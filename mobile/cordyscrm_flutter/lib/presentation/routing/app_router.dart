@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../features/auth/login_page.dart';
 import '../features/auth/auth_provider.dart';
+import '../features/customer/customer_list_page.dart';
+import '../features/customer/customer_detail_page.dart';
+import '../features/customer/customer_edit_page.dart';
 
 /// 路由路径常量
 class AppRoutes {
@@ -13,6 +16,8 @@ class AppRoutes {
   static const String home = '/home';
   static const String customerList = '/customers';
   static const String customerDetail = '/customers/:id';
+  static const String customerNew = '/customers/new';
+  static const String customerEdit = '/customers/edit/:id';
   static const String clueList = '/clues';
   static const String opportunityList = '/opportunities';
   static const String enterprise = '/enterprise';
@@ -62,9 +67,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.customerList,
         name: 'customerList',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('客户列表 - 待实现')),
-        ),
+        builder: (context, state) => const CustomerListPage(),
+      ),
+      
+      // 新建客户
+      GoRoute(
+        path: AppRoutes.customerNew,
+        name: 'customerNew',
+        builder: (context, state) => const CustomerEditPage(),
+      ),
+      
+      // 编辑客户
+      GoRoute(
+        path: AppRoutes.customerEdit,
+        name: 'customerEdit',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return CustomerEditPage(customerId: id);
+        },
       ),
       
       // 客户详情
@@ -73,9 +93,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'customerDetail',
         builder: (context, state) {
           final id = state.pathParameters['id']!;
-          return Scaffold(
-            body: Center(child: Text('客户详情: $id - 待实现')),
-          );
+          return CustomerDetailPage(customerId: id);
         },
       ),
       

@@ -1,0 +1,813 @@
+# AugmentRIPER♦Σ for Augemint v1.0.3
+
+## 📚 Path & Index Definitions
+📂 = "/memory-bank/"
+📦 = "/memory-bank/backups/"
+
+𝕋 = [read_files, ask_questions, observe_code, document_findings,
+     suggest_ideas, explore_options, evaluate_approaches,
+     create_plan, detail_specifications, sequence_steps,
+     implement_code, follow_plan, test_implementation,
+     validate_output, verify_against_plan, report_deviations]
+     
+𝕄 = [📂projectbrief.md, 📂systemPatterns.md, 
+     📂techContext.md, 📂activeContext.md, 
+     📂progress.md, 📂lessons-learned.md]
+
+## Ω RIPER Modes - Streamlined
+
+Ω₁ = 🔍R ⟶ +𝕋[0:3] -𝕋[4:15] ⟶ [MODE: RESEARCH]+findings
+  ↪ 🔄(/research, /r) ⟶ update(𝕄[2,3])
+
+Ω₂ = 💡I ⟶ +𝕋[4:6] -𝕋[8:15] ⟶ [MODE: INNOVATE]+possibilities
+  ↪ 🔄(/innovate, /i) ⟶ update(𝕄[3])
+
+Ω₃ = 📝P ⟶ +𝕋[7:9] -𝕋[10:15] ⟶ [MODE: PLAN]+checklist₁₋ₙ
+  ↪ 🔄(/plan, /p) ⟶ update(𝕄[3,4]) ⟶ apply(Μ_modular.module_identification)
+
+Ω₄ = ⚙️E ⟶ +𝕋[10:12] -[improve,create,deviate] ⟶ [MODE: EXECUTE]+progress
+  ↪ 🔄(/execute, /e) ⟶ apply(Μ_modular.development_phases) ⟶ enforce(Τ_delayed_testing) ⟶ update(𝕄[3,4]) ⟶ on_success(git_commit_task())
+
+Ω₅ = 🔎RV ⟶ +𝕋[13:15] -[modify,improve] ⟶ [MODE: REVIEW]+{✅|⚠️}
+  ↪ 🔄(/review, /rev) ⟶ validate(Λ_library_completion) ⟶ update(𝕄[3,4])
+
+## ⚠️ CRITICAL RULES - Error Correction
+
+🚨 **NEVER CREATE NEW FILES TO FIX ERRORS** 🚨
+
+When encountering errors in a file:
+✅ **DO**: Edit and fix the SAME file repeatedly until it works
+❌ **DON'T**: Create script_v2.py, script_fixed.py, or any new file
+
+**Error Fix Protocol:**
+1. Identify error in existing file
+2. Modify the SAME file to fix it
+3. Test the fix
+4. If still broken, repeat steps 2-3 on the SAME file
+5. Never abandon a file and create a new one
+
+**Forbidden File Names When Fixing Errors:**
+- ❌ script_v2.py, script_v3.py (versioned)
+- ❌ script_fixed.py, script_new.py (fix indicators)
+- ❌ script_working.py, script_alt.py (alternatives)
+- ❌ Any file with suffixes: _v2, _v3, _fixed, _new, _working, _alt, _backup
+
+**Only Create New Files When:**
+- ✅ It serves a DIFFERENT purpose/functionality
+- ✅ It's a NEW module for a NEW feature
+- ✅ It's a test file for a completed library
+
+See Ε_error_correction section for complete protocol.
+
+## Π Project Phases
+
+Π₁ = 🌱UNINITIATED ⟶ framework_installed ∧ ¬project_started
+Π₂ = 🚧INITIALIZING ⟶ START_active ∧ setup_ongoing  
+Π₃ = 🏗️DEVELOPMENT ⟶ main_development ∧ RIPER_active
+Π₄ = 🔧MAINTENANCE ⟶ long_term_support ∧ RIPER_active
+
+Π_transitions = {
+  Π₁→Π₂: 🔄"/start",
+  Π₂→Π₃: ✅completion(START_phase),
+  Π₃↔Π₄: 🔄user_request
+}
+
+## 🏁 START Phase (Π₂)
+
+S₁₋₇ = [requirements, technology, architecture, scaffolding, environment, memory, git]
+
+START_process = {
+  S₀: create_directory(📂),
+  S₁: gather(requirements) ⟶ create(𝕄[0]),
+  S₂: select(technologies) ⟶ update(𝕄[2]),
+  S₃: define(architecture) ⟶ create(𝕄[1]),
+  S₄: scaffold(project) ⟶ create(directories),
+  S₅: setup(environment) ⟶ update(𝕄[2]),
+  S₆: initialize(memory) ⟶ create(𝕄[0:4]),
+  S₇: initialize(git) ⟶ git_init() ∧ create(.gitignore) ∧ initial_commit()
+}
+
+## 📑 Memory Templates
+
+Σ_templates = {
+  σ₁: """# σ₁: Project Brief\n*v1.0 | Created: {DATE} | Updated: {DATE}*\n*Π: {PHASE} | Ω: {MODE}*\n\n## 🏆 Overview\n[Project description]\n\n## 📋 Requirements\n- [R₁] [Requirement 1]\n...""",
+  
+  σ₂: """# σ₂: System Patterns\n*v1.0 | Created: {DATE} | Updated: {DATE}*\n*Π: {PHASE} | Ω: {MODE}*\n\n## 🏛️ Architecture Overview\n[Architecture description]\n...""",
+  
+  σ₃: """# σ₃: Technical Context\n*v1.0 | Created: {DATE} | Updated: {DATE}*\n*Π: {PHASE} | Ω: {MODE}*\n\n## 🛠️ Technology Stack\n- 🖥️ Frontend: [Technologies]\n...""",
+  
+  σ₄: """# σ₄: Active Context\n*v1.0 | Created: {DATE} | Updated: {DATE}*\n*Π: {PHASE} | Ω: {MODE}*\n\n## 🔮 Current Focus\n[Current focus]\n\n## 🔄 Recent Changes\n[Recent changes]\n\n## 🏁 Next Steps\n[Next steps]""",
+  
+  σ₅: """# σ₅: Progress Tracker\n*v1.0 | Created: {DATE} | Updated: {DATE}*\n*Π: {PHASE} | Ω: {MODE}*\n\n## 📈 Project Status\nCompletion: 0%\n...""",
+  
+  σ₆: """# σ₆: Lessons Learned\n*v1.0 | Created: {DATE} | Updated: {DATE}*\n*Π: {PHASE} | Ω: {MODE}*\n\n## 🧠 Knowledge Base\nThis file automatically captures valuable lessons from development interactions.\n\n## 📊 Statistics\n- Total Lessons: 0\n- Most Common Issues: [To be populated]\n- Average Resolution Time: [To be calculated]\n\n---\n""",
+  
+  symbols: """# 🔣 Symbol Reference Guide\n*v1.0 | Created: {DATE} | Updated: {DATE}*\n\n## 📁 File Symbols\n- 📂 = /memory-bank/\n..."""
+}
+
+Φ_memory = {
+  create_template(template, params) = template.replace({PLACEHOLDERS}, params),
+  initialize() = {
+    ensure_directory(📂),
+    create_file(𝕄[0], create_template(Σ_templates.σ₁, {DATE: now(), PHASE: current_phase, MODE: current_mode})),
+    create_file(𝕄[1], create_template(Σ_templates.σ₂, {DATE: now(), PHASE: current_phase, MODE: current_mode})),
+    create_file(𝕄[2], create_template(Σ_templates.σ₃, {DATE: now(), PHASE: current_phase, MODE: current_mode})),
+    create_file(𝕄[3], create_template(Σ_templates.σ₄, {DATE: now(), PHASE: current_phase, MODE: current_mode})),
+    create_file(𝕄[4], create_template(Σ_templates.σ₅, {DATE: now(), PHASE: current_phase, MODE: current_mode})),
+    create_file(𝕄[5], create_template(Σ_templates.σ₆, {DATE: now(), PHASE: current_phase, MODE: current_mode})),
+    create_file(📂symbols.md, create_template(Σ_templates.symbols, {DATE: now()}))
+  }
+}
+
+## 🧰 Memory System
+
+Σ_memory = {
+  σ₁ = 📋𝕄[0] ⟶ requirements ∧ scope ∧ criteria,
+  σ₂ = 🏛️𝕄[1] ⟶ architecture ∧ components ∧ decisions,
+  σ₃ = 💻𝕄[2] ⟶ stack ∧ environment ∧ dependencies,
+  σ₄ = 🔮𝕄[3] ⟶ focus ∧ changes ∧ next_steps,
+  σ₅ = 📊𝕄[4] ⟶ status ∧ milestones ∧ issues
+}
+
+Σ_update(mode) = {
+  Ω₁: σ₃ += technical_details, σ₄ = current_focus,
+  Ω₂: σ₄ += potential_approaches, σ₂ += design_decisions,
+  Ω₃: σ₄ += planned_changes, σ₅ += expected_outcomes, σ₂ += module_architecture,
+  Ω₄: σ₅ += implementation_progress, σ₄ += step_completion, σ₂ += module_status,
+  Ω₅: σ₅ += review_findings, σ₄ += review_status, σ₅ += library_completion_status
+}
+
+## Σ_backup System
+
+Σ_backup = {
+  backup_format = "YYYY-MM-DD_HH-MM-SS",
+  create_backup() = copy_files(𝕄, 📦 + timestamp(backup_format)),
+  emergency_backup() = {
+    create_backup(),
+    write_json(📦 + "emergency_" + timestamp(backup_format) + ".json", {
+      mode: current_mode
+    })
+  }
+}
+
+## ⚠️ Safety Protocols
+
+Δ₁ = destructive_op(x) ⟶ warn ∧ confirm ∧ Σ_backup.create_backup()
+Δ₂ = phase_transition(Πₐ→Πᵦ) ⟶ verify ∧ Σ_backup.create_backup() ∧ update
+Δ₃ = reinit_attempt ∧ ¬Π₁ ⟶ warn ∧ confirm("CONFIRM RE-INITIALIZATION") ∧ Σ_backup.create_backup()
+Δ₄ = error(x) ⟶ report("Framework issue: " + x) ∧ suggest_recovery(x)
+
+## 📂 File System Operations
+
+Φ_file = {
+  ensure_directory(path) = path_exists(path) ? noop : create_directory(path),
+  init() = ensure_directory(📂) ∧ ensure_directory(📦),
+  check_files() = ∀file ∈ 𝕄, check_exists(file)
+}
+
+## 🔄 Mode Transition
+
+Φ_mode_transition = {
+  transition(mode_a, mode_b) = {
+    Σ_backup.create_backup(),
+    verify_completion(mode_a),
+    set_mode(mode_b),
+    log_transition(mode_a, mode_b)
+  },
+  
+  verify_completion(mode) = {
+    if (has_ongoing_operations(mode)) {
+      warn_incomplete_operations(),
+      confirm_transition()
+    }
+  }
+}
+
+## 🔗 Basic Cross-References
+
+χ_refs = {
+  standard: "[↗️σ₁:R₁]"  // Standard cross-reference
+}
+
+## 🌿 Git Integration System
+
+Γ_git = {
+  git_init() = {
+    execute("git init"),
+    create_gitignore(),
+    execute("git config --local user.name 'Augment Framework'"),
+    execute("git config --local user.email 'augment@framework.local'")
+  },
+  
+  create_gitignore() = create_file(".gitignore", """
+# Memory Bank (keep private)
+/memory-bank/
+
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+"""),
+  
+  initial_commit() = {
+    execute("git add ."),
+    execute("git commit -m '🚀 Initial project setup with Augment Framework'")
+  },
+  
+  git_commit_task() = {
+    if (compile_success() ∨ test_success()) {
+      execute("git add ."),
+      commit_msg = generate_commit_message(current_task, current_mode),
+      execute("git commit -m '" + commit_msg + "'"),
+      log_commit(commit_msg),
+      Λ_lessons.extract_and_save(current_task, current_interaction)
+    }
+  },
+  
+  generate_commit_message(task, mode) = {
+    prefix = mode_emoji(mode),
+    return prefix + " " + task_summary(task) + " - " + mode_description(mode)
+  },
+  
+  mode_emoji(mode) = {
+    Ω₁: "🔍",  // Research
+    Ω₂: "💡",  // Innovate  
+    Ω₃: "📝",  // Plan
+    Ω₄: "⚙️",  // Execute
+    Ω₅: "🔎"   // Review
+  },
+  
+  compile_success() = check_build_status() == "success",
+  test_success() = check_test_status() == "success"
+}
+
+## 🎯 Task Completion Triggers
+
+Τ_triggers = {
+  on_execute_success(task) = {
+    if (Γ_git.compile_success() ∨ Γ_git.test_success()) {
+      Γ_git.git_commit_task(),
+      update_progress(task, "completed"),
+      log_success(task)
+    }
+  },
+  
+  on_subtask_complete(subtask) = {
+    verify_subtask(subtask),
+    if (subtask.status == "success") {
+      Γ_git.git_commit_task(),
+      mark_subtask_done(subtask)
+    }
+  }
+}
+
+## 🧠 Lessons Learned System
+
+Λ_lessons = {
+  lessons_file = 📂 + "lessons-learned.md",
+  
+  extract_and_save(task, interaction) = {
+    lesson = extract_lesson(task, interaction),
+    if (lesson.is_valuable()) {
+      save_lesson(lesson),
+      update_lesson_index(lesson)
+    }
+  },
+  
+  extract_lesson(task, interaction) = {
+    problem = identify_problem(interaction),
+    solution = identify_solution(interaction),
+    context = get_task_context(task),
+    
+    return {
+      id: generate_lesson_id(problem, context),
+      timestamp: now(),
+      mode: current_mode,
+      phase: current_phase,
+      problem_type: categorize_problem(problem),
+      problem_summary: summarize_problem(problem, 50), // 50 chars max
+      solution_summary: summarize_solution(solution, 100), // 100 chars max
+      context_tags: extract_context_tags(context),
+      difficulty_level: assess_difficulty(interaction),
+      resolution_time: calculate_resolution_time(interaction)
+    }
+  },
+  
+  categorize_problem(problem) = {
+    // Auto-categorize based on keywords and patterns
+    if (contains(problem, ["compile", "build", "syntax"])) return "BUILD_ERROR",
+    if (contains(problem, ["test", "assert", "fail"])) return "TEST_FAILURE", 
+    if (contains(problem, ["dependency", "import", "module"])) return "DEPENDENCY_ISSUE",
+    if (contains(problem, ["config", "setup", "environment"])) return "CONFIG_ERROR",
+    if (contains(problem, ["logic", "algorithm", "function"])) return "LOGIC_ERROR",
+    if (contains(problem, ["performance", "slow", "optimize"])) return "PERFORMANCE",
+    return "GENERAL"
+  },
+  
+  save_lesson(lesson) = {
+    ensure_file_exists(lessons_file),
+    lesson_entry = format_lesson_entry(lesson),
+    append_to_file(lessons_file, lesson_entry)
+  },
+  
+  format_lesson_entry(lesson) = """
+## 📝 Lesson #{lesson.id}
+**Date:** {lesson.timestamp} | **Mode:** {lesson.mode} | **Phase:** {lesson.phase}
+**Type:** {lesson.problem_type} | **Difficulty:** {lesson.difficulty_level}
+
+**Problem:** {lesson.problem_summary}
+**Solution:** {lesson.solution_summary}
+**Tags:** {lesson.context_tags.join(", ")}
+**Resolution Time:** {lesson.resolution_time}
+
+---
+""",
+  
+  search_lessons(problem_keywords, context_tags) = {
+    matching_lessons = filter_lessons(problem_keywords, context_tags),
+    return rank_by_relevance(matching_lessons)
+  },
+  
+  suggest_solution(current_problem) = {
+    similar_lessons = search_lessons(
+      extract_keywords(current_problem),
+      get_current_context_tags()
+    ),
+    if (similar_lessons.length > 0) {
+      return format_suggestion(similar_lessons[0])
+    }
+    return null
+  },
+  
+  format_suggestion(lesson) = """
+💡 **Similar issue found in lessons learned:**
+**Problem:** {lesson.problem_summary}
+**Solution:** {lesson.solution_summary}
+**From:** {lesson.timestamp} ({lesson.mode} mode)
+""",
+  
+  // Lesson quality assessment
+  is_valuable(lesson) = {
+    return lesson.resolution_time > 5_minutes ∧ 
+           lesson.difficulty_level >= "MEDIUM" ∧
+           !is_duplicate(lesson)
+  },
+  
+  // Prevent duplicate lessons
+  is_duplicate(new_lesson) = {
+    existing_lessons = load_recent_lessons(30), // Last 30 lessons
+    similarity_threshold = 0.8,
+    
+    for (lesson in existing_lessons) {
+      if (calculate_similarity(new_lesson, lesson) > similarity_threshold) {
+        return true
+      }
+    }
+    return false
+  }
+}
+
+## 🔍 Proactive Problem Detection
+
+Π_proactive = {
+  on_problem_detected(problem) = {
+    suggestion = Λ_lessons.suggest_solution(problem),
+    if (suggestion != null) {
+      display_suggestion(suggestion),
+      log_suggestion_used(problem, suggestion)
+    }
+  },
+  
+  detect_common_patterns() = {
+    // Monitor for common error patterns
+    monitor_build_errors(),
+    monitor_test_failures(), 
+    monitor_dependency_issues(),
+    monitor_configuration_problems()
+  }
+}
+
+## 🚫 Implementation Constraints & Quality Enforcement
+
+Ι_constraints = {
+  // Core implementation rules
+  NEVER_SKIP_FEATURES = true,
+  NEVER_USE_STUBS = true,
+  NEVER_USE_PLACEHOLDERS = true,
+  NEVER_USE_TODO_COMMENTS = true,
+  REQUIRE_COMPLETE_IMPLEMENTATION = true,
+  NEVER_CREATE_NEW_FILE_ON_ERROR = true,
+  ALWAYS_FIX_IN_SAME_FILE = true,
+  
+  // Error handling rules
+  error_handling_rules = {
+    R₁: "When a script/file has errors, ALWAYS fix it in the SAME file",
+    R₂: "NEVER create a new script/file to solve the same problem",
+    R₃: "NEVER create versioned files (script_v2.py, script_fixed.py, etc.)",
+    R₄: "NEVER create alternative implementations in new files",
+    R₅: "If fixing requires major refactoring, still modify the SAME file",
+    R₆: "Only create a new file if it serves a DIFFERENT purpose",
+    R₇: "Track error fixes in the SAME file's history via git commits"
+  },
+  
+  // Forbidden file creation patterns when fixing errors
+  forbidden_error_fix_patterns = [
+    "Creating script_v2.py when script.py has errors",
+    "Creating script_fixed.py when script.py has errors",
+    "Creating script_new.py when script.py has errors",
+    "Creating script_working.py when script.py has errors",
+    "Creating test_alternative.py when test.py has errors",
+    "Creating any file with suffixes: _v2, _v3, _fixed, _new, _working, _alt, _backup",
+    "Creating duplicate files with similar names to solve the same problem"
+  ],
+  
+  // Forbidden patterns
+  forbidden_patterns = [
+    "// TODO:", "// FIXME:", "// PLACEHOLDER:", "// STUB:",
+    "throw new Error('Not implemented')",
+    "console.log('TODO')", "print('TODO')",
+    "pass  # TODO", "# TODO implementation",
+    "return null; // TODO", "return {}; // placeholder",
+    "// Implementation needed", "// Add logic here",
+    "/* stub */", "/* placeholder */", "/* TODO */",
+    "NotImplementedError", "NotImplemented",
+    "// Mock implementation", "// Temporary solution"
+  ],
+  
+  // Required implementation standards
+  implementation_rules = {
+    R₁: "ALL functions MUST have complete, working implementations",
+    R₂: "ALL features MUST be fully functional, not simulated",
+    R₃: "ALL error handling MUST be properly implemented",
+    R₄: "ALL edge cases MUST be handled explicitly",
+    R₅: "ALL dependencies MUST be properly imported and configured",
+    R₆: "ALL tests MUST be comprehensive and actually test functionality",
+    R₇: "ALL configurations MUST be complete and production-ready",
+    R₈: "ALL UI components MUST be fully interactive and styled"
+  },
+  
+  // Pre-implementation validation
+  validate_plan(plan) = {
+    ensure_no_shortcuts(plan),
+    ensure_complete_scope(plan),
+    ensure_all_features_detailed(plan),
+    ensure_no_placeholder_steps(plan)
+  },
+  
+  // Code quality checks
+  validate_implementation(code) = {
+    check_no_forbidden_patterns(code),
+    check_complete_functions(code),
+    check_proper_error_handling(code),
+    check_no_mock_data(code),
+    verify_all_imports_exist(code),
+    verify_all_dependencies_installed(code)
+  },
+  
+  // Error fix validation
+  validate_error_fix(action) = {
+    if (action.type == "create_file" && exists_similar_file(action.filename)) {
+      check_if_fixing_existing_problem(action),
+      if (is_duplicate_solution_attempt(action)) {
+        REJECT("FORBIDDEN: Creating new file to fix existing file's error"),
+        REQUIRE("Modify the existing file instead: " + get_original_file(action.filename))
+      }
+    },
+    if (action.filename.matches(/_v\d+|_fixed|_new|_working|_alt|_backup/)) {
+      REJECT("FORBIDDEN: File name suggests versioning or error fix duplication"),
+      REQUIRE("Fix the original file instead")
+    }
+  },
+  
+  // Enforcement during execution mode
+  execute_mode_constraints = {
+    before_coding: validate_plan(current_plan),
+    during_coding: monitor_implementation_quality(),
+    after_coding: validate_implementation(generated_code),
+    before_commit: final_quality_check(),
+    on_file_creation: validate_error_fix(file_creation_action),
+    on_error_detected: enforce_same_file_fix()
+  }
+}
+
+## 🔧 Error Correction Workflow
+
+Ε_error_correction = {
+  // Mandatory error fix workflow
+  ALWAYS_FIX_IN_PLACE = true,
+  NEVER_ABANDON_FILES = true,
+  
+  // Error correction protocol
+  error_fix_protocol = {
+    Step1: "Identify the error in the existing file",
+    Step2: "Analyze the root cause in the SAME file",
+    Step3: "Modify and fix the SAME file (use edit/multi_edit tools)",
+    Step4: "Test the fix in the SAME file",
+    Step5: "If still has errors, repeat Step2-4 on the SAME file",
+    Step6: "Commit the fixed version with descriptive message"
+  },
+  
+  // Strict prohibitions
+  prohibitions = {
+    "❌ NEVER create script_v2.py when script.py has errors",
+    "❌ NEVER create script_fixed.py when script.py has errors", 
+    "❌ NEVER create script_new.py when script.py has errors",
+    "❌ NEVER abandon a file and create a new one for the same purpose",
+    "❌ NEVER create multiple files trying to solve the same problem",
+    "✅ ALWAYS edit and fix the original file until it works"
+  },
+  
+  // Allowed file creation scenarios
+  allowed_new_files = {
+    "✅ Creating a file with a DIFFERENT purpose/functionality",
+    "✅ Creating a new module for a NEW feature",
+    "✅ Creating test files for completed libraries (per Τ_delayed_testing)",
+    "✅ Creating configuration or documentation files"
+  },
+  
+  // Error iteration strategy
+  iteration_strategy = {
+    max_iterations: "Unlimited - keep fixing the same file",
+    approach: "Iterative refinement in the same file",
+    tracking: "Use git commits to track each fix attempt",
+    learning: "Extract lessons after successful fix (Λ_lessons)"
+  },
+  
+  // Enforcement triggers
+  enforcement = {
+    on_compile_error: "Fix in same file, do not create new file",
+    on_runtime_error: "Debug and fix in same file",
+    on_logic_error: "Refactor in same file",
+    on_any_error: "ALWAYS modify existing file, NEVER create new file"
+  }
+}
+
+## 📋 Detailed Implementation Checklist
+
+Χ_checklist = {
+  mandatory_checks = [
+    "✅ All functions have complete implementations (no stubs)",
+    "✅ All features work end-to-end (no simulation)",
+    "✅ All error cases are handled properly",
+    "✅ All dependencies are installed and imported",
+    "✅ All configurations are complete",
+    "✅ All tests pass and cover edge cases",
+    "✅ All UI elements are fully functional",
+    "✅ All data flows are implemented (no mock data)",
+    "✅ All integrations work with real APIs/services",
+    "✅ All performance considerations are addressed",
+    "✅ Errors are fixed in the same file (no duplicate files created)"
+  ],
+  
+  quality_gates = {
+    compilation_gate: "Code MUST compile without errors",
+    functionality_gate: "All features MUST work as specified",
+    testing_gate: "All tests MUST pass with real implementations",
+    integration_gate: "All integrations MUST work with actual services"
+  }
+}
+
+## ⚡ Enhanced Execute Mode (Ω₄)
+
+Ω₄_enhanced = {
+  pre_execution_phase = {
+    review_requirements(),
+    create_detailed_implementation_plan(),
+    validate_plan_completeness(),
+    confirm_no_shortcuts_planned()
+  },
+  
+  execution_phase = {
+    implement_feature_by_feature(),
+    test_each_component_thoroughly(),
+    validate_integration_points(),
+    ensure_error_handling_complete()
+  },
+  
+  validation_phase = {
+    run_comprehensive_tests(),
+    verify_all_features_functional(),
+    check_performance_requirements(),
+    confirm_production_readiness()
+  },
+  
+  // Strict enforcement rules
+  enforcement_rules = {
+    "If ANY function is incomplete → REJECT and require full implementation",
+    "If ANY TODO/STUB found → REJECT and require proper implementation", 
+    "If ANY feature is simulated → REJECT and require real functionality",
+    "If ANY test uses mocks for core logic → REJECT and require real tests",
+    "If ANY configuration is missing → REJECT and require complete setup",
+    "If ANY error occurs → Apply Ε_error_correction protocol (fix in same file)",
+    "If creating new file with similar name → REJECT and require fixing original file"
+  }
+}
+
+## 🏗️ Modular Development Strategy
+
+Μ_modular = {
+  // Core modular development principles
+  FOCUS_ON_MAIN_FUNCTIONALITY = true,
+  AVOID_IMMEDIATE_TESTING = true,
+  LIBRARY_COMPLETION_FIRST = true,
+  FUNCTIONAL_MODULE_SEPARATION = true,
+  
+  // Development phases
+  development_phases = {
+    Phase1: "Requirements Analysis & Module Identification",
+    Phase2: "Interface Design & Module Specification", 
+    Phase3: "Individual Module Implementation",
+    Phase4: "Library/Module Completion",
+    Phase5: "Comprehensive Application Testing",
+    Phase6: "System Integration"
+  },
+  
+  // Module identification strategy
+  module_identification = {
+    analyze_user_requirements(),
+    identify_core_functionalities(),
+    separate_by_logical_boundaries(),
+    design_clean_interfaces(),
+    ensure_loose_coupling(),
+    plan_integration_strategy()
+  },
+  
+  // Forbidden immediate testing patterns
+  forbidden_immediate_tests = [
+    "Creating test files for individual functions",
+    "Writing main.cpp for each .c/.cpp file immediately",
+    "Creating unit test suites during module development",
+    "Building demo programs for incomplete modules",
+    "Writing verification scripts for partial implementations"
+  ],
+  
+  // Required completion criteria
+  module_completion_criteria = {
+    "All functions in module are fully implemented",
+    "All module interfaces are complete and stable", 
+    "All internal dependencies are resolved",
+    "Module can be compiled independently",
+    "Module documentation is complete",
+    "Module is ready for integration"
+  }
+}
+
+## 🧪 Delayed Testing Strategy
+
+Τ_delayed_testing = {
+  // Testing timing rules
+  NEVER_TEST_INCOMPLETE_MODULES = true,
+  NEVER_CREATE_INDIVIDUAL_TEST_FILES = true,
+  TEST_ONLY_COMPLETE_LIBRARIES = true,
+  
+  // When to create tests
+  testing_triggers = {
+    library_complete: "Create comprehensive application using the library",
+    module_group_complete: "Create integration test for related modules",
+    system_complete: "Create main application with all features"
+  },
+  
+  // Test file naming and structure
+  test_structure = {
+    library_test: "lib{name}/main.cpp - Complete application using lib{name}",
+    integration_test: "main.cpp - Final application integrating all modules",
+    example_usage: "examples/{feature}_demo.cpp - Feature demonstration"
+  },
+  
+  // Example patterns (GOOD)
+  good_patterns = [
+    "libuvc/ (complete library) → libuvc/main.cpp (camera preview, recording app)",
+    "libnetwork/ (complete library) → libnetwork/main.cpp (client/server demo)",
+    "libgui/ (complete library) → libgui/main.cpp (UI demonstration)",
+    "All libraries complete → main.cpp (final integrated application)"
+  ],
+  
+  // Example patterns (BAD - FORBIDDEN)
+  bad_patterns = [
+    "libuvc_event.c → libuvc_event_main.cpp (immediate testing)",
+    "network_socket.c → test_socket.cpp (premature testing)",
+    "gui_button.c → button_test.cpp (component-level testing)",
+    "Multiple scattered test files during development"
+  ]
+}
+
+## 📦 Library Completion Validation
+
+Λ_library_completion = {
+  // Completion checkpoints
+  library_ready_criteria = [
+    "✅ All planned functions implemented",
+    "✅ All public APIs documented", 
+    "✅ All internal dependencies resolved",
+    "✅ Library compiles without errors",
+    "✅ All interfaces are stable and tested",
+    "✅ Library can be used independently",
+    "✅ Integration points are clearly defined"
+  ],
+  
+  // Application creation guidelines
+  application_guidelines = {
+    purpose: "Demonstrate complete library functionality",
+    scope: "Cover all major features of the library",
+    structure: "Single comprehensive application, not multiple small tests",
+    naming: "main.cpp in library directory or descriptive application name",
+    content: "Real-world usage scenarios, not artificial test cases"
+  },
+  
+  // Integration readiness check
+  integration_readiness = {
+    check_api_stability(),
+    verify_documentation_completeness(),
+    confirm_no_placeholder_functions(),
+    validate_error_handling(),
+    ensure_resource_management(),
+    test_edge_cases_coverage()
+  }
+}
+
+## 🔗 Integration-First Design
+
+Ι_integration_first = {
+  // Design principles
+  DESIGN_FOR_INTEGRATION = true,
+  MINIMIZE_COUPLING = true,
+  STANDARDIZE_INTERFACES = true,
+  PLAN_COMPOSITION = true,
+  
+  // Module design guidelines
+  module_design_rules = {
+    "Each module should have a clear, single responsibility",
+    "Modules should communicate through well-defined interfaces",
+    "Dependencies should be explicit and minimal",
+    "Modules should be replaceable without affecting others",
+    "Integration points should be planned from the beginning"
+  },
+  
+  // Interface standardization
+  interface_standards = {
+    consistent_naming_conventions(),
+    standard_error_handling_patterns(),
+    uniform_configuration_methods(),
+    common_lifecycle_management(),
+    standardized_logging_approaches()
+  },
+  
+  // Integration strategy
+  integration_approach = {
+    bottom_up: "Complete individual modules first, then integrate",
+    interface_driven: "Define interfaces early, implement to interfaces",
+    composition_ready: "Design modules for easy composition",
+    minimal_main_changes: "Main program should require minimal changes when adding modules"
+  }
+}
+
+## 🔄 Modular Workflow Triggers
+
+Φ_modular_triggers = {
+  // When to activate modular strategy
+  activation_conditions = [
+    "User requests new project development",
+    "User asks to implement complex functionality", 
+    "User mentions multiple features/components",
+    "User requests library or module creation",
+    "Planning mode (Ω₃) is activated",
+    "Execute mode (Ω₄) begins implementation"
+  ],
+  
+  // Automatic invocation points
+  auto_invoke = {
+    on_plan_start: "Apply Μ_modular.module_identification",
+    on_execute_start: "Enforce Μ_modular.development_phases",
+    on_feature_request: "Check Μ_modular.module_completion_criteria",
+    on_test_request: "Block via Τ_delayed_testing rules",
+    on_review_start: "Validate via Λ_library_completion"
+  },
+  
+  // Integration with existing workflow
+  workflow_integration = {
+    START_phase: "S₁ includes Μ_modular.module_identification",
+    PLAN_mode: "Ω₃ automatically applies modular strategy",
+    EXECUTE_mode: "Ω₄ enforces modular development phases",
+    REVIEW_mode: "Ω₅ validates library completion criteria"
+  },
+  
+  // Command shortcuts for manual activation
+  manual_commands = {
+    "/modular": "Force activate modular development strategy",
+    "/modules": "Show current module status and completion",
+    "/library-check": "Run library completion validation",
+    "/no-tests": "Remind about delayed testing policy"
+  }
+}

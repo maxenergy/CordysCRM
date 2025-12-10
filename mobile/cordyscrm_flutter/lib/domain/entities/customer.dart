@@ -14,6 +14,9 @@ class Customer {
     this.lastFollowUpAt,
     required this.createdAt,
     required this.updatedAt,
+    this.industry,
+    this.source,
+    this.address,
   });
 
   final String id;
@@ -26,6 +29,9 @@ class Customer {
   final DateTime? lastFollowUpAt;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? industry;
+  final String? source;
+  final String? address;
 
   /// 从 JSON 创建
   factory Customer.fromJson(Map<String, dynamic> json) {
@@ -42,6 +48,9 @@ class Customer {
           : null,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
+      industry: json['industry'] as String?,
+      source: json['source'] as String?,
+      address: json['address'] as String?,
     );
   }
 
@@ -58,6 +67,9 @@ class Customer {
       'lastFollowUpAt': lastFollowUpAt?.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'industry': industry,
+      'source': source,
+      'address': address,
     };
   }
 
@@ -73,6 +85,9 @@ class Customer {
     DateTime? lastFollowUpAt,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? industry,
+    String? source,
+    String? address,
   }) {
     return Customer(
       id: id ?? this.id,
@@ -85,6 +100,9 @@ class Customer {
       lastFollowUpAt: lastFollowUpAt ?? this.lastFollowUpAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      industry: industry ?? this.industry,
+      source: source ?? this.source,
+      address: address ?? this.address,
     );
   }
 }

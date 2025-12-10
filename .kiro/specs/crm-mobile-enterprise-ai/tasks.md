@@ -178,7 +178,7 @@
     - 使用 fetch 调用 POST /api/enterprise/import
     - 设置 Authorization: Bearer {token} 头
     - _Requirements: 2.4_
-  - [ ]* 14.2 编写 API 请求格式的属性测试
+  - [ ] 14.2 编写 API 请求格式的属性测试
     - **Property 7: API请求格式正确性**
     - **Validates: Requirements 2.4**
   - [x] 14.3 实现错误处理和重试逻辑
@@ -264,7 +264,7 @@
 ## Phase 6: Flutter App 核心功能
 
 - [-] 20. 实现客户模块
-  - [-] 20.1 创建客户列表页面
+  - [x] 20.1 创建客户列表页面
     - 创建 CustomerListPage widget
     - 实现 InfiniteScrollPagination 分页加载（每页 20 条）
     - 实现搜索框（防抖 300ms）

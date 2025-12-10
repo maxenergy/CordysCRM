@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.cordys.crm.integration.mapper.ExtIntegrationConfigMapper">
+
+    <select id="selectByKey" resultType="cn.cordys.crm.integration.domain.IntegrationConfig">
+        SELECT id, config_key, config_value, encrypted, organization_id,
+               description, create_time, update_time, create_user, update_user
+        FROM integration_config
+        WHERE config_key = #{configKey} AND organization_id = #{orgId}
+    </select>
+
+    <select id="selectByOrganization" resultType="cn.cordys.crm.integration.domain.IntegrationConfig">
+        SELECT id, config_key, config_value, encrypted, organization_id,
+               description, create_time, update_time, create_user, update_user
+        FROM integration_config
+        WHERE organization_id = #{orgId}
+        ORDER BY config_key
+    </select>
+
+    <insert id="upsert">
+        INSERT INTO integration_config (id, config_key, config_value, encrypted,
+                                        organization_id, description,
+                                        create_time, update_time, create_user, update_user)
+        VALUES (#{config.id}, #{config.configKey}, #{config.configValue}, #{config.encrypted},
+                #{config.organizationId}, #{config.description},
+                #{config.createTime}, #{config.updateTime}, #{config.createUser}, #{config.updateUser})
+        ON DUPLICATE KEY UPDATE
+            config_value = #{config.configValue},
+            encrypted = #{config.encrypted},
+            description = #{config.description},
+            update_time = #{config.updateTime},
+            update_user = #{config.updateUser}
+    </insert>
+
+</mapper>

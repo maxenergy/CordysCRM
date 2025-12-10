@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.cordys.crm.integration.mapper.ExtIqichaSyncLogMapper">
+
+    <insert id="insert">
+        INSERT INTO iqicha_sync_log (id, operator_id, customer_id, iqicha_id, action,
+                                     request_params, response_code, response_msg,
+                                     diff_snapshot, cost, organization_id, create_time)
+        VALUES (#{log.id}, #{log.operatorId}, #{log.customerId}, #{log.iqichaId}, #{log.action},
+                #{log.requestParams}, #{log.responseCode}, #{log.responseMsg},
+                #{log.diffSnapshot}, #{log.cost}, #{log.organizationId}, #{log.createTime})
+    </insert>
+
+    <select id="selectByCustomerId" resultType="cn.cordys.crm.integration.domain.IqichaSyncLog">
+        SELECT id, operator_id, customer_id, iqicha_id, action,
+               request_params, response_code, response_msg,
+               diff_snapshot, cost, organization_id, create_time
+        FROM iqicha_sync_log
+        WHERE customer_id = #{customerId}
+        ORDER BY create_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectByAction" resultType="cn.cordys.crm.integration.domain.IqichaSyncLog">
+        SELECT id, operator_id, customer_id, iqicha_id, action,
+               request_params, response_code, response_msg,
+               diff_snapshot, cost, organization_id, create_time
+        FROM iqicha_sync_log
+        WHERE action = #{action} AND organization_id = #{orgId}
+        <if test="startTime != null">
+            AND create_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND create_time &lt;= #{endTime}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>

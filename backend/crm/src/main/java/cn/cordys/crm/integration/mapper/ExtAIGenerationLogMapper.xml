@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.cordys.crm.integration.mapper.ExtAIGenerationLogMapper">
+
+    <insert id="insert">
+        INSERT INTO ai_generation_log (id, customer_id, scene, model, provider,
+                                       prompt_hash, tokens_prompt, tokens_completion,
+                                       latency_ms, status, error_msg, cost,
+                                       organization_id, create_time, create_user)
+        VALUES (#{log.id}, #{log.customerId}, #{log.scene}, #{log.model}, #{log.provider},
+                #{log.promptHash}, #{log.tokensPrompt}, #{log.tokensCompletion},
+                #{log.latencyMs}, #{log.status}, #{log.errorMsg}, #{log.cost},
+                #{log.organizationId}, #{log.createTime}, #{log.createUser})
+    </insert>
+
+    <select id="selectByCustomerAndScene" resultType="cn.cordys.crm.integration.domain.AIGenerationLog">
+        SELECT id, customer_id, scene, model, provider, prompt_hash,
+               tokens_prompt, tokens_completion, latency_ms, status, error_msg,
+               cost, organization_id, create_time, create_user
+        FROM ai_generation_log
+        WHERE customer_id = #{customerId}
+        <if test="scene != null and scene != ''">
+            AND scene = #{scene}
+        </if>
+        ORDER BY create_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="sumTokensByOrganization" resultType="java.lang.Long">
+        SELECT COALESCE(SUM(tokens_prompt) + SUM(tokens_completion), 0)
+        FROM ai_generation_log
+        WHERE organization_id = #{orgId}
+          AND status = 'success'
+        <if test="startTime != null">
+            AND create_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND create_time &lt;= #{endTime}
+        </if>
+    </select>
+
+</mapper>

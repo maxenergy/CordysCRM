@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "爱企查 CRM 助手",
+  "version": "1.0.0",
+  "description": "从爱企查网站一键导入企业信息到 CordysCRM 系统",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": ["*://*.aiqicha.baidu.com/*"],
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "爱企查 CRM 助手"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.aiqicha.baidu.com/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

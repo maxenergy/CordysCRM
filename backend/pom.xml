@@ -217,6 +217,14 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Property-Based Testing -->
+        <dependency>
+            <groupId>net.jqwik</groupId>
+            <artifactId>jqwik</artifactId>
+            <version>1.9.1</version>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Caching / Redis / Redisson -->
         <dependency>
             <groupId>org.springframework.session</groupId>

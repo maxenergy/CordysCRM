@@ -1,0 +1,16 @@
+/**
+ * Content Script 样式
+ * 
+ * 注意：主要样式通过 Shadow DOM 注入，此文件仅作为备用
+ * 用于不支持 Shadow DOM 的场景
+ */
+
+/* 确保容器不被页面样式影响 */
+#crm-import-button-container,
+#crm-toast-container {
+  all: initial;
+  position: fixed;
+  z-index: 2147483647;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
+    'PingFang SC', 'Microsoft YaHei', sans-serif;
+}

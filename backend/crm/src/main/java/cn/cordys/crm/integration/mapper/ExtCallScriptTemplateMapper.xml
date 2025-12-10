@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.cordys.crm.integration.mapper.ExtCallScriptTemplateMapper">
+
+    <select id="selectEnabledTemplates" resultType="cn.cordys.crm.integration.domain.CallScriptTemplate">
+        SELECT id, name, industry, scene, channel, language, tone,
+               content, variables, version, enabled, organization_id,
+               create_time, update_time, create_user, update_user
+        FROM call_script_template
+        WHERE enabled = 1 AND organization_id = #{orgId}
+        <if test="industry != null and industry != ''">
+            AND industry = #{industry}
+        </if>
+        <if test="scene != null and scene != ''">
+            AND scene = #{scene}
+        </if>
+        <if test="channel != null and channel != ''">
+            AND channel = #{channel}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectGroupedTemplates" resultType="cn.cordys.crm.integration.domain.CallScriptTemplate">
+        SELECT id, name, industry, scene, channel, language, tone,
+               content, variables, version, enabled, organization_id,
+               create_time, update_time, create_user, update_user
+        FROM call_script_template
+        WHERE organization_id = #{orgId}
+        ORDER BY industry, scene, create_time DESC
+    </select>
+
+</mapper>

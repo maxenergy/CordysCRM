@@ -1,0 +1,19 @@
+{
+  "name": "@cordyscrm/chrome-extension",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Chrome Extension for importing enterprise data from Aiqicha to CordysCRM",
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .ts",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "typescript": "^5.5.3",
+    "vite": "^5.3.3"
+  }
+}

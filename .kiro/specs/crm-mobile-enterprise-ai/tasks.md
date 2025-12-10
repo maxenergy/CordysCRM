@@ -1,5 +1,21 @@
 # Implementation Plan
 
+## Progress Summary
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| Phase 1 | 后端基础设施 | ✅ Complete |
+| Phase 2 | 爱企查集成服务 | ✅ Complete |
+| Phase 3 | AI 服务 | ✅ Complete |
+| Phase 4 | Chrome Extension | ✅ Complete |
+| Phase 5 | Flutter App 基础架构 | ✅ Complete |
+| Phase 6 | Flutter App 核心功能 | 🔄 In Progress (Task 20 done, 21-23 pending) |
+| Phase 7 | Flutter App 爱企查集成 | ⏳ Not Started |
+| Phase 8 | Flutter App AI 功能 | ⏳ Not Started |
+| Phase 9 | Web 前端集成 | ⏳ Not Started |
+
+---
+
 ## Phase 1: 后端基础设施 ✅
 
 - [x] 1. 创建数据库表和实体类
@@ -127,7 +143,7 @@
 - [x] 11. Checkpoint - 确保所有测试通过
   - All 54 property tests passed!
 
-## Phase 4: Chrome Extension
+## Phase 4: Chrome Extension ✅
 
 - [x] 12. 创建 Chrome Extension 项目结构
   - [x] 12.1 初始化 Manifest V3 项目
@@ -178,7 +194,7 @@
     - 使用 fetch 调用 POST /api/enterprise/import
     - 设置 Authorization: Bearer {token} 头
     - _Requirements: 2.4_
-  - [ ] 14.2 编写 API 请求格式的属性测试
+  - [ ]* 14.2 编写 API 请求格式的属性测试
     - **Property 7: API请求格式正确性**
     - **Validates: Requirements 2.4**
   - [x] 14.3 实现错误处理和重试逻辑
@@ -192,7 +208,7 @@
   - Ensure all tests pass, ask the user if questions arise.
 
 
-## Phase 5: Flutter App 基础架构
+## Phase 5: Flutter App 基础架构 ✅
 
 - [x] 16. 初始化 Flutter 项目
   - [x] 16.1 创建 Flutter 项目并配置依赖
@@ -261,9 +277,9 @@
 - [x] 19. Checkpoint - 确保所有测试通过
   - Ensure all tests pass, ask the user if questions arise.
 
-## Phase 6: Flutter App 核心功能
+## Phase 6: Flutter App 核心功能 🔄
 
-- [-] 20. 实现客户模块
+- [x] 20. 实现客户模块
   - [x] 20.1 创建客户列表页面
     - 创建 CustomerListPage widget
     - 实现 InfiniteScrollPagination 分页加载（每页 20 条）
@@ -275,14 +291,14 @@
   - [ ]* 20.2 编写分页数据的属性测试
     - **Property 1: 分页数据一致性**
     - **Validates: Requirements 1.3**
-  - [ ] 20.3 创建客户详情页面
+  - [x] 20.3 创建客户详情页面
     - 创建 CustomerDetailPage widget
     - 顶部展示客户基本信息卡片
     - Tab 切换：基本信息、跟进记录、商机、联系人
     - 集成 AIProfileCard 组件展示 AI 画像
     - 底部操作栏：编辑、跟进、话术
     - _Requirements: 1.2, 5.1_
-  - [ ] 20.4 创建客户编辑页面
+  - [x] 20.4 创建客户编辑页面
     - 创建 CustomerEditPage widget
     - 实现表单字段：名称（必填）、联系人、电话、邮箱、地址、行业、来源
     - 实现验证规则：手机号格式、邮箱格式

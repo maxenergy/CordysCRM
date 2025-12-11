@@ -1,13 +1,7 @@
 <template>
   <CrmCard :title="t('aiProfile.title')" class="ai-profile-card">
     <template #header-extra>
-      <NButton
-        v-if="portrait"
-        size="small"
-        quaternary
-        :loading="loading"
-        @click="handleRefresh"
-      >
+      <NButton v-if="portrait" size="small" quaternary :loading="loading" @click="handleRefresh">
         <template #icon>
           <NIcon><RefreshOutline /></NIcon>
         </template>
@@ -72,15 +66,15 @@
 
 <script lang="ts" setup>
   import { RefreshOutline, SparklesOutline } from '@vicons/ionicons5';
+
   import { useI18n } from '@lib/shared/hooks/useI18n';
   import type { CompanyPortrait } from '@lib/shared/models/ai';
 
   import CrmCard from '@/components/pure/crm-card/index.vue';
-
   import BasicInfoTab from './components/BasicInfoTab.vue';
   import InsightsTab from './components/InsightsTab.vue';
-  import RisksTab from './components/RisksTab.vue';
   import OpinionsTab from './components/OpinionsTab.vue';
+  import RisksTab from './components/RisksTab.vue';
 
   const props = defineProps<{
     customerId: string;
@@ -97,64 +91,11 @@
   const error = ref(false);
   const portrait = ref<CompanyPortrait | null>(null);
 
-  // 生成画像
-  async function handleGenerate() {
-    loading.value = true;
-    error.value = false;
-    try {
-      // TODO: 调用 API 生成画像
-      // const result = await generatePortrait({ customerId: props.customerId });
-      // portrait.value = result;
-      
-      // 模拟数据
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      portrait.value = getMockPortrait();
-      emit('generate');
-    } catch (e) {
-      error.value = true;
-      console.error('Failed to generate portrait:', e);
-    } finally {
-      loading.value = false;
-    }
-  }
-
-  // 刷新画像
-  async function handleRefresh() {
-    loading.value = true;
-    error.value = false;
-    try {
-      // TODO: 调用 API 刷新画像
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      portrait.value = getMockPortrait();
-      emit('refresh');
-    } catch (e) {
-      error.value = true;
-      console.error('Failed to refresh portrait:', e);
-    } finally {
-      loading.value = false;
-    }
-  }
-
-  // 加载画像
-  async function loadPortrait() {
-    if (!props.customerId) return;
-    
-    loading.value = true;
-    try {
-      // TODO: 调用 API 获取画像
-      // const result = await getPortrait(props.customerId);
-      // portrait.value = result;
-      
-      // 模拟：随机决定是否有画像
-      await new Promise(resolve => setTimeout(resolve, 500));
-      if (Math.random() > 0.5) {
-        portrait.value = getMockPortrait();
-      }
-    } catch (e) {
-      console.error('Failed to load portrait:', e);
-    } finally {
-      loading.value = false;
-    }
+  // 延迟函数
+  function delay(ms: number): Promise<void> {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
   }
 
   // 模拟数据
@@ -221,10 +162,62 @@
     };
   }
 
+  // 生成画像
+  async function handleGenerate() {
+    loading.value = true;
+    error.value = false;
+    try {
+      // TODO: 调用 API 生成画像
+      await delay(2000);
+      portrait.value = getMockPortrait();
+      emit('generate');
+    } catch {
+      error.value = true;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  // 刷新画像
+  async function handleRefresh() {
+    loading.value = true;
+    error.value = false;
+    try {
+      // TODO: 调用 API 刷新画像
+      await delay(2000);
+      portrait.value = getMockPortrait();
+      emit('refresh');
+    } catch {
+      error.value = true;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  // 加载画像
+  async function loadPortrait() {
+    if (!props.customerId) return;
+
+    loading.value = true;
+    try {
+      // TODO: 调用 API 获取画像
+      await delay(500);
+      if (Math.random() > 0.5) {
+        portrait.value = getMockPortrait();
+      }
+    } finally {
+      loading.value = false;
+    }
+  }
+
   // 监听 customerId 变化
-  watch(() => props.customerId, () => {
-    loadPortrait();
-  }, { immediate: true });
+  watch(
+    () => props.customerId,
+    () => {
+      loadPortrait();
+    },
+    { immediate: true }
+  );
 
   // 暴露方法
   defineExpose({
@@ -239,34 +232,29 @@
       min-height: 300px;
     }
   }
-
   .empty-state {
     display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: center;
+    align-items: center;
     padding: 48px 24px;
-
+    flex-direction: column;
     .empty-tip {
       margin-bottom: 16px;
-      color: var(--text-n5);
       font-size: 14px;
+      color: var(--text-n5);
     }
   }
-
   .loading-state {
     display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: center;
+    align-items: center;
     padding: 48px 24px;
-
+    flex-direction: column;
     .loading-text {
       margin-top: 16px;
       color: var(--text-n5);
     }
   }
-
   .error-state {
     padding: 24px;
   }

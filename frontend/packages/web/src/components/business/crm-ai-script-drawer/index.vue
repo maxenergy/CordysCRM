@@ -1,21 +1,12 @@
 <template>
-  <CrmDrawer
-    v-model:show="visible"
-    :title="t('aiScript.title')"
-    width="480"
-    :footer="false"
-  >
+  <CrmDrawer v-model:show="visible" :title="t('aiScript.title')" width="480" :footer="false">
     <div class="ai-script-drawer">
       <!-- 场景选择 -->
       <div class="section">
         <div class="section-title">{{ t('aiScript.scene') }}</div>
         <NRadioGroup v-model:value="form.scene" name="scene">
           <NSpace>
-            <NRadioButton
-              v-for="scene in sceneOptions"
-              :key="scene.value"
-              :value="scene.value"
-            >
+            <NRadioButton v-for="scene in sceneOptions" :key="scene.value" :value="scene.value">
               {{ scene.label }}
             </NRadioButton>
           </NSpace>
@@ -27,11 +18,7 @@
         <div class="section-title">{{ t('aiScript.channel') }}</div>
         <NRadioGroup v-model:value="form.channel" name="channel">
           <NSpace>
-            <NRadioButton
-              v-for="channel in channelOptions"
-              :key="channel.value"
-              :value="channel.value"
-            >
+            <NRadioButton v-for="channel in channelOptions" :key="channel.value" :value="channel.value">
               {{ channel.label }}
             </NRadioButton>
           </NSpace>
@@ -43,11 +30,7 @@
         <div class="section-title">{{ t('aiScript.tone') }}</div>
         <NRadioGroup v-model:value="form.tone" name="tone">
           <NSpace>
-            <NRadioButton
-              v-for="tone in toneOptions"
-              :key="tone.value"
-              :value="tone.value"
-            >
+            <NRadioButton v-for="tone in toneOptions" :key="tone.value" :value="tone.value">
               {{ tone.label }}
             </NRadioButton>
           </NSpace>
@@ -66,13 +49,7 @@
       </div>
 
       <!-- 生成按钮 -->
-      <NButton
-        type="primary"
-        block
-        size="large"
-        :loading="generating"
-        @click="handleGenerate"
-      >
+      <NButton type="primary" block size="large" :loading="generating" @click="handleGenerate">
         <template #icon>
           <NIcon><SparklesOutline /></NIcon>
         </template>
@@ -111,11 +88,7 @@
             <NIcon><TimeOutline /></NIcon>
           </template>
           <NList hoverable clickable>
-            <NListItem
-              v-for="(item, index) in history"
-              :key="index"
-              @click="handleLoadHistory(item)"
-            >
+            <NListItem v-for="(item, index) in history" :key="index" @click="handleLoadHistory(item)">
               <NThing>
                 <template #header>
                   <NEllipsis :line-clamp="2">{{ item.content }}</NEllipsis>
@@ -143,19 +116,17 @@
       :negative-text="t('aiScript.saveTemplate.cancel')"
       @positive-click="handleConfirmSave"
     >
-      <NInput
-        v-model:value="templateName"
-        :placeholder="t('aiScript.saveTemplate.namePlaceholder')"
-      />
+      <NInput v-model:value="templateName" :placeholder="t('aiScript.saveTemplate.namePlaceholder')" />
     </NModal>
   </CrmDrawer>
 </template>
 
 <script lang="ts" setup>
   import { useMessage } from 'naive-ui';
-  import { SparklesOutline, CopyOutline, SaveOutline, TimeOutline } from '@vicons/ionicons5';
+  import { CopyOutline, SaveOutline, SparklesOutline, TimeOutline } from '@vicons/ionicons5';
+
   import { useI18n } from '@lib/shared/hooks/useI18n';
-  import type { ScriptScene, ScriptChannel, ScriptTone, ScriptHistoryItem } from '@lib/shared/models/ai';
+  import type { ScriptChannel, ScriptHistoryItem, ScriptScene, ScriptTone } from '@lib/shared/models/ai';
 
   import CrmDrawer from '@/components/pure/crm-drawer/index.vue';
 
@@ -219,108 +190,11 @@
   const showSaveModal = ref(false);
   const templateName = ref('');
 
-  // 生成话术
-  async function handleGenerate() {
-    generating.value = true;
-    try {
-      // TODO: 调用 API 生成话术
-      // const result = await generateScript({
-      //   customerId: props.customerId,
-      //   scene: form.value.scene,
-      //   channel: form.value.channel,
-      //   tone: form.value.tone,
-      //   templateId: form.value.templateId || undefined,
-      // });
-      // generatedContent.value = result.content;
-
-      // 模拟生成
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      generatedContent.value = getMockScript();
-
-      // 添加到历史记录
-      history.value.unshift({
-        id: Date.now().toString(),
-        content: generatedContent.value,
-        scene: form.value.scene,
-        channel: form.value.channel,
-        tone: form.value.tone,
-        createdAt: new Date().toISOString(),
-      });
-
-      // 限制历史记录数量
-      if (history.value.length > 10) {
-        history.value = history.value.slice(0, 10);
-      }
-    } catch (e) {
-      console.error('Failed to generate script:', e);
-    } finally {
-      generating.value = false;
-    }
-  }
-
-  // 复制到剪贴板
-  async function handleCopy() {
-    if (!generatedContent.value) return;
-    try {
-      await copyToClipboard(generatedContent.value);
-      message.success(t('aiScript.copySuccess'));
-    } catch (e) {
-      console.error('Failed to copy:', e);
-    }
-  }
-
-  // 保存为模板
-  function handleSaveAsTemplate() {
-    templateName.value = '';
-    showSaveModal.value = true;
-  }
-
-  // 确认保存模板
-  async function handleConfirmSave() {
-    if (!templateName.value.trim()) return;
-
-    try {
-      // TODO: 调用 API 保存模板
-      // await saveScriptTemplate({
-      //   name: templateName.value,
-      //   content: generatedContent.value,
-      //   scene: form.value.scene,
-      //   channel: form.value.channel,
-      //   tone: form.value.tone,
-      // });
-
-      message.success(t('aiScript.saveSuccess'));
-      showSaveModal.value = false;
-    } catch (e) {
-      message.error(t('aiScript.saveFailed'));
-      console.error('Failed to save template:', e);
-    }
-  }
-
-  // 加载历史记录
-  function handleLoadHistory(item: ScriptHistoryItem) {
-    form.value.scene = item.scene;
-    form.value.channel = item.channel;
-    form.value.tone = item.tone;
-    generatedContent.value = item.content;
-  }
-
-  // 获取场景标签
-  function getSceneLabel(scene: ScriptScene): string {
-    const option = sceneOptions.value.find(o => o.value === scene);
-    return option?.label || scene;
-  }
-
-  // 获取渠道标签
-  function getChannelLabel(channel: ScriptChannel): string {
-    const option = channelOptions.value.find(o => o.value === channel);
-    return option?.label || channel;
-  }
-
-  // 获取语气标签
-  function getToneLabel(tone: ScriptTone): string {
-    const option = toneOptions.value.find(o => o.value === tone);
-    return option?.label || tone;
+  // 延迟函数
+  function delay(ms: number): Promise<void> {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
   }
 
   // 模拟话术内容
@@ -484,15 +358,92 @@ XX公司 销售顾问
     return scripts[form.value.scene]?.[form.value.channel] || '话术生成中...';
   }
 
+  // 获取场景标签
+  function getSceneLabel(scene: ScriptScene): string {
+    const option = sceneOptions.value.find((o) => o.value === scene);
+    return option?.label || scene;
+  }
+
+  // 获取渠道标签
+  function getChannelLabel(channel: ScriptChannel): string {
+    const option = channelOptions.value.find((o) => o.value === channel);
+    return option?.label || channel;
+  }
+
+  // 获取语气标签
+  function getToneLabel(tone: ScriptTone): string {
+    const option = toneOptions.value.find((o) => o.value === tone);
+    return option?.label || tone;
+  }
+
+  // 生成话术
+  async function handleGenerate() {
+    generating.value = true;
+    try {
+      // TODO: 调用 API 生成话术
+      await delay(2000);
+      generatedContent.value = getMockScript();
+
+      // 添加到历史记录
+      history.value.unshift({
+        id: Date.now().toString(),
+        content: generatedContent.value,
+        scene: form.value.scene,
+        channel: form.value.channel,
+        tone: form.value.tone,
+        createdAt: new Date().toISOString(),
+      });
+
+      // 限制历史记录数量
+      if (history.value.length > 10) {
+        history.value = history.value.slice(0, 10);
+      }
+    } finally {
+      generating.value = false;
+    }
+  }
+
+  // 复制到剪贴板
+  async function handleCopy() {
+    if (!generatedContent.value) return;
+    try {
+      await copyToClipboard(generatedContent.value);
+      message.success(t('aiScript.copySuccess'));
+    } catch {
+      // ignore
+    }
+  }
+
+  // 保存为模板
+  function handleSaveAsTemplate() {
+    templateName.value = '';
+    showSaveModal.value = true;
+  }
+
+  // 确认保存模板
+  async function handleConfirmSave() {
+    if (!templateName.value.trim()) return;
+
+    try {
+      // TODO: 调用 API 保存模板
+      message.success(t('aiScript.saveSuccess'));
+      showSaveModal.value = false;
+    } catch {
+      message.error(t('aiScript.saveFailed'));
+    }
+  }
+
+  // 加载历史记录
+  function handleLoadHistory(item: ScriptHistoryItem) {
+    form.value.scene = item.scene;
+    form.value.channel = item.channel;
+    form.value.tone = item.tone;
+    generatedContent.value = item.content;
+  }
+
   // 加载模板列表
   async function loadTemplates() {
-    try {
-      // TODO: 调用 API 获取模板列表
-      // const templates = await getScriptTemplates();
-      // templateOptions.value = templates.map(t => ({ label: t.name, value: t.id }));
-    } catch (e) {
-      console.error('Failed to load templates:', e);
-    }
+    // TODO: 调用 API 获取模板列表
   }
 
   // 监听显示状态
@@ -507,18 +458,15 @@ XX公司 销售顾问
   .ai-script-drawer {
     padding: 16px;
   }
-
   .section {
     margin-bottom: 24px;
   }
-
   .section-title {
     margin-bottom: 12px;
-    font-weight: 600;
     font-size: 14px;
+    font-weight: 600;
     color: var(--text-n2);
   }
-
   .result-section {
     margin-top: 24px;
   }

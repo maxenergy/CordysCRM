@@ -9,12 +9,7 @@
         <!-- 爱企查配置 -->
         <NTabPane :name="'iqicha'" :tab="t('integrationConfig.tab.iqicha')">
           <NCard>
-            <NForm
-              ref="iqichaFormRef"
-              :model="iqichaConfig"
-              label-placement="left"
-              label-width="120"
-            >
+            <NForm ref="iqichaFormRef" :model="iqichaConfig" label-placement="left" label-width="120">
               <NFormItem :label="t('integrationConfig.iqicha.cookie')">
                 <NInput
                   v-model:value="iqichaConfig.cookie"
@@ -25,10 +20,10 @@
               </NFormItem>
               <NFormItem>
                 <NSpace>
-                  <NButton @click="handleTestIqicha" :loading="testingIqicha">
+                  <NButton :loading="testingIqicha" @click="handleTestIqicha">
                     {{ t('integrationConfig.testConnection') }}
                   </NButton>
-                  <NButton type="primary" @click="handleSaveIqicha" :loading="savingIqicha">
+                  <NButton type="primary" :loading="savingIqicha" @click="handleSaveIqicha">
                     {{ t('integrationConfig.save') }}
                   </NButton>
                 </NSpace>
@@ -41,12 +36,7 @@
         <!-- AI 服务配置 -->
         <NTabPane :name="'ai'" :tab="t('integrationConfig.tab.ai')">
           <NCard>
-            <NForm
-              ref="aiFormRef"
-              :model="aiConfig"
-              label-placement="left"
-              label-width="120"
-            >
+            <NForm ref="aiFormRef" :model="aiConfig" label-placement="left" label-width="120">
               <NFormItem :label="t('integrationConfig.ai.provider')">
                 <NSelect
                   v-model:value="aiConfig.provider"
@@ -75,13 +65,7 @@
 
               <NFormItem :label="t('integrationConfig.ai.temperature')">
                 <div class="slider-container">
-                  <NSlider
-                    v-model:value="aiConfig.temperature"
-                    :min="0"
-                    :max="2"
-                    :step="0.1"
-                    :tooltip="true"
-                  />
+                  <NSlider v-model:value="aiConfig.temperature" :min="0" :max="2" :step="0.1" :tooltip="true" />
                   <span class="slider-value">{{ aiConfig.temperature }}</span>
                 </div>
               </NFormItem>
@@ -108,10 +92,10 @@
 
               <NFormItem>
                 <NSpace>
-                  <NButton @click="handleTestAI" :loading="testingAI">
+                  <NButton :loading="testingAI" @click="handleTestAI">
                     {{ t('integrationConfig.testConnection') }}
                   </NButton>
-                  <NButton type="primary" @click="handleSaveAI" :loading="savingAI">
+                  <NButton type="primary" :loading="savingAI" @click="handleSaveAI">
                     {{ t('integrationConfig.save') }}
                   </NButton>
                 </NSpace>
@@ -126,6 +110,7 @@
 
 <script lang="ts" setup>
   import { useMessage } from 'naive-ui';
+
   import { useI18n } from '@lib/shared/hooks/useI18n';
 
   const { t } = useI18n();
@@ -173,9 +158,7 @@
           { label: 'Claude 3 Haiku', value: 'claude-3-haiku' },
         ];
       case 'maxkb':
-        return [
-          { label: 'MaxKB Default', value: 'maxkb-default' },
-        ];
+        return [{ label: 'MaxKB Default', value: 'maxkb-default' }];
       case 'local':
         return [
           { label: 'Llama 3', value: 'llama-3' },
@@ -186,6 +169,13 @@
         return [];
     }
   });
+
+  // 延迟函数
+  function delay(ms: number): Promise<void> {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+  }
 
   // 提供商变化时重置模型
   function handleProviderChange() {
@@ -202,9 +192,9 @@
     testingIqicha.value = true;
     try {
       // TODO: 调用 API 测试连接
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await delay(1000);
       message.success(t('integrationConfig.testSuccess'));
-    } catch (e) {
+    } catch {
       message.error(t('integrationConfig.testFailed'));
     } finally {
       testingIqicha.value = false;
@@ -216,9 +206,9 @@
     savingIqicha.value = true;
     try {
       // TODO: 调用 API 保存配置
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await delay(500);
       message.success(t('integrationConfig.saveSuccess'));
-    } catch (e) {
+    } catch {
       message.error(t('integrationConfig.saveFailed'));
     } finally {
       savingIqicha.value = false;
@@ -235,9 +225,9 @@
     testingAI.value = true;
     try {
       // TODO: 调用 API 测试连接
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await delay(1000);
       message.success(t('integrationConfig.testSuccess'));
-    } catch (e) {
+    } catch {
       message.error(t('integrationConfig.testFailed'));
     } finally {
       testingAI.value = false;
@@ -249,9 +239,9 @@
     savingAI.value = true;
     try {
       // TODO: 调用 API 保存配置
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await delay(500);
       message.success(t('integrationConfig.saveSuccess'));
-    } catch (e) {
+    } catch {
       message.error(t('integrationConfig.saveFailed'));
     } finally {
       savingAI.value = false;
@@ -260,12 +250,8 @@
 
   // 加载配置
   async function loadConfig() {
-    try {
-      // TODO: 调用 API 获取配置
-      // 敏感字段显示为 ******
-    } catch (e) {
-      console.error('Failed to load config:', e);
-    }
+    // TODO: 调用 API 获取配置
+    // 敏感字段显示为 ******
   }
 
   onMounted(() => {
@@ -275,51 +261,44 @@
 
 <style lang="less" scoped>
   .integration-config-page {
-    height: 100%;
     display: flex;
-    flex-direction: column;
     padding: 16px;
+    height: 100%;
     background: var(--bg-color);
+    flex-direction: column;
   }
-
   .page-header {
     margin-bottom: 16px;
-
     h2 {
       margin: 0;
       font-size: 18px;
       font-weight: 600;
     }
   }
-
   .page-content {
-    flex: 1;
-    padding: 16px;
-    background: var(--card-color);
-    border-radius: 8px;
     overflow: auto;
+    padding: 16px;
+    border-radius: 8px;
+    background: var(--card-color);
+    flex: 1;
   }
-
   .slider-container {
     display: flex;
     align-items: center;
     gap: 16px;
     width: 100%;
     max-width: 400px;
-
     .n-slider {
       flex: 1;
     }
-
     .slider-value {
       width: 40px;
-      text-align: right;
       font-weight: 500;
+      text-align: right;
     }
   }
-
   .form-tip {
-    font-size: 12px;
     margin-top: -8px;
+    font-size: 12px;
   }
 </style>

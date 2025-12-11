@@ -5,18 +5,9 @@
     width="600"
     @positive-click="handleSave"
   >
-    <NForm
-      ref="formRef"
-      :model="form"
-      :rules="rules"
-      label-placement="left"
-      label-width="100"
-    >
+    <NForm ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="100">
       <NFormItem :label="t('scriptTemplate.form.name')" path="name">
-        <NInput
-          v-model:value="form.name"
-          :placeholder="t('scriptTemplate.form.namePlaceholder')"
-        />
+        <NInput v-model:value="form.name" :placeholder="t('scriptTemplate.form.namePlaceholder')" />
       </NFormItem>
 
       <NFormItem :label="t('scriptTemplate.form.industry')" path="industry">
@@ -30,11 +21,7 @@
       <NFormItem :label="t('scriptTemplate.form.scene')" path="scene">
         <NRadioGroup v-model:value="form.scene">
           <NSpace>
-            <NRadio
-              v-for="option in sceneOptions"
-              :key="option.value"
-              :value="option.value"
-            >
+            <NRadio v-for="option in sceneOptions" :key="option.value" :value="option.value">
               {{ option.label }}
             </NRadio>
           </NSpace>
@@ -44,11 +31,7 @@
       <NFormItem :label="t('scriptTemplate.form.channel')" path="channel">
         <NRadioGroup v-model:value="form.channel">
           <NSpace>
-            <NRadio
-              v-for="option in channelOptions"
-              :key="option.value"
-              :value="option.value"
-            >
+            <NRadio v-for="option in channelOptions" :key="option.value" :value="option.value">
               {{ option.label }}
             </NRadio>
           </NSpace>
@@ -58,11 +41,7 @@
       <NFormItem :label="t('scriptTemplate.form.tone')" path="tone">
         <NRadioGroup v-model:value="form.tone">
           <NSpace>
-            <NRadio
-              v-for="option in toneOptions"
-              :key="option.value"
-              :value="option.value"
-            >
+            <NRadio v-for="option in toneOptions" :key="option.value" :value="option.value">
               {{ option.label }}
             </NRadio>
           </NSpace>
@@ -114,13 +93,15 @@
 </template>
 
 <script lang="ts" setup>
-  import type { FormInst, FormRules } from 'naive-ui';
   import { useMessage } from 'naive-ui';
   import { InformationCircleOutline } from '@vicons/ionicons5';
+
   import { useI18n } from '@lib/shared/hooks/useI18n';
-  import type { ScriptScene, ScriptChannel, ScriptTone } from '@lib/shared/models/ai';
+  import type { ScriptChannel, ScriptScene, ScriptTone } from '@lib/shared/models/ai';
 
   import CrmDrawer from '@/components/pure/crm-drawer/index.vue';
+
+  import type { FormInst, FormRules } from 'naive-ui';
 
   const props = defineProps<{
     templateId: string | null;
@@ -138,7 +119,6 @@
   const message = useMessage();
 
   const formRef = ref<FormInst | null>(null);
-  const contentInputRef = ref<any>(null);
 
   const isEdit = computed(() => !!props.templateId);
 
@@ -154,12 +134,8 @@
 
   // 表单验证规则
   const rules: FormRules = {
-    name: [
-      { required: true, message: t('scriptTemplate.form.namePlaceholder'), trigger: 'blur' },
-    ],
-    content: [
-      { required: true, message: t('scriptTemplate.form.contentPlaceholder'), trigger: 'blur' },
-    ],
+    name: [{ required: true, message: t('scriptTemplate.form.namePlaceholder'), trigger: 'blur' }],
+    content: [{ required: true, message: t('scriptTemplate.form.contentPlaceholder'), trigger: 'blur' }],
   };
 
   // 行业选项
@@ -209,7 +185,7 @@
 
   // 预览内容
   const previewContent = computed(() => {
-    let content = form.value.content;
+    let { content } = form.value;
     // 替换变量为示例值
     const sampleValues: Record<string, string> = {
       '{{公司名称}}': 'XX科技有限公司',
@@ -220,9 +196,9 @@
       '{{邮箱地址}}': 'example@company.com',
       '{{当前日期}}': new Date().toLocaleDateString(),
     };
-    for (const [key, value] of Object.entries(sampleValues)) {
+    Object.entries(sampleValues).forEach(([key, value]) => {
       content = content.replace(new RegExp(key.replace(/[{}]/g, '\\$&'), 'g'), value);
-    }
+    });
     return content || '-';
   });
 
@@ -237,17 +213,11 @@
       await formRef.value?.validate();
 
       // TODO: 调用 API 保存模板
-      // if (isEdit.value) {
-      //   await updateScriptTemplate({ id: props.templateId, ...form.value });
-      // } else {
-      //   await createScriptTemplate(form.value);
-      // }
-
       message.success(t('scriptTemplate.saveSuccess'));
       emit('saved');
       visible.value = false;
-    } catch (e) {
-      console.error('Validation failed:', e);
+    } catch {
+      // validation failed
     }
   }
 
@@ -263,15 +233,8 @@
         tone: 'professional',
         content: '',
       };
-      return;
-    }
-
-    try {
+    } else {
       // TODO: 调用 API 获取模板详情
-      // const template = await getScriptTemplate(props.templateId);
-      // form.value = { ...template };
-    } catch (e) {
-      console.error('Failed to load template:', e);
     }
   }
 
@@ -287,14 +250,12 @@
   .content-editor {
     width: 100%;
   }
-
   .variables-panel {
     margin-top: 12px;
     padding: 12px;
-    background: var(--bg-color);
     border-radius: 8px;
+    background: var(--bg-color);
   }
-
   .variables-title {
     display: flex;
     align-items: center;
@@ -303,31 +264,27 @@
     font-size: 13px;
     color: var(--text-n3);
   }
-
   .variables-list {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
   }
-
   .variable-tag {
     cursor: pointer;
-
     &:hover {
-      background: var(--primary-color-hover);
       color: var(--primary-color);
+      background: var(--primary-color-hover);
     }
   }
-
   .preview-content {
+    padding: 12px;
     width: 100%;
     min-height: 100px;
-    padding: 12px;
-    background: var(--bg-color);
+    font-size: 14px;
     border-radius: 8px;
     white-space: pre-wrap;
+    background: var(--bg-color);
     word-break: break-word;
-    font-size: 14px;
     line-height: 1.6;
   }
 </style>

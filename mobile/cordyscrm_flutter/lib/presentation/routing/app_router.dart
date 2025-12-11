@@ -6,6 +6,10 @@ import '../features/auth/auth_provider.dart';
 import '../features/customer/customer_list_page.dart';
 import '../features/customer/customer_detail_page.dart';
 import '../features/customer/customer_edit_page.dart';
+import '../features/clue/clue_list_page.dart';
+import '../features/clue/clue_detail_page.dart';
+import '../features/opportunity/opportunity_list_page.dart';
+import '../features/opportunity/opportunity_detail_page.dart';
 
 /// 路由路径常量
 class AppRoutes {
@@ -19,7 +23,13 @@ class AppRoutes {
   static const String customerNew = '/customers/new';
   static const String customerEdit = '/customers/edit/:id';
   static const String clueList = '/clues';
+  static const String clueDetail = '/clues/:id';
+  static const String clueNew = '/clues/new';
+  static const String clueEdit = '/clues/edit/:id';
   static const String opportunityList = '/opportunities';
+  static const String opportunityDetail = '/opportunities/:id';
+  static const String opportunityNew = '/opportunities/new';
+  static const String opportunityEdit = '/opportunities/edit/:id';
   static const String enterprise = '/enterprise';
   static const String profile = '/profile';
 }
@@ -101,18 +111,70 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.clueList,
         name: 'clueList',
+        builder: (context, state) => const ClueListPage(),
+      ),
+      
+      // 新建线索
+      GoRoute(
+        path: AppRoutes.clueNew,
+        name: 'clueNew',
         builder: (context, state) => const Scaffold(
-          body: Center(child: Text('线索列表 - 待实现')),
+          body: Center(child: Text('新建线索 - 待实现')),
         ),
+      ),
+      
+      // 编辑线索
+      GoRoute(
+        path: AppRoutes.clueEdit,
+        name: 'clueEdit',
+        builder: (context, state) => const Scaffold(
+          body: Center(child: Text('编辑线索 - 待实现')),
+        ),
+      ),
+      
+      // 线索详情
+      GoRoute(
+        path: AppRoutes.clueDetail,
+        name: 'clueDetail',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return ClueDetailPage(clueId: id);
+        },
       ),
       
       // 商机列表
       GoRoute(
         path: AppRoutes.opportunityList,
         name: 'opportunityList',
+        builder: (context, state) => const OpportunityListPage(),
+      ),
+      
+      // 新建商机
+      GoRoute(
+        path: AppRoutes.opportunityNew,
+        name: 'opportunityNew',
         builder: (context, state) => const Scaffold(
-          body: Center(child: Text('商机列表 - 待实现')),
+          body: Center(child: Text('新建商机 - 待实现')),
         ),
+      ),
+      
+      // 编辑商机
+      GoRoute(
+        path: AppRoutes.opportunityEdit,
+        name: 'opportunityEdit',
+        builder: (context, state) => const Scaffold(
+          body: Center(child: Text('编辑商机 - 待实现')),
+        ),
+      ),
+      
+      // 商机详情
+      GoRoute(
+        path: AppRoutes.opportunityDetail,
+        name: 'opportunityDetail',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return OpportunityDetailPage(opportunityId: id);
+        },
       ),
       
       // 企业信息查询

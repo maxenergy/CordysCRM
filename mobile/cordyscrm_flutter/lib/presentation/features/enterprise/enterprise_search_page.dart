@@ -274,7 +274,7 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
                   borderRadius: BorderRadius.circular(12),
                 ),
                 filled: true,
-                fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               ),
               onChanged: _onSearchChanged,
               textInputAction: TextInputAction.search,
@@ -329,7 +329,7 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
                     color: Theme.of(context)
                         .colorScheme
                         .onPrimaryContainer
-                        .withOpacity(0.7),
+                        .withValues(alpha: 0.7),
                   ),
                 ),
               ],

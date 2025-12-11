@@ -406,7 +406,7 @@
   - [ ]* 25.2 编写企业名称识别的属性测试
     - **Property 13: 剪贴板企业名称识别**
     - **Validates: Requirements 4.1**
-  - [-] 25.3 实现分享接收
+  - [x] 25.3 实现分享接收
     - 配置 AndroidManifest.xml 和 Info.plist 接收分享
     - 使用 receive_sharing_intent 包
     - 解析 aiqicha.baidu.com/company_detail_* 链接
@@ -473,8 +473,8 @@
     - 点击历史记录可快速复用
     - _Requirements: 6.10_
 
-- [ ] 29. 实现推送通知
-  - [ ] 29.1 集成 Firebase Cloud Messaging
+- [-] 29. 实现推送通知
+  - [-] 29.1 集成 Firebase Cloud Messaging
     - 添加 firebase_messaging: ^14.7.0 依赖
     - 配置 Android google-services.json
     - 配置 iOS GoogleService-Info.plist

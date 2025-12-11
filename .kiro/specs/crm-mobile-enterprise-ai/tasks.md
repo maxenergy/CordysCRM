@@ -10,8 +10,8 @@
 | Phase 4 | Chrome Extension | ✅ Complete |
 | Phase 5 | Flutter App 基础架构 | ✅ Complete |
 | Phase 6 | Flutter App 核心功能 | ✅ Complete |
-| Phase 7 | Flutter App 爱企查集成 | 🔄 In Progress |
-| Phase 8 | Flutter App AI 功能 | 🔄 In Progress |
+| Phase 7 | Flutter App 爱企查集成 | ✅ Complete |
+| Phase 8 | Flutter App AI 功能 | ✅ Complete |
 | Phase 9 | Web 前端集成 | ✅ Complete |
 
 ---
@@ -353,7 +353,7 @@
   - Flutter test: All tests passed!
 
 
-## Phase 7: Flutter App 爱企查集成 🔄
+## Phase 7: Flutter App 爱企查集成 ✅
 
 - [x] 24. 实现 WebView 爱企查集成
   - [x] 24.1 创建 EnterpriseWebView 页面
@@ -430,7 +430,7 @@
   - Flutter analyze: No issues found!
 
 
-## Phase 8: Flutter App AI 功能 🔄
+## Phase 8: Flutter App AI 功能 ✅
 
 - [x] 27. 实现 AI 画像展示
   - [x] 27.1 创建 AIProfileCard 组件
@@ -473,15 +473,15 @@
     - 点击历史记录可快速复用
     - _Requirements: 6.10_
 
-- [-] 29. 实现推送通知
-  - [-] 29.1 集成 Firebase Cloud Messaging
+- [x] 29. 实现推送通知
+  - [x] 29.1 集成 Firebase Cloud Messaging
     - 添加 firebase_messaging: ^14.7.0 依赖
     - 配置 Android google-services.json
     - 配置 iOS GoogleService-Info.plist
     - 请求通知权限
     - 获取 FCM Token 并上报到后端
     - _Requirements: 1.8_
-  - [ ] 29.2 实现通知处理
+  - [x] 29.2 实现通知处理
     - 前台通知：使用 flutter_local_notifications 显示
     - 后台通知：系统自动显示
     - 点击通知：解析 data 字段，跳转到对应页面（客户详情、商机详情等）
@@ -571,7 +571,7 @@
     - 保存成功提示
     - _Requirements: 8.4_
 
-- [ ] 35. Final Checkpoint - 确保所有测试通过
+- [x] 35. Final Checkpoint - 确保所有测试通过
   - 运行后端测试: `mvn test -pl backend/crm`
   - 运行 Flutter 分析: `flutter analyze`
   - 运行 Flutter 测试: `flutter test`

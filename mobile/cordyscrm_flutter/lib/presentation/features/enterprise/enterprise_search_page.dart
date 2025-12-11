@@ -104,23 +104,6 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
     return keywords.any((k) => text.contains(k));
   }
 
-  /// 从爱企查链接提取企业 ID
-  String? _extractEnterpriseId(String url) {
-    // 匹配 company_detail_xxx 格式
-    final detailMatch = RegExp(r'company_detail_(\w+)').firstMatch(url);
-    if (detailMatch != null) {
-      return detailMatch.group(1);
-    }
-
-    // 匹配 pid=xxx 格式
-    final pidMatch = RegExp(r'pid=(\w+)').firstMatch(url);
-    if (pidMatch != null) {
-      return pidMatch.group(1);
-    }
-
-    return null;
-  }
-
   /// 处理剪贴板内容
   void _handleClipboardContent() {
     final content = _clipboardContent;

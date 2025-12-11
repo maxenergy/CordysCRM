@@ -19,11 +19,7 @@
           <NTag size="small" :bordered="false">
             {{ opinion.source }}
           </NTag>
-          <NTag
-            size="small"
-            :bordered="false"
-            :type="getSentimentTagType(opinion.sentiment)"
-          >
+          <NTag size="small" :bordered="false" :type="getSentimentTagType(opinion.sentiment)">
             {{ getSentimentLabel(opinion.sentiment) }}
           </NTag>
         </NSpace>
@@ -34,7 +30,8 @@
 </template>
 
 <script lang="ts" setup>
-  import { ThumbsUpOutline, ThumbsDownOutline, RemoveOutline } from '@vicons/ionicons5';
+  import { RemoveOutline, ThumbsDownOutline, ThumbsUpOutline } from '@vicons/ionicons5';
+
   import { useI18n } from '@lib/shared/hooks/useI18n';
   import type { PublicOpinion, Sentiment } from '@lib/shared/models/ai';
 

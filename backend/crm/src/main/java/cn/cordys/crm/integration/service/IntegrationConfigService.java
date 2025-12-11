@@ -22,7 +22,7 @@ import java.util.Optional;
  * @author cordys
  * @date 2025-12-10
  */
-@Service
+@Service("aiIntegrationConfigService")
 public class IntegrationConfigService {
 
     /**

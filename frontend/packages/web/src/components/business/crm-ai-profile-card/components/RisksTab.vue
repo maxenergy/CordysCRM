@@ -55,7 +55,8 @@
 </template>
 
 <script lang="ts" setup>
-  import { WarningOutline, AlertCircleOutline, InformationCircleOutline } from '@vicons/ionicons5';
+  import { AlertCircleOutline, InformationCircleOutline, WarningOutline } from '@vicons/ionicons5';
+
   import { useI18n } from '@lib/shared/hooks/useI18n';
   import type { RiskAlert } from '@lib/shared/models/ai';
 
@@ -65,48 +66,40 @@
 
   const { t } = useI18n();
 
-  const highRisks = computed(() => props.risks.filter(r => r.level === 'high'));
-  const mediumRisks = computed(() => props.risks.filter(r => r.level === 'medium'));
-  const lowRisks = computed(() => props.risks.filter(r => r.level === 'low'));
+  const highRisks = computed(() => props.risks.filter((r) => r.level === 'high'));
+  const mediumRisks = computed(() => props.risks.filter((r) => r.level === 'medium'));
+  const lowRisks = computed(() => props.risks.filter((r) => r.level === 'low'));
 </script>
 
 <style lang="less" scoped>
   .risks-container {
     padding: 8px 0;
   }
-
   .risk-group {
     margin-bottom: 16px;
-
     &:last-child {
       margin-bottom: 0;
     }
   }
-
   .risk-group-header {
     display: flex;
     align-items: center;
-    gap: 4px;
     margin-bottom: 8px;
-    font-weight: 600;
     font-size: 14px;
-
+    font-weight: 600;
+    gap: 4px;
     &.high {
       color: var(--error-color);
     }
-
     &.medium {
       color: var(--warning-color);
     }
-
     &.low {
       color: var(--info-color);
     }
   }
-
   .risk-alert {
     margin-bottom: 8px;
-
     &:last-child {
       margin-bottom: 0;
     }

@@ -38,6 +38,18 @@
           @import-success="() => searchData()"
         />
         <n-button
+          v-if="hasAnyPermission(['CUSTOMER_MANAGEMENT:IMPORT']) && !props.readonly"
+          type="primary"
+          ghost
+          class="n-btn-outline-primary"
+          @click="showEnterpriseImportDrawer = true"
+        >
+          <template #icon>
+            <n-icon><SearchOutline /></n-icon>
+          </template>
+          爱企查导入
+        </n-button>
+        <n-button
           v-if="
             hasAnyPermission(['CUSTOMER_MANAGEMENT:EXPORT']) &&
             activeTab !== CustomerSearchTypeEnum.CUSTOMER_COLLABORATION &&
@@ -125,11 +137,13 @@
     @refresh="() => (tableRefreshId += 1)"
   />
   <mergeAccountModal v-model:show="showMergeModal" :selected-rows="selectedRows" @saved="() => (tableRefreshId += 1)" />
+  <CrmEnterpriseImportDrawer v-model:show="showEnterpriseImportDrawer" @imported="handleEnterpriseImported" />
 </template>
 
 <script setup lang="ts">
   import { useRoute } from 'vue-router';
-  import { DataTableRowKey, NButton, useMessage } from 'naive-ui';
+  import { DataTableRowKey, NButton, NIcon, useMessage } from 'naive-ui';
+  import { SearchOutline } from '@vicons/ionicons5';
 
   import { CustomerSearchTypeEnum } from '@lib/shared/enums/customerEnum';
   import { FieldTypeEnum, FormDesignKeyEnum, FormLinkScenarioEnum } from '@lib/shared/enums/formDesignEnum';
@@ -149,6 +163,7 @@
   import { BatchActionConfig } from '@/components/pure/crm-table/type';
   import CrmTableButton from '@/components/pure/crm-table-button/index.vue';
   import CrmBatchEditModal from '@/components/business/crm-batch-edit-modal/index.vue';
+  import CrmEnterpriseImportDrawer from '@/components/business/crm-enterprise-import-drawer/index.vue';
   import CrmFormCreateDrawer from '@/components/business/crm-form-create-drawer/index.vue';
   import CrmImportButton from '@/components/business/crm-import-button/index.vue';
   import CrmMoveModal from '@/components/business/crm-move-modal/index.vue';
@@ -206,6 +221,9 @@
     customerId: '',
     id: '',
   });
+
+  // 爱企查导入抽屉
+  const showEnterpriseImportDrawer = ref(false);
 
   function handleNewClick() {
     needInitDetail.value = false;
@@ -686,6 +704,11 @@
     crmTableRef.value?.scrollTo({ top: 0 });
   }
   handleSearchData.value = searchData;
+
+  function handleEnterpriseImported(_customerId: string) {
+    searchData();
+    Message.success('企业导入成功');
+  }
 
   function handleFormCreateSaved(res: any) {
     searchData();

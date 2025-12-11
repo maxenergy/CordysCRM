@@ -59,7 +59,7 @@ dependencies:
   # 推送通知
   firebase_core: ^2.24.0
   firebase_messaging: ^14.7.0
-  flutter_local_notifications: ^16.0.0
+  flutter_local_notifications: ^17.0.0
   
   # 图片选择
   image_picker: ^1.0.0

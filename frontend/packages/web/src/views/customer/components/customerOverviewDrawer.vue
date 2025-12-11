@@ -96,10 +96,7 @@
           :form-key="FormDesignKeyEnum.CONTRACT_PAYMENT"
           :source-id="props.sourceId"
         />
-        <CrmAIProfileCard
-          v-else-if="activeTab === 'aiProfile'"
-          :customer-id="props.sourceId"
-        />
+        <CrmAIProfileCard v-else-if="activeTab === 'aiProfile'" :customer-id="props.sourceId" />
       </div>
       <CrmMoveModal
         v-model:show="showMoveModal"
@@ -109,10 +106,7 @@
         type="warning"
         @refresh="refresh"
       />
-      <CrmAIScriptDrawer
-        v-model:show="showAIScriptDrawer"
-        :customer-id="props.sourceId"
-      />
+      <CrmAIScriptDrawer v-model:show="showAIScriptDrawer" :customer-id="props.sourceId" />
     </template>
   </CrmOverviewDrawer>
 </template>
@@ -139,14 +133,13 @@
   import ContractTimeline from '@/views/contract/contract/components/contractTimeline.vue';
   import opportunityTable from '@/views/opportunity/components/opportunityTable.vue';
 
-  // AI 组件
-  const CrmAIProfileCard = defineAsyncComponent(() => import('@/components/business/crm-ai-profile-card/index.vue'));
-  const CrmAIScriptDrawer = defineAsyncComponent(() => import('@/components/business/crm-ai-script-drawer/index.vue'));
-
   import { deleteCustomer, getCustomerHeaderList, updateCustomer } from '@/api/modules';
   import useModal from '@/hooks/useModal';
   import { hasAnyPermission } from '@/utils/permission';
 
+  // AI 组件 (异步加载)
+  const CrmAIProfileCard = defineAsyncComponent(() => import('@/components/business/crm-ai-profile-card/index.vue'));
+  const CrmAIScriptDrawer = defineAsyncComponent(() => import('@/components/business/crm-ai-script-drawer/index.vue'));
   const FollowDetail = defineAsyncComponent(() => import('@/components/business/crm-follow-detail/index.vue'));
 
   const props = defineProps<{

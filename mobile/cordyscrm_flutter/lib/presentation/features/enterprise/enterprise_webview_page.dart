@@ -7,9 +7,19 @@ import 'widgets/enterprise_preview_sheet.dart';
 
 /// 爱企查 WebView 页面
 ///
-/// 加载爱企查网站，支持企业信息提取和导入
+/// 加载爱企查网站，支持企业信息提取和导入。
+/// 可通过 [initialUrl] 参数指定初始加载的 URL（用于分享接收）。
 class EnterpriseWebViewPage extends ConsumerStatefulWidget {
-  const EnterpriseWebViewPage({super.key});
+  const EnterpriseWebViewPage({
+    super.key,
+    this.initialUrl,
+  });
+
+  /// 初始加载的 URL
+  ///
+  /// 如果为 null，则加载爱企查首页。
+  /// 用于从其他应用分享链接时直接打开指定企业详情页。
+  final String? initialUrl;
 
   @override
   ConsumerState<EnterpriseWebViewPage> createState() =>
@@ -247,7 +257,7 @@ window.__extractEnterpriseData = function() {
       ),
       body: InAppWebView(
         initialUrlRequest: URLRequest(
-          url: WebUri('https://aiqicha.baidu.com'),
+          url: WebUri(widget.initialUrl ?? 'https://aiqicha.baidu.com'),
         ),
         initialSettings: _settings,
         onWebViewCreated: (controller) async {

@@ -184,7 +184,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.enterprise,
         name: 'enterprise',
-        builder: (context, state) => const EnterpriseWebViewPage(),
+        builder: (context, state) {
+          // 支持通过 extra 传递初始 URL（用于分享接收）
+          final initialUrl = state.extra as String?;
+          return EnterpriseWebViewPage(initialUrl: initialUrl);
+        },
       ),
 
       // 企业搜索页面

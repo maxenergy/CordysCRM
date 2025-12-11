@@ -10,8 +10,8 @@
 | Phase 4 | Chrome Extension | ✅ Complete |
 | Phase 5 | Flutter App 基础架构 | ✅ Complete |
 | Phase 6 | Flutter App 核心功能 | ✅ Complete |
-| Phase 7 | Flutter App 爱企查集成 | ✅ Complete |
-| Phase 8 | Flutter App AI 功能 | ✅ Complete |
+| Phase 7 | Flutter App 爱企查集成 | 🔄 In Progress |
+| Phase 8 | Flutter App AI 功能 | 🔄 In Progress |
 | Phase 9 | Web 前端集成 | ✅ Complete |
 
 ---
@@ -353,7 +353,7 @@
   - Flutter test: All tests passed!
 
 
-## Phase 7: Flutter App 爱企查集成 ✅
+## Phase 7: Flutter App 爱企查集成 🔄
 
 - [x] 24. 实现 WebView 爱企查集成
   - [x] 24.1 创建 EnterpriseWebView 页面
@@ -406,7 +406,7 @@
   - [ ]* 25.2 编写企业名称识别的属性测试
     - **Property 13: 剪贴板企业名称识别**
     - **Validates: Requirements 4.1**
-  - [ ] 25.3 实现分享接收
+  - [-] 25.3 实现分享接收
     - 配置 AndroidManifest.xml 和 Info.plist 接收分享
     - 使用 receive_sharing_intent 包
     - 解析 aiqicha.baidu.com/company_detail_* 链接
@@ -430,7 +430,7 @@
   - Flutter analyze: No issues found!
 
 
-## Phase 8: Flutter App AI 功能 ✅
+## Phase 8: Flutter App AI 功能 🔄
 
 - [x] 27. 实现 AI 画像展示
   - [x] 27.1 创建 AIProfileCard 组件
@@ -572,4 +572,9 @@
     - _Requirements: 8.4_
 
 - [ ] 35. Final Checkpoint - 确保所有测试通过
-  - Ensure all tests pass, ask the user if questions arise.
+  - 运行后端测试: `mvn test -pl backend/crm`
+  - 运行 Flutter 分析: `flutter analyze`
+  - 运行 Flutter 测试: `flutter test`
+  - 运行 Chrome Extension 构建: `pnpm build`
+  - 确保所有测试通过，如有问题请询问用户
+  - _Requirements: All_

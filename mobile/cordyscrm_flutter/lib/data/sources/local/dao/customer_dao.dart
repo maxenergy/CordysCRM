@@ -57,6 +57,12 @@ class CustomerDao extends DatabaseAccessor<AppDatabase>
     return (delete(customers)..where((c) => c.id.equals(id))).go();
   }
 
+  /// 批量删除客户（用于同步删除操作）
+  Future<int> deleteAllByIds(List<String> ids) async {
+    if (ids.isEmpty) return 0;
+    return (delete(customers)..where((c) => c.id.isIn(ids))).go();
+  }
+
   /// 更新客户同步状态
   Future<int> updateSyncStatus(String id, SyncStatus status) {
     return (update(customers)..where((c) => c.id.equals(id))).write(

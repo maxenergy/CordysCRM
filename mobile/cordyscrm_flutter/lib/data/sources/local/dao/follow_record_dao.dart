@@ -91,6 +91,12 @@ class FollowRecordDao extends DatabaseAccessor<AppDatabase>
     return (delete(followRecords)..where((r) => r.id.equals(id))).go();
   }
 
+  /// 批量删除跟进记录（用于同步删除操作）
+  Future<int> deleteAllByIds(List<String> ids) async {
+    if (ids.isEmpty) return 0;
+    return (delete(followRecords)..where((r) => r.id.isIn(ids))).go();
+  }
+
   /// 更新跟进记录同步状态
   Future<int> updateSyncStatus(String id, SyncStatus status) {
     return (update(followRecords)..where((r) => r.id.equals(id))).write(

@@ -49,6 +49,12 @@ class ClueDao extends DatabaseAccessor<AppDatabase> with _$ClueDaoMixin {
     return (delete(clues)..where((c) => c.id.equals(id))).go();
   }
 
+  /// 批量删除线索（用于同步删除操作）
+  Future<int> deleteAllByIds(List<String> ids) async {
+    if (ids.isEmpty) return 0;
+    return (delete(clues)..where((c) => c.id.isIn(ids))).go();
+  }
+
   /// 更新线索同步状态
   Future<int> updateSyncStatus(String id, SyncStatus status) {
     return (update(clues)..where((c) => c.id.equals(id))).write(

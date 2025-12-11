@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -7,6 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/sources/local/app_database.dart';
 import '../../data/sources/local/dao/sync_queue_dao.dart';
+import '../../data/sources/local/tables/tables.dart' show SyncOperation;
+import 'sync_api_client.dart';
 import 'sync_state.dart';
 
 /// 同步服务
@@ -20,12 +23,14 @@ import 'sync_state.dart';
 class SyncService {
   SyncService({
     required AppDatabase db,
+    SyncApiClient? apiClient,
     Connectivity? connectivity,
     Duration debounce = const Duration(seconds: 3),
     Duration maxBackoff = const Duration(minutes: 5),
     int maxRetryAttempts = 5,
   })  : _db = db,
         _dao = db.syncQueueDao,
+        _apiClient = apiClient,
         _connectivity = connectivity ?? Connectivity(),
         _debounce = debounce,
         _maxBackoff = maxBackoff,
@@ -33,9 +38,9 @@ class SyncService {
     _init();
   }
 
-  // ignore: unused_field - 预留给未来 API 调用使用
   final AppDatabase _db;
   final SyncQueueDao _dao;
+  final SyncApiClient? _apiClient;
   final Connectivity _connectivity;
   final Duration _debounce;
   final Duration _maxBackoff;
@@ -190,14 +195,13 @@ class SyncService {
 
       // 同步成功
       _retryAttempt = 0;
-      final syncTime = DateTime.now();
-      await _saveLastSyncTime(syncTime);
+      // 注意：lastSyncedAt 已在 _pullServerChanges 中使用服务器时间戳更新
 
       final pendingCount = await _dao.getPendingCount();
       _emit(_currentState.copyWith(
         status: SyncServiceStatus.succeeded,
         pendingCount: pendingCount,
-        lastSyncedAt: syncTime,
+        lastSyncedAt: _lastSyncedAt,
         progress: 1.0,
       ));
 
@@ -345,48 +349,172 @@ class SyncService {
   }
 
   /// 处理单个同步项
+  ///
+  /// 将本地变更推送到服务器，处理冲突（服务器优先）
   Future<void> _processSyncItem(SyncQueueItemData item) async {
     _logger.d('处理同步项: ${item.entityType}/${item.entityId} (${item.operation})');
 
-    // TODO: 实现实际的 API 调用
-    // 这里需要根据 entityType 和 operation 调用对应的后端 API
-    // 示例：
-    // switch (item.entityType) {
-    //   case 'customers':
-    //     await _syncCustomer(item);
-    //     break;
-    //   case 'clues':
-    //     await _syncClue(item);
-    //     break;
-    //   case 'follow_records':
-    //     await _syncFollowRecord(item);
-    //     break;
-    // }
+    // 如果没有配置 API 客户端，模拟成功
+    if (_apiClient == null) {
+      _logger.d('未配置 API 客户端，模拟同步成功');
+      await Future.delayed(const Duration(milliseconds: 100));
+      return;
+    }
 
-    // 模拟 API 调用延迟
-    await Future.delayed(const Duration(milliseconds: 100));
+    // 解析 payload
+    final payload = json.decode(item.payload) as Map<String, dynamic>;
+    
+    // 获取基准更新时间（用于冲突检测）
+    final baseUpdatedAt = payload['updatedAt'] != null
+        ? DateTime.tryParse(payload['updatedAt'] as String)
+        : null;
+
+    // 构建推送项
+    final pushItem = SyncPushItem(
+      localId: item.entityId,
+      entityType: item.entityType,
+      operation: _operationToString(item.operation),
+      payload: payload,
+      baseUpdatedAt: baseUpdatedAt,
+    );
+
+    // 调用 API 推送
+    final results = await _apiClient.pushChanges([pushItem]);
+    
+    if (results.isEmpty) {
+      throw Exception('服务器未返回推送结果');
+    }
+
+    final result = results.first;
+
+    if (result.isSuccess) {
+      _logger.d('同步项 ${item.entityId} 推送成功');
+      
+      // 如果是 create 操作，可能需要更新本地 ID
+      // 这里暂时不处理，因为我们使用 UUID 作为主键
+      return;
+    }
+
+    if (result.isConflict) {
+      _logger.w('同步项 ${item.entityId} 发生冲突，使用服务器版本覆盖');
+      
+      // 服务器优先：用服务器版本覆盖本地
+      if (result.serverVersion == null) {
+        // 服务器未返回版本数据，标记为失败等待重试
+        throw Exception('冲突处理失败：服务器未返回版本数据');
+      }
+      await _handleConflict(item.entityType, result.serverVersion);
+      return;
+    }
+
+    // 其他错误
+    throw Exception(result.errorMessage ?? '推送失败');
+  }
+
+  /// 处理冲突（服务器优先策略）
+  Future<void> _handleConflict(
+    String entityType,
+    Map<String, dynamic>? serverVersion,
+  ) async {
+    if (serverVersion == null) {
+      _logger.w('冲突处理：服务器未返回版本数据');
+      return;
+    }
+
+    switch (entityType) {
+      case 'customers':
+        final customer = ServerDelta.parseCustomer(serverVersion);
+        await _db.customerDao.upsertCustomer(customer);
+        break;
+      case 'clues':
+        final clue = ServerDelta.parseClue(serverVersion);
+        await _db.clueDao.upsertClue(clue);
+        break;
+      case 'follow_records':
+        final record = ServerDelta.parseFollowRecord(serverVersion);
+        await _db.followRecordDao.upsertFollowRecord(record);
+        break;
+      default:
+        _logger.w('未知实体类型: $entityType');
+    }
+  }
+
+  /// 将操作枚举转换为字符串
+  String _operationToString(SyncOperation operation) {
+    switch (operation) {
+      case SyncOperation.create:
+        return 'create';
+      case SyncOperation.update:
+        return 'update';
+      case SyncOperation.delete:
+        return 'delete';
+    }
   }
 
   /// 拉取服务器增量数据
+  ///
+  /// 实现增量同步逻辑：
+  /// 1. 调用 API 获取 lastSyncedAt 之后的变更数据
+  /// 2. 先删除服务器标记为删除的数据
+  /// 3. 再 upsert 更新/新增的数据（服务器优先）
   Future<void> _pullServerChanges() async {
     _logger.d('开始拉取服务器数据...');
 
-    // TODO: 实现实际的增量拉取逻辑
-    // 1. 调用 API 获取 lastSyncedAt 之后的变更数据
-    // 2. 使用 upsert 逻辑更新本地数据库
-    // 示例：
-    // final delta = await _api.getChanges(since: _lastSyncedAt);
-    // await _db.transaction(() async {
-    //   for (final change in delta.customers) {
-    //     await _db.customerDao.upsert(change);
-    //   }
-    //   for (final change in delta.clues) {
-    //     await _db.clueDao.upsert(change);
-    //   }
-    // });
+    // 如果没有配置 API 客户端，跳过拉取
+    if (_apiClient == null) {
+      _logger.d('未配置 API 客户端，跳过服务器数据拉取');
+      _emit(_currentState.copyWith(progress: 1.0));
+      return;
+    }
 
-    _emit(_currentState.copyWith(progress: 1.0));
-    _logger.d('服务器数据拉取完成');
+    try {
+      // 1. 调用 API 获取增量数据
+      final delta = await _apiClient.pullChanges(_lastSyncedAt);
+
+      // 如果没有变更，直接更新时间戳并持久化
+      if (delta.isEmpty) {
+        _logger.d('服务器无新数据');
+        await _saveLastSyncTime(delta.serverTimestamp);
+        _emit(_currentState.copyWith(progress: 1.0));
+        return;
+      }
+
+      _logger.i('收到服务器增量: '
+          '${delta.customers.length} 客户更新, '
+          '${delta.deletedCustomerIds.length} 客户删除, '
+          '${delta.clues.length} 线索更新, '
+          '${delta.deletedClueIds.length} 线索删除, '
+          '${delta.followRecords.length} 跟进记录更新, '
+          '${delta.deletedFollowRecordIds.length} 跟进记录删除');
+
+      // 2. 在事务中处理所有变更（服务器优先策略）
+      await _db.transaction(() async {
+        // 先删除（避免删除后又被 upsert 回来）
+        await _db.customerDao.deleteAllByIds(delta.deletedCustomerIds);
+        await _db.clueDao.deleteAllByIds(delta.deletedClueIds);
+        await _db.followRecordDao.deleteAllByIds(delta.deletedFollowRecordIds);
+
+        // 再 upsert（服务器版本覆盖本地）
+        if (delta.customers.isNotEmpty) {
+          await _db.customerDao.upsertCustomers(delta.customers);
+        }
+        if (delta.clues.isNotEmpty) {
+          await _db.clueDao.upsertClues(delta.clues);
+        }
+        if (delta.followRecords.isNotEmpty) {
+          await _db.followRecordDao.upsertFollowRecords(delta.followRecords);
+        }
+      });
+
+      // 3. 立即持久化服务器时间戳（避免崩溃后重复拉取）
+      await _saveLastSyncTime(delta.serverTimestamp);
+
+      _emit(_currentState.copyWith(progress: 1.0));
+      _logger.d('服务器数据拉取完成');
+    } catch (e) {
+      _logger.e('拉取服务器数据失败: $e');
+      rethrow;
+    }
   }
 
   /// 发送状态更新

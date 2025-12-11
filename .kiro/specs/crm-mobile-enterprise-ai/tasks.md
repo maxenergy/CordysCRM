@@ -432,8 +432,8 @@
 
 ## Phase 8: Flutter App AI 功能
 
-- [ ] 27. 实现 AI 画像展示
-  - [ ] 27.1 创建 AIProfileCard 组件
+- [x] 27. 实现 AI 画像展示
+  - [x] 27.1 创建 AIProfileCard 组件
     - 创建 AIProfileCard widget
     - 使用 TabBar 分类展示：基本信息、商机洞察、风险提示、相关舆情
     - 基本信息 Tab：行业、规模、主营产品
@@ -441,7 +441,7 @@
     - 风险提示 Tab：按级别（高/中/低）分组展示
     - 舆情信息 Tab：列表展示，包含标题、来源、情感倾向
     - _Requirements: 5.1, 5.2_
-  - [ ] 27.2 实现画像生成和刷新
+  - [x] 27.2 实现画像生成和刷新
     - 无画像时显示"生成画像"按钮
     - 有画像时显示"刷新画像"按钮
     - 调用 POST /api/ai/portrait/generate
@@ -449,25 +449,25 @@
     - 生成失败显示错误提示和重试按钮
     - _Requirements: 5.3, 5.4_
 
-- [ ] 28. 实现 AI 话术生成
-  - [ ] 28.1 创建 AIScriptDrawer 组件
+- [x] 28. 实现 AI 话术生成
+  - [x] 28.1 创建 AIScriptDrawer 组件
     - 创建 AIScriptDrawer 底部抽屉组件
     - 场景选择：首次接触、产品介绍、邀约会议、跟进回访
     - 渠道选择：电话、微信、邮件
     - 语气选择：专业、热情、简洁
     - 可选：选择话术模板
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
-  - [ ] 28.2 实现话术生成和展示
+  - [x] 28.2 实现话术生成和展示
     - 点击"生成话术"调用 POST /api/ai/script/generate
     - 显示生成中 Loading 状态
     - 生成完成后在可编辑 TextField 中展示
     - 支持用户修改话术内容
     - _Requirements: 6.5, 6.7_
-  - [ ] 28.3 实现话术复制和保存
+  - [x] 28.3 实现话术复制和保存
     - "复制"按钮：Clipboard.setData 复制到剪贴板，显示 SnackBar 提示
     - "保存为模板"按钮：调用 API 保存为个人模板
     - _Requirements: 6.8, 6.9_
-  - [ ] 28.4 实现生成历史
+  - [x] 28.4 实现生成历史
     - 使用 Riverpod StateNotifier 管理本次会话历史
     - 显示历史记录列表（最近 10 条）
     - 点击历史记录可快速复用

@@ -44,6 +44,7 @@
 - [x] 3. Checkpoint - 确保所有测试通过
   - Ensure all tests pass, ask the user if questions arise.
 
+
 ## Phase 2: 爱企查集成服务 ✅
 
 - [x] 4. 实现企业信息导入接口
@@ -99,6 +100,7 @@
     - **Property 16: 画像数据分类正确性**
     - **Validates: Requirements 5.2**
 
+
 - [x] 8. 实现 AI 话术生成服务
   - [x] 8.1 创建 CallScriptTemplateService 管理话术模板
     - CRUD 操作
@@ -142,6 +144,7 @@
 
 - [x] 11. Checkpoint - 确保所有测试通过
   - All 54 property tests passed!
+
 
 ## Phase 4: Chrome Extension ✅
 
@@ -277,7 +280,10 @@
 - [x] 19. Checkpoint - 确保所有测试通过
   - Ensure all tests pass, ask the user if questions arise.
 
+
 ## Phase 6: Flutter App 核心功能 🔄
+
+> Task 20, 21, 22 已完成，仅剩 Task 23 Checkpoint
 
 - [x] 20. 实现客户模块
   - [x] 20.1 创建客户列表页面
@@ -295,7 +301,7 @@
     - 创建 CustomerDetailPage widget
     - 顶部展示客户基本信息卡片
     - Tab 切换：基本信息、跟进记录、商机、联系人
-    - 集成 AIProfileCard 组件展示 AI 画像
+    - 集成 AIProfileCard 组件展示 AI 画像（占位）
     - 底部操作栏：编辑、跟进、话术
     - _Requirements: 1.2, 5.1_
   - [x] 20.4 创建客户编辑页面
@@ -308,18 +314,18 @@
     - **Property 2: 表单验证规则一致性**
     - **Validates: Requirements 1.4**
 
-- [ ] 21. 实现线索和商机模块
-  - [ ] 21.1 创建线索列表和详情页面
+- [x] 21. 实现线索和商机模块
+  - [x] 21.1 创建线索列表和详情页面
     - 复用 CustomerListPage 组件结构
     - 创建 ClueListPage 和 ClueDetailPage
     - 支持线索转客户操作
     - _Requirements: 1.2_
-  - [ ] 21.2 创建商机列表和详情页面
+  - [x] 21.2 创建商机列表和详情页面
     - 创建 OpportunityListPage 和 OpportunityDetailPage
     - 显示商机阶段、金额、预计成交日期
     - 支持阶段推进操作
     - _Requirements: 1.2_
-  - [ ] 21.3 实现跟进记录功能
+  - [x] 21.3 实现跟进记录功能
     - 创建 FollowRecordForm 组件
     - 支持文字输入（富文本）
     - 支持图片选择和上传（image_picker）
@@ -327,14 +333,14 @@
     - 显示跟进记录时间线
     - _Requirements: 1.5_
 
-- [ ] 22. 实现离线同步
-  - [ ] 22.1 创建 SyncService 同步服务
+- [x] 22. 实现离线同步
+  - [x] 22.1 创建 SyncService 同步服务
     - 使用 connectivity_plus 监听网络状态
     - 创建 SyncQueue 管理待同步操作
     - 网络恢复时自动触发同步
     - 显示同步状态指示器
     - _Requirements: 1.7_
-  - [ ] 22.2 实现增量同步逻辑
+  - [x] 22.2 实现增量同步逻辑
     - 记录最后同步时间戳
     - 拉取服务器 updatedAt > lastSyncTime 的数据
     - 上传本地 syncStatus = pending 的数据
@@ -346,6 +352,7 @@
 
 - [ ] 23. Checkpoint - 确保所有测试通过
   - Ensure all tests pass, ask the user if questions arise.
+
 
 ## Phase 7: Flutter App 爱企查集成
 
@@ -423,6 +430,7 @@
 - [ ] 26. Checkpoint - 确保所有测试通过
   - Ensure all tests pass, ask the user if questions arise.
 
+
 ## Phase 8: Flutter App AI 功能
 
 - [ ] 27. 实现 AI 画像展示
@@ -482,6 +490,7 @@
 
 - [ ] 30. Checkpoint - 确保所有测试通过
   - Ensure all tests pass, ask the user if questions arise.
+
 
 ## Phase 9: Web 前端集成
 

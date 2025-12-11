@@ -10,7 +10,7 @@
 | Phase 4 | Chrome Extension | ✅ Complete |
 | Phase 5 | Flutter App 基础架构 | ✅ Complete |
 | Phase 6 | Flutter App 核心功能 | ✅ Complete |
-| Phase 7 | Flutter App 爱企查集成 | ⏳ Not Started |
+| Phase 7 | Flutter App 爱企查集成 | ⏳ In Progress |
 | Phase 8 | Flutter App AI 功能 | ⏳ Not Started |
 | Phase 9 | Web 前端集成 | ⏳ Not Started |
 
@@ -353,31 +353,31 @@
   - Flutter test: All tests passed!
 
 
-## Phase 7: Flutter App 爱企查集成
+## Phase 7: Flutter App 爱企查集成 ⏳
 
-- [ ] 24. 实现 WebView 爱企查集成
-  - [ ] 24.1 创建 EnterpriseWebView 页面
+- [x] 24. 实现 WebView 爱企查集成
+  - [x] 24.1 创建 EnterpriseWebView 页面
     - 添加 flutter_inappwebview: ^6.0.0 依赖
-    - 创建 EnterpriseSearchPage widget
+    - 创建 EnterpriseWebViewPage widget
     - 配置 InAppWebView 加载 https://aiqicha.baidu.com
     - 配置 WebView 设置：javaScriptEnabled, domStorageEnabled
     - 添加加载进度条
     - _Requirements: 3.1_
-  - [ ] 24.2 实现 Cookie 管理
+  - [x] 24.2 实现 Cookie 管理
     - 使用 CookieManager 获取和保存 Cookie
-    - 存储到 SharedPreferences（加密）
-    - 下次打开时自动恢复 Cookie
+    - 存储到 FlutterSecureStorage（加密）
+    - 下次打开时自动恢复 Cookie（支持多域名）
     - _Requirements: 3.2_
   - [ ]* 24.3 编写会话持久性的属性测试
     - **Property 10: WebView会话持久性**
     - **Validates: Requirements 3.2**
-  - [ ] 24.4 实现 JavaScript 注入
+  - [x] 24.4 实现 JavaScript 注入
     - 检测 URL 匹配企业详情页
     - 注入 JS 脚本创建浮动"导入到 CRM"按钮
     - 注入 JS 脚本提取 DOM 数据（企业名称、信用代码等）
     - 使用 addJavaScriptHandler 接收 JS 回调
     - _Requirements: 3.3, 3.4_
-  - [ ] 24.5 实现数据预览和导入确认
+  - [x] 24.5 实现数据预览和导入确认
     - 创建 EnterprisePreviewSheet 底部弹窗
     - 显示提取的企业信息（可编辑）
     - 提供"关联现有客户"或"创建新客户"选项
@@ -386,7 +386,7 @@
   - [ ]* 24.6 编写数据保存的属性测试
     - **Property 11: 企业数据保存完整性**
     - **Validates: Requirements 3.6**
-  - [ ] 24.7 实现会话失效检测
+  - [x] 24.7 实现会话失效检测
     - 监听 WebView URL 变化
     - 检测重定向到登录页（passport.baidu.com）
     - 检测 401/403 响应
@@ -396,12 +396,12 @@
     - **Property 12: 会话失效检测准确性**
     - **Validates: Requirements 3.7**
 
-- [ ] 25. 实现备选导入方案
-  - [ ] 25.1 实现剪贴板监听
+- [x] 25. 实现备选导入方案
+  - [x] 25.1 实现剪贴板监听
     - 使用 Clipboard.getData 获取剪贴板内容
     - 正则匹配中文企业名称（2-50字符，包含"公司"/"集团"/"有限"）
     - 应用进入前台时检测
-    - 显示 SnackBar 提示"检测到企业信息，是否搜索？"
+    - 显示提示"检测到企业信息，是否搜索？"
     - _Requirements: 4.1_
   - [ ]* 25.2 编写企业名称识别的属性测试
     - **Property 13: 剪贴板企业名称识别**
@@ -415,10 +415,10 @@
   - [ ]* 25.4 编写链接解析的属性测试
     - **Property 14: 爱企查链接解析**
     - **Validates: Requirements 4.2**
-  - [ ] 25.5 实现手动搜索
-    - 创建 EnterpriseSearchField 组件
+  - [x] 25.5 实现手动搜索
+    - 创建 EnterpriseSearchPage 页面
     - 输入 ≥2 字符时触发搜索（防抖 500ms）
-    - 调用后端 GET /api/enterprise/search?keyword=xxx
+    - 调用后端 GET /api/enterprise/search?keyword=xxx（模拟数据）
     - 显示候选企业列表（名称、信用代码、法人）
     - 点击跳转到 WebView 详情页
     - _Requirements: 4.3_

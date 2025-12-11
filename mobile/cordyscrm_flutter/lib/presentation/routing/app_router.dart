@@ -10,6 +10,8 @@ import '../features/clue/clue_list_page.dart';
 import '../features/clue/clue_detail_page.dart';
 import '../features/opportunity/opportunity_list_page.dart';
 import '../features/opportunity/opportunity_detail_page.dart';
+import '../features/enterprise/enterprise_webview_page.dart';
+import '../features/enterprise/enterprise_search_page.dart';
 
 /// 路由路径常量
 class AppRoutes {
@@ -31,6 +33,7 @@ class AppRoutes {
   static const String opportunityNew = '/opportunities/new';
   static const String opportunityEdit = '/opportunities/edit/:id';
   static const String enterprise = '/enterprise';
+  static const String enterpriseSearch = '/enterprise/search';
   static const String profile = '/profile';
 }
 
@@ -177,13 +180,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       
-      // 企业信息查询
+      // 企业信息查询（爱企查 WebView）
       GoRoute(
         path: AppRoutes.enterprise,
         name: 'enterprise',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('企业信息查询 - 待实现')),
-        ),
+        builder: (context, state) => const EnterpriseWebViewPage(),
+      ),
+
+      // 企业搜索页面
+      GoRoute(
+        path: AppRoutes.enterpriseSearch,
+        name: 'enterpriseSearch',
+        builder: (context, state) => const EnterpriseSearchPage(),
       ),
     ],
     

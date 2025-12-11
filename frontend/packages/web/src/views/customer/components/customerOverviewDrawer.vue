@@ -96,6 +96,10 @@
           :form-key="FormDesignKeyEnum.CONTRACT_PAYMENT"
           :source-id="props.sourceId"
         />
+        <CrmAIProfileCard
+          v-else-if="activeTab === 'aiProfile'"
+          :customer-id="props.sourceId"
+        />
       </div>
       <CrmMoveModal
         v-model:show="showMoveModal"
@@ -104,6 +108,10 @@
         :name="sourceName"
         type="warning"
         @refresh="refresh"
+      />
+      <CrmAIScriptDrawer
+        v-model:show="showAIScriptDrawer"
+        :customer-id="props.sourceId"
       />
     </template>
   </CrmOverviewDrawer>
@@ -130,6 +138,10 @@
   import customerRelation from './customerRelation.vue';
   import ContractTimeline from '@/views/contract/contract/components/contractTimeline.vue';
   import opportunityTable from '@/views/opportunity/components/opportunityTable.vue';
+
+  // AI 组件
+  const CrmAIProfileCard = defineAsyncComponent(() => import('@/components/business/crm-ai-profile-card/index.vue'));
+  const CrmAIScriptDrawer = defineAsyncComponent(() => import('@/components/business/crm-ai-script-drawer/index.vue'));
 
   import { deleteCustomer, getCustomerHeaderList, updateCustomer } from '@/api/modules';
   import useModal from '@/hooks/useModal';
@@ -206,6 +218,13 @@
         class: 'n-btn-outline-primary',
         permission: ['CUSTOMER_MANAGEMENT:DELETE'],
       },
+      {
+        label: t('customer.aiScript'),
+        key: 'aiScript',
+        text: false,
+        ghost: true,
+        class: 'n-btn-outline-primary',
+      },
     ];
   });
 
@@ -259,6 +278,11 @@
         tab: t('module.paymentPlan'),
         enable: true,
         permission: ['CONTRACT_PAYMENT_PLAN:READ'],
+      },
+      {
+        name: 'aiProfile',
+        tab: t('customer.aiProfile'),
+        enable: true,
       },
     ];
     if (collaborationType.value) {
@@ -320,6 +344,12 @@
     showMoveModal.value = true;
   }
 
+  // AI 话术抽屉
+  const showAIScriptDrawer = ref(false);
+  function handleOpenAIScript() {
+    showAIScriptDrawer.value = true;
+  }
+
   function handleButtonSelect(key: string) {
     if (key === 'delete') {
       handleDelete();
@@ -327,6 +357,8 @@
       transfer();
     } else if (key === 'moveToOpenSea') {
       handleMoveToPublicPool();
+    } else if (key === 'aiScript') {
+      handleOpenAIScript();
     }
   }
 

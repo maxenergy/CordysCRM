@@ -10,9 +10,9 @@
 | Phase 4 | Chrome Extension | ✅ Complete |
 | Phase 5 | Flutter App 基础架构 | ✅ Complete |
 | Phase 6 | Flutter App 核心功能 | ✅ Complete |
-| Phase 7 | Flutter App 爱企查集成 | ⏳ In Progress |
-| Phase 8 | Flutter App AI 功能 | ⏳ Not Started |
-| Phase 9 | Web 前端集成 | ⏳ Not Started |
+| Phase 7 | Flutter App 爱企查集成 | ✅ Complete |
+| Phase 8 | Flutter App AI 功能 | ✅ Complete |
+| Phase 9 | Web 前端集成 | ✅ Complete |
 
 ---
 
@@ -493,8 +493,8 @@
 
 ## Phase 9: Web 前端集成
 
-- [ ] 31. 实现 AI 画像组件
-  - [ ] 31.1 创建 AIProfileCard.vue 组件
+- [x] 31. 实现 AI 画像组件
+  - [x] 31.1 创建 AIProfileCard.vue 组件
     - 在 `frontend/packages/web/src/components/business/` 下创建 ai-profile-card 目录
     - 创建 AIProfileCard.vue 组件
     - 使用 NTabs 分类展示：基本信息、商机洞察、风险提示、相关舆情
@@ -504,20 +504,20 @@
     - 舆情信息 Tab：NTimeline 展示，包含标题、来源、情感标签
     - 无数据时显示 NEmpty + "生成画像"按钮
     - _Requirements: 5.1, 5.2_
-  - [ ] 31.2 集成到客户详情页
+  - [x] 31.2 集成到客户详情页
     - 在 `frontend/packages/web/src/views/customer/detail/` 中引入 AIProfileCard
     - 在客户详情页右侧或 Tab 中展示
     - 传入 customerId prop
     - _Requirements: 5.1_
 
-- [ ] 32. 实现 AI 话术组件
-  - [ ] 32.1 创建 AIScriptDrawer.vue 组件
+- [x] 32. 实现 AI 话术组件
+  - [x] 32.1 创建 AIScriptDrawer.vue 组件
     - 在 `frontend/packages/web/src/components/business/` 下创建 ai-script-drawer 目录
     - 创建 AIScriptDrawer.vue 组件
     - 使用 NDrawer 从右侧滑出
     - 宽度 480px
     - _Requirements: 6.1_
-  - [ ] 32.2 实现参数选择和生成
+  - [x] 32.2 实现参数选择和生成
     - 场景选择：NRadioGroup（首次接触、产品介绍、邀约会议、跟进回访）
     - 渠道选择：NRadioGroup（电话、微信、邮件）
     - 语气选择：NRadioGroup（专业、热情、简洁）
@@ -526,14 +526,14 @@
     - 生成结果：NInput type="textarea" 可编辑
     - 操作按钮：复制、保存为模板
     - _Requirements: 6.2, 6.3, 6.4, 6.5_
-  - [ ] 32.3 集成到客户详情页
+  - [x] 32.3 集成到客户详情页
     - 在客户详情页添加"AI 话术"按钮
     - 点击打开 AIScriptDrawer
     - 传入 customerId prop
     - _Requirements: 6.1_
 
-- [ ] 33. 实现话术模板管理页面
-  - [ ] 33.1 创建模板列表页面
+- [x] 33. 实现话术模板管理页面
+  - [x] 33.1 创建模板列表页面
     - 在 `frontend/packages/web/src/views/system/` 下创建 script-template 目录
     - 创建 index.vue 列表页面
     - 使用 NDataTable 展示模板列表
@@ -544,7 +544,7 @@
   - [ ]* 33.2 编写模板分类的属性测试
     - **Property 24: 模板列表分类正确性**
     - **Validates: Requirements 7.1**
-  - [ ] 33.3 创建模板编辑页面
+  - [x] 33.3 创建模板编辑页面
     - 创建 edit.vue 编辑页面
     - 表单字段：名称、行业、场景、渠道、语气、内容
     - 内容编辑器支持变量占位符插入（{{公司名称}}、{{产品名称}}等）
@@ -555,8 +555,8 @@
     - **Property 25: 模板状态影响可用性**
     - **Validates: Requirements 7.5**
 
-- [ ] 34. 实现集成配置页面
-  - [ ] 34.1 创建配置管理页面
+- [x] 34. 实现集成配置页面
+  - [x] 34.1 创建配置管理页面
     - 在 `frontend/packages/web/src/views/system/` 下创建 integration-config 目录
     - 创建 index.vue 配置页面
     - 使用 NTabs 分类：爱企查配置、AI 服务配置
@@ -564,7 +564,7 @@
     - AI 服务配置：Provider 选择、API Key 输入、模型选择、温度参数滑块
     - 添加路由配置和菜单项
     - _Requirements: 8.1, 8.3_
-  - [ ] 34.2 实现配置保存
+  - [x] 34.2 实现配置保存
     - 调用 POST /api/integration/config 保存配置
     - 敏感字段显示为 ******
     - 保存成功提示

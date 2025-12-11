@@ -1,6 +1,7 @@
 export default {
   'integrationConfig.title': 'Integration Configuration',
   'integrationConfig.tab.iqicha': 'Aiqicha Config',
+  'integrationConfig.tab.extension': 'Chrome Extension',
   'integrationConfig.tab.ai': 'AI Service Config',
   'integrationConfig.save': 'Save Configuration',
   'integrationConfig.saveSuccess': 'Configuration saved successfully',

@@ -1,6 +1,7 @@
 export default {
   'integrationConfig.title': '集成配置',
   'integrationConfig.tab.iqicha': '爱企查配置',
+  'integrationConfig.tab.extension': 'Chrome 扩展',
   'integrationConfig.tab.ai': 'AI 服务配置',
   'integrationConfig.save': '保存配置',
   'integrationConfig.saveSuccess': '配置保存成功',

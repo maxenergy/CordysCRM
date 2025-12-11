@@ -33,6 +33,60 @@
           </NCard>
         </NTabPane>
 
+        <!-- Chrome 扩展配置 -->
+        <NTabPane :name="'extension'" :tab="t('integrationConfig.tab.extension')">
+          <NCard>
+            <NAlert type="info" class="mb-4">
+              <template #header>Chrome 扩展安装说明</template>
+              <ol class="extension-steps">
+                <li>打开 Chrome 浏览器，访问 <NText code>chrome://extensions/</NText></li>
+                <li>开启右上角的「开发者模式」</li>
+                <li>点击「加载已解压的扩展程序」</li>
+                <li>选择项目目录下的 <NText code>frontend/packages/chrome-extension/dist</NText></li>
+              </ol>
+            </NAlert>
+
+            <NDivider>扩展配置信息</NDivider>
+
+            <NForm label-placement="left" label-width="120">
+              <NFormItem label="CRM 地址">
+                <NInputGroup>
+                  <NInput :value="crmUrl" readonly style="width: 300px" />
+                  <NButton @click="handleCopyCrmUrl">
+                    <template #icon>
+                      <NIcon><CopyOutline /></NIcon>
+                    </template>
+                    复制
+                  </NButton>
+                </NInputGroup>
+              </NFormItem>
+
+              <NFormItem label="API Token">
+                <NInputGroup>
+                  <NInput
+                    :value="tokenDisplay"
+                    type="password"
+                    show-password-on="click"
+                    readonly
+                    style="width: 300px"
+                  />
+                  <NButton type="primary" @click="handleCopyToken">
+                    <template #icon>
+                      <NIcon><CopyOutline /></NIcon>
+                    </template>
+                    复制 Token
+                  </NButton>
+                </NInputGroup>
+              </NFormItem>
+            </NForm>
+
+            <NAlert type="warning" class="mt-4">
+              <template #header>安全提示</template>
+              Token 是您的身份凭证，请勿泄露给他人。Token 有效期与登录会话一致。
+            </NAlert>
+          </NCard>
+        </NTabPane>
+
         <!-- AI 服务配置 -->
         <NTabPane :name="'ai'" :tab="t('integrationConfig.tab.ai')">
           <NCard>
@@ -110,11 +164,52 @@
 
 <script lang="ts" setup>
   import { useMessage } from 'naive-ui';
+  import { CopyOutline } from '@vicons/ionicons5';
 
   import { useI18n } from '@lib/shared/hooks/useI18n';
 
   const { t } = useI18n();
   const message = useMessage();
+
+  // Chrome 扩展配置
+  const crmUrl = computed(() => window.location.origin);
+  const tokenDisplay = ref('');
+
+  // 获取当前 Token
+  function getToken(): string {
+    // 从 localStorage 获取 token
+    const token = localStorage.getItem('token') || localStorage.getItem('accessToken') || '';
+    return token.replace(/^"|"$/g, ''); // 移除可能的引号
+  }
+
+  // 复制 CRM 地址
+  function handleCopyCrmUrl() {
+    navigator.clipboard.writeText(crmUrl.value);
+    message.success('CRM 地址已复制到剪贴板');
+  }
+
+  // 复制 Token
+  function handleCopyToken() {
+    const token = getToken();
+    if (!token) {
+      message.warning('未找到有效的 Token，请确保已登录');
+      return;
+    }
+    navigator.clipboard.writeText(token);
+    message.success('Token 已复制到剪贴板，请粘贴到 Chrome 扩展配置中');
+  }
+
+  // 初始化 Token 显示
+  function initTokenDisplay() {
+    const token = getToken();
+    if (token) {
+      // 显示部分 Token
+      tokenDisplay.value =
+        token.length > 20 ? `${token.substring(0, 10)}...${token.substring(token.length - 10)}` : token;
+    } else {
+      tokenDisplay.value = '未登录';
+    }
+  }
 
   // 爱企查配置
   const iqichaConfig = ref({
@@ -252,6 +347,7 @@
   async function loadConfig() {
     // TODO: 调用 API 获取配置
     // 敏感字段显示为 ******
+    initTokenDisplay();
   }
 
   onMounted(() => {

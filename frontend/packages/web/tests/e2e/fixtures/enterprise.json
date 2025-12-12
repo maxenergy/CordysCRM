@@ -1,0 +1,79 @@
+{
+  "success": {
+    "items": [
+      {
+        "pid": "FIXTURE_001",
+        "name": "测试企业_腾讯科技有限公司",
+        "creditCode": "91440300MA5FTEST01",
+        "legalPerson": "马化腾",
+        "address": "深圳市南山区科技园腾讯大厦",
+        "status": "存续",
+        "establishDate": "1998-11-11",
+        "registeredCapital": "50000万人民币",
+        "industry": "软件和信息技术服务业"
+      }
+    ],
+    "total": 1
+  },
+  "multiple": {
+    "items": [
+      {
+        "pid": "FIXTURE_001",
+        "name": "测试企业_腾讯科技有限公司",
+        "creditCode": "91440300MA5FTEST01",
+        "legalPerson": "马化腾",
+        "address": "深圳市南山区",
+        "status": "存续"
+      },
+      {
+        "pid": "FIXTURE_002",
+        "name": "测试企业_阿里巴巴集团",
+        "creditCode": "91440300MA5FTEST02",
+        "legalPerson": "张勇",
+        "address": "杭州市余杭区",
+        "status": "存续"
+      },
+      {
+        "pid": "FIXTURE_003",
+        "name": "测试企业_字节跳动",
+        "creditCode": "91440300MA5FTEST03",
+        "legalPerson": "张一鸣",
+        "address": "北京市海淀区",
+        "status": "存续"
+      }
+    ],
+    "total": 3
+  },
+  "empty": {
+    "items": [],
+    "total": 0
+  },
+  "missingFields": {
+    "items": [
+      {
+        "pid": "FIXTURE_MISSING",
+        "name": "",
+        "creditCode": "91440300MA5FTEST99"
+      }
+    ],
+    "total": 1
+  },
+  "errors": {
+    "needLogin": {
+      "success": false,
+      "message": "请先登录爱企查"
+    },
+    "captcha": {
+      "success": false,
+      "message": "爱企查需要验证码验证，请先在爱企查网站完成验证"
+    },
+    "timeout": {
+      "success": false,
+      "message": "搜索请求超时，请重试"
+    },
+    "network": {
+      "success": false,
+      "message": "网络错误，请检查网络连接"
+    }
+  }
+}

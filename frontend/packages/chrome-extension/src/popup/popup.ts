@@ -8,6 +8,13 @@ import { testConnection } from '../utils/api';
 import { validateUrl, validateToken } from '../utils/validation';
 import type { CRMConfig } from '../types/config';
 
+/** 从 CRM 复制的配置格式 */
+interface CRMConfigClipboard {
+  crmUrl: string;
+  token: string;
+  timestamp?: number;
+}
+
 /** DOM 元素引用 */
 interface DOMElements {
   form: HTMLFormElement;
@@ -16,6 +23,7 @@ interface DOMElements {
   saveBtn: HTMLButtonElement;
   testBtn: HTMLButtonElement;
   toggleTokenBtn: HTMLButtonElement;
+  pasteConfigBtn: HTMLButtonElement;
   statusMessage: HTMLDivElement;
   urlError: HTMLDivElement;
   tokenError: HTMLDivElement;
@@ -30,6 +38,7 @@ function getDOMElements(): DOMElements {
     saveBtn: document.getElementById('save-btn') as HTMLButtonElement,
     testBtn: document.getElementById('test-btn') as HTMLButtonElement,
     toggleTokenBtn: document.getElementById('toggle-token') as HTMLButtonElement,
+    pasteConfigBtn: document.getElementById('paste-config-btn') as HTMLButtonElement,
     statusMessage: document.getElementById('status-message') as HTMLDivElement,
     urlError: document.getElementById('url-error') as HTMLDivElement,
     tokenError: document.getElementById('token-error') as HTMLDivElement,
@@ -150,6 +159,65 @@ async function loadSavedConfig(elements: DOMElements): Promise<void> {
   }
 }
 
+/** 解析剪贴板中的配置 */
+function parseClipboardConfig(text: string): CRMConfigClipboard | null {
+  try {
+    const data = JSON.parse(text);
+    // 验证必要字段
+    if (data.crmUrl && data.token) {
+      return {
+        crmUrl: data.crmUrl,
+        token: data.token,
+        timestamp: data.timestamp,
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** 粘贴配置 */
+async function handlePasteConfig(elements: DOMElements): Promise<void> {
+  try {
+    const text = await navigator.clipboard.readText();
+    const config = parseClipboardConfig(text);
+    
+    if (!config) {
+      showStatus(
+        elements.statusMessage,
+        '剪贴板中没有有效的配置信息，请先从 CRM 系统复制配置',
+        'error',
+        5000
+      );
+      return;
+    }
+    
+    // 填充表单
+    elements.crmUrlInput.value = config.crmUrl;
+    elements.jwtTokenInput.value = config.token;
+    
+    // 验证填充的值
+    const urlValid = handleUrlValidation(elements.crmUrlInput, elements.urlError);
+    const tokenValid = handleTokenValidation(elements.jwtTokenInput, elements.tokenError);
+    
+    if (urlValid && tokenValid) {
+      showStatus(elements.statusMessage, '配置已填充，请点击「连接测试」验证', 'success', 5000);
+    } else {
+      showStatus(elements.statusMessage, '配置已填充，但部分内容可能无效', 'error', 5000);
+    }
+  } catch (error) {
+    // 可能是权限问题
+    showStatus(
+      elements.statusMessage,
+      '无法读取剪贴板，请确保已授予权限',
+      'error',
+      5000
+    );
+    console.error('Failed to read clipboard:', error);
+  }
+}
+
 /** 保存配置 */
 async function handleSave(elements: DOMElements): Promise<void> {
   const urlValid = handleUrlValidation(elements.crmUrlInput, elements.urlError);
@@ -217,6 +285,11 @@ function init(): void {
 
   // 加载已保存的配置
   loadSavedConfig(elements);
+
+  // 粘贴配置按钮
+  elements.pasteConfigBtn.addEventListener('click', () => {
+    handlePasteConfig(elements);
+  });
 
   // URL 输入验证
   elements.crmUrlInput.addEventListener('input', () => {

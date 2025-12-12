@@ -36,54 +36,122 @@
         <!-- Chrome 扩展配置 -->
         <NTabPane :name="'extension'" :tab="t('integrationConfig.tab.extension')">
           <NCard>
-            <NAlert type="info" class="mb-4">
-              <template #header>Chrome 扩展安装说明</template>
-              <ol class="extension-steps">
-                <li>打开 Chrome 浏览器，访问 <NText code>chrome://extensions/</NText></li>
-                <li>开启右上角的「开发者模式」</li>
-                <li>点击「加载已解压的扩展程序」</li>
-                <li>选择项目目录下的 <NText code>frontend/packages/chrome-extension/dist</NText></li>
-              </ol>
-            </NAlert>
+            <!-- 向导模式 -->
+            <NSteps :current="currentStep" class="extension-wizard">
+              <NStep title="安装扩展" description="在 Chrome 中安装扩展程序" />
+              <NStep title="获取配置" description="一键复制配置信息" />
+              <NStep title="完成配置" description="在扩展中粘贴配置" />
+            </NSteps>
 
-            <NDivider>扩展配置信息</NDivider>
-
-            <NForm label-placement="left" label-width="120">
-              <NFormItem label="CRM 地址">
-                <NInputGroup>
-                  <NInput :value="crmUrl" readonly style="width: 300px" />
-                  <NButton @click="handleCopyCrmUrl">
+            <div class="wizard-content">
+              <!-- 步骤 1: 安装扩展 -->
+              <div v-show="currentStep === 1" class="step-content">
+                <NAlert type="info" class="mb-4">
+                  <template #header>
+                    <NSpace align="center">
+                      <NIcon size="18"><ExtensionPuzzleOutline /></NIcon>
+                      <span>安装 Chrome 扩展</span>
+                    </NSpace>
+                  </template>
+                  <ol class="extension-steps">
+                    <li>打开 Chrome 浏览器，访问 <NText code>chrome://extensions/</NText></li>
+                    <li>开启右上角的「开发者模式」</li>
+                    <li>点击「加载已解压的扩展程序」</li>
+                    <li>选择项目目录下的 <NText code>frontend/packages/chrome-extension/dist</NText></li>
+                  </ol>
+                </NAlert>
+                <div class="step-actions">
+                  <NButton type="primary" @click="currentStep = 2">
+                    已安装，下一步
                     <template #icon>
-                      <NIcon><CopyOutline /></NIcon>
+                      <NIcon><ArrowForwardOutline /></NIcon>
                     </template>
-                    复制
                   </NButton>
-                </NInputGroup>
-              </NFormItem>
+                </div>
+              </div>
 
-              <NFormItem label="API Token">
-                <NInputGroup>
-                  <NInput
-                    :value="tokenDisplay"
-                    type="password"
-                    show-password-on="click"
-                    readonly
-                    style="width: 300px"
-                  />
-                  <NButton type="primary" @click="handleCopyToken">
-                    <template #icon>
-                      <NIcon><CopyOutline /></NIcon>
+              <!-- 步骤 2: 获取配置 -->
+              <div v-show="currentStep === 2" class="step-content">
+                <div class="one-click-config">
+                  <NCard embedded class="config-card">
+                    <template #header>
+                      <NSpace align="center">
+                        <NIcon size="20" color="#18a058"><FlashOutline /></NIcon>
+                        <span>一键配置</span>
+                      </NSpace>
                     </template>
-                    复制 Token
-                  </NButton>
-                </NInputGroup>
-              </NFormItem>
-            </NForm>
+                    <p class="config-desc">点击下方按钮复制配置信息，然后在 Chrome 扩展中粘贴即可完成配置。</p>
+                    <NButton type="primary" size="large" block :loading="copyingConfig" @click="handleCopyConfig">
+                      <template #icon>
+                        <NIcon><CopyOutline /></NIcon>
+                      </template>
+                      一键复制配置
+                    </NButton>
+                    <NText v-if="configCopied" type="success" class="copy-success">
+                      <NIcon><CheckmarkCircleOutline /></NIcon>
+                      配置已复制到剪贴板
+                    </NText>
+                  </NCard>
 
-            <NAlert type="warning" class="mt-4">
-              <template #header>安全提示</template>
-              Token 是您的身份凭证，请勿泄露给他人。Token 有效期与登录会话一致。
-            </NAlert>
+                  <NCollapse class="mt-4">
+                    <NCollapseItem title="查看配置详情" name="details">
+                      <NDescriptions label-placement="left" :column="1" bordered>
+                        <NDescriptionsItem label="CRM 地址">
+                          <NText code>{{ crmUrl }}</NText>
+                        </NDescriptionsItem>
+                        <NDescriptionsItem label="API Token">
+                          <NSpace>
+                            <NText code>{{ tokenDisplay }}</NText>
+                            <NButton text type="primary" size="small" @click="handleCopyToken">复制</NButton>
+                          </NSpace>
+                        </NDescriptionsItem>
+                      </NDescriptions>
+                    </NCollapseItem>
+                  </NCollapse>
+                </div>
+
+                <div class="step-actions">
+                  <NSpace>
+                    <NButton @click="currentStep = 1">上一步</NButton>
+                    <NButton type="primary" @click="currentStep = 3">
+                      已复制，下一步
+                      <template #icon>
+                        <NIcon><ArrowForwardOutline /></NIcon>
+                      </template>
+                    </NButton>
+                  </NSpace>
+                </div>
+              </div>
+
+              <!-- 步骤 3: 完成配置 -->
+              <div v-show="currentStep === 3" class="step-content">
+                <NResult status="info" title="在扩展中完成配置" description="请按以下步骤完成最后的配置">
+                  <template #footer>
+                    <ol class="final-steps">
+                      <li
+                        >点击浏览器右上角的扩展图标 <NIcon><ExtensionPuzzleOutline /></NIcon
+                      ></li>
+                      <li>找到「爱企查 CRM 助手」扩展并点击</li>
+                      <li>在弹出窗口中点击「粘贴配置」按钮</li>
+                      <li>点击「连接测试」验证配置是否正确</li>
+                      <li>测试成功后点击「保存设置」</li>
+                    </ol>
+                  </template>
+                </NResult>
+
+                <NAlert type="warning" class="mt-4">
+                  <template #header>安全提示</template>
+                  Token 是您的身份凭证，请勿泄露给他人。Token 有效期与登录会话一致。
+                </NAlert>
+
+                <div class="step-actions">
+                  <NSpace>
+                    <NButton @click="currentStep = 2">上一步</NButton>
+                    <NButton type="primary" @click="currentStep = 1">重新开始</NButton>
+                  </NSpace>
+                </div>
+              </div>
+            </div>
           </NCard>
         </NTabPane>
 
@@ -164,12 +232,23 @@
 
 <script lang="ts" setup>
   import { useMessage } from 'naive-ui';
-  import { CopyOutline } from '@vicons/ionicons5';
+  import {
+    ArrowForwardOutline,
+    CheckmarkCircleOutline,
+    CopyOutline,
+    ExtensionPuzzleOutline,
+    FlashOutline,
+  } from '@vicons/ionicons5';
 
   import { useI18n } from '@lib/shared/hooks/useI18n';
 
   const { t } = useI18n();
   const message = useMessage();
+
+  // Chrome 扩展配置 - 向导步骤
+  const currentStep = ref(1);
+  const copyingConfig = ref(false);
+  const configCopied = ref(false);
 
   // Chrome 扩展配置
   const crmUrl = computed(() => window.location.origin);
@@ -177,15 +256,36 @@
 
   // 获取当前 Token
   function getToken(): string {
-    // 从 localStorage 获取 token
     const token = localStorage.getItem('token') || localStorage.getItem('accessToken') || '';
-    return token.replace(/^"|"$/g, ''); // 移除可能的引号
+    return token.replace(/^"|"$/g, '');
   }
 
-  // 复制 CRM 地址
-  function handleCopyCrmUrl() {
-    navigator.clipboard.writeText(crmUrl.value);
-    message.success('CRM 地址已复制到剪贴板');
+  // 一键复制配置（JSON 格式）
+  async function handleCopyConfig() {
+    const token = getToken();
+    if (!token) {
+      message.warning('未找到有效的 Token，请确保已登录');
+      return;
+    }
+
+    copyingConfig.value = true;
+    try {
+      const config = {
+        crmUrl: crmUrl.value,
+        token,
+        timestamp: Date.now(),
+      };
+      await navigator.clipboard.writeText(JSON.stringify(config));
+      configCopied.value = true;
+      message.success('配置已复制，请在 Chrome 扩展中粘贴');
+      setTimeout(() => {
+        configCopied.value = false;
+      }, 3000);
+    } catch {
+      message.error('复制失败，请手动复制');
+    } finally {
+      copyingConfig.value = false;
+    }
   }
 
   // 复制 Token
@@ -196,14 +296,13 @@
       return;
     }
     navigator.clipboard.writeText(token);
-    message.success('Token 已复制到剪贴板，请粘贴到 Chrome 扩展配置中');
+    message.success('Token 已复制到剪贴板');
   }
 
   // 初始化 Token 显示
   function initTokenDisplay() {
     const token = getToken();
     if (token) {
-      // 显示部分 Token
       tokenDisplay.value =
         token.length > 20 ? `${token.substring(0, 10)}...${token.substring(token.length - 10)}` : token;
     } else {
@@ -237,7 +336,7 @@
     { label: t('integrationConfig.provider.local'), value: 'local' },
   ]);
 
-  // 模型选项（根据提供商动态变化）
+  // 模型选项
   const modelOptions = computed(() => {
     switch (aiConfig.value.provider) {
       case 'openai':
@@ -265,28 +364,23 @@
     }
   });
 
-  // 延迟函数
   function delay(ms: number): Promise<void> {
     return new Promise((resolve) => {
       setTimeout(resolve, ms);
     });
   }
 
-  // 提供商变化时重置模型
   function handleProviderChange() {
     aiConfig.value.model = modelOptions.value[0]?.value || '';
   }
 
-  // 测试爱企查连接
   async function handleTestIqicha() {
     if (!iqichaConfig.value.cookie) {
       message.warning(t('integrationConfig.iqicha.cookiePlaceholder'));
       return;
     }
-
     testingIqicha.value = true;
     try {
-      // TODO: 调用 API 测试连接
       await delay(1000);
       message.success(t('integrationConfig.testSuccess'));
     } catch {
@@ -296,11 +390,9 @@
     }
   }
 
-  // 保存爱企查配置
   async function handleSaveIqicha() {
     savingIqicha.value = true;
     try {
-      // TODO: 调用 API 保存配置
       await delay(500);
       message.success(t('integrationConfig.saveSuccess'));
     } catch {
@@ -310,16 +402,13 @@
     }
   }
 
-  // 测试 AI 连接
   async function handleTestAI() {
     if (!aiConfig.value.apiKey) {
       message.warning(t('integrationConfig.ai.apiKeyPlaceholder'));
       return;
     }
-
     testingAI.value = true;
     try {
-      // TODO: 调用 API 测试连接
       await delay(1000);
       message.success(t('integrationConfig.testSuccess'));
     } catch {
@@ -329,11 +418,9 @@
     }
   }
 
-  // 保存 AI 配置
   async function handleSaveAI() {
     savingAI.value = true;
     try {
-      // TODO: 调用 API 保存配置
       await delay(500);
       message.success(t('integrationConfig.saveSuccess'));
     } catch {
@@ -343,10 +430,7 @@
     }
   }
 
-  // 加载配置
   async function loadConfig() {
-    // TODO: 调用 API 获取配置
-    // 敏感字段显示为 ******
     initTokenDisplay();
   }
 
@@ -378,6 +462,58 @@
     background: var(--card-color);
     flex: 1;
   }
+  .extension-wizard {
+    margin-bottom: 24px;
+    padding: 0 20px;
+  }
+  .wizard-content {
+    min-height: 300px;
+  }
+  .step-content {
+    padding: 16px 0;
+  }
+  .step-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+  }
+  .extension-steps {
+    margin: 8px 0 0;
+    padding-left: 20px;
+    li {
+      margin: 8px 0;
+      line-height: 1.6;
+    }
+  }
+  .one-click-config {
+    margin: 0 auto;
+    max-width: 500px;
+  }
+  .config-card {
+    text-align: center;
+  }
+  .config-desc {
+    margin: 0 0 16px;
+    color: var(--text-color-3);
+  }
+  .copy-success {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 12px;
+    gap: 4px;
+  }
+  .final-steps {
+    margin: 0;
+    padding-left: 20px;
+    text-align: left;
+    li {
+      margin: 12px 0;
+      line-height: 1.6;
+    }
+  }
   .slider-container {
     display: flex;
     align-items: center;
@@ -396,5 +532,11 @@
   .form-tip {
     margin-top: -8px;
     font-size: 12px;
+  }
+  .mb-4 {
+    margin-bottom: 16px;
+  }
+  .mt-4 {
+    margin-top: 16px;
   }
 </style>

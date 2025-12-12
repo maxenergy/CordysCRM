@@ -256,6 +256,7 @@
   import { CheckmarkCircleOutline, CopyOutline, FlashOutline } from '@vicons/ionicons5';
 
   import { useI18n } from '@lib/shared/hooks/useI18n';
+  import { getToken as getAuthToken } from '@lib/shared/method/auth';
 
   import CrmCard from '@/components/pure/crm-card/index.vue';
   import CrmTab from '@/components/pure/crm-tab/index.vue';
@@ -279,8 +280,8 @@
   const tokenDisplay = ref('');
 
   function getToken(): string {
-    const token = localStorage.getItem('token') || localStorage.getItem('accessToken') || '';
-    return token.replace(/^"|"$/g, '');
+    const authToken = getAuthToken();
+    return authToken.sessionId || '';
   }
 
   async function handleCopyConfig() {

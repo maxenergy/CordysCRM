@@ -9,202 +9,227 @@
       <!-- Chrome 扩展配置 -->
       <CrmCard v-if="activeTab === 'extension'" hide-footer auto-height>
         <div class="mb-[24px]">
-          <NSteps :current="currentStep" size="small">
-            <NStep title="安装扩展" />
-            <NStep title="获取配置" />
-            <NStep title="完成配置" />
-          </NSteps>
+          <n-steps :current="currentStep" size="small">
+            <n-step :title="t('integrationConfig.extension.step.install')" />
+            <n-step :title="t('integrationConfig.extension.step.config')" />
+            <n-step :title="t('integrationConfig.extension.step.complete')" />
+          </n-steps>
         </div>
 
         <!-- 步骤 1: 安装扩展 -->
         <div v-if="currentStep === 1">
-          <NAlert type="info" class="mb-[16px]">
-            <template #header>安装 Chrome 扩展</template>
+          <n-alert type="info" class="mb-[16px]">
+            <template #header>{{ t('integrationConfig.extension.install.title') }}</template>
             <ol class="mt-[8px] list-decimal pl-[20px]">
-              <li class="mb-[8px]">打开 Chrome 浏览器，访问 <NText code>chrome://extensions/</NText></li>
-              <li class="mb-[8px]">开启右上角的「开发者模式」</li>
-              <li class="mb-[8px]">点击「加载已解压的扩展程序」</li>
-              <li>选择项目目录下的 <NText code>frontend/packages/chrome-extension/dist</NText></li>
+              <li class="mb-[8px]">
+                {{ t('integrationConfig.extension.install.step1') }}
+                <n-text code>chrome://extensions/</n-text>
+              </li>
+              <li class="mb-[8px]">{{ t('integrationConfig.extension.install.step2') }}</li>
+              <li class="mb-[8px]">{{ t('integrationConfig.extension.install.step3') }}</li>
+              <li>
+                {{ t('integrationConfig.extension.install.step4') }}
+                <n-text code>frontend/packages/chrome-extension/dist</n-text>
+              </li>
             </ol>
-          </NAlert>
+          </n-alert>
           <div class="flex justify-end">
-            <NButton type="primary" @click="currentStep = 2"> 已安装，下一步 </NButton>
+            <n-button type="primary" @click="currentStep = 2">
+              {{ t('integrationConfig.extension.install.next') }}
+            </n-button>
           </div>
         </div>
 
         <!-- 步骤 2: 获取配置 -->
         <div v-if="currentStep === 2">
           <div class="mx-auto max-w-[500px]">
-            <NCard embedded class="mb-[16px] text-center">
+            <n-card embedded class="mb-[16px] text-center">
               <template #header>
                 <div class="flex items-center justify-center gap-[8px]">
-                  <NIcon size="20" color="#18a058"><FlashOutline /></NIcon>
-                  <span>一键配置</span>
+                  <n-icon size="20" color="#18a058"><FlashOutline /></n-icon>
+                  <span>{{ t('integrationConfig.extension.config.title') }}</span>
                 </div>
               </template>
-              <p class="mb-[16px] text-[var(--text-n2)]"
-                >点击下方按钮复制配置信息，然后在 Chrome 扩展中粘贴即可完成配置。</p
-              >
-              <NButton type="primary" size="large" block :loading="copyingConfig" @click="handleCopyConfig">
+              <p class="mb-[16px] text-[var(--text-n2)]">
+                {{ t('integrationConfig.extension.config.desc') }}
+              </p>
+              <n-button type="primary" size="large" block :loading="copyingConfig" @click="handleCopyConfig">
                 <template #icon>
-                  <NIcon><CopyOutline /></NIcon>
+                  <n-icon><CopyOutline /></n-icon>
                 </template>
-                一键复制配置
-              </NButton>
+                {{ t('integrationConfig.extension.config.copy') }}
+              </n-button>
               <div
                 v-if="configCopied"
                 class="mt-[12px] flex items-center justify-center gap-[4px] text-[var(--success-color)]"
               >
-                <NIcon><CheckmarkCircleOutline /></NIcon>
-                <span>配置已复制到剪贴板</span>
+                <n-icon><CheckmarkCircleOutline /></n-icon>
+                <span>{{ t('integrationConfig.extension.config.copied') }}</span>
               </div>
-            </NCard>
+            </n-card>
 
-            <NCollapse>
-              <NCollapseItem title="查看配置详情" name="details">
-                <NDescriptions label-placement="left" :column="1" bordered>
-                  <NDescriptionsItem label="CRM 地址">
-                    <NText code>{{ crmUrl }}</NText>
-                  </NDescriptionsItem>
-                  <NDescriptionsItem label="API Token">
+            <n-collapse>
+              <n-collapse-item :title="t('integrationConfig.extension.config.details')" name="details">
+                <n-descriptions label-placement="left" :column="1" bordered>
+                  <n-descriptions-item :label="t('integrationConfig.extension.config.crmUrl')">
+                    <n-text code>{{ crmUrl }}</n-text>
+                  </n-descriptions-item>
+                  <n-descriptions-item :label="t('integrationConfig.extension.config.token')">
                     <div class="flex items-center gap-[8px]">
-                      <NText code>{{ tokenDisplay }}</NText>
-                      <NButton text type="primary" size="small" @click="handleCopyToken">复制</NButton>
+                      <n-text code>{{ tokenDisplay }}</n-text>
+                      <n-button text type="primary" size="small" @click="handleCopyToken">
+                        {{ t('integrationConfig.common.copy') }}
+                      </n-button>
                     </div>
-                  </NDescriptionsItem>
-                </NDescriptions>
-              </NCollapseItem>
-            </NCollapse>
+                  </n-descriptions-item>
+                </n-descriptions>
+              </n-collapse-item>
+            </n-collapse>
           </div>
 
           <div class="mt-[24px] flex justify-end gap-[16px] border-t border-[var(--border-color)] pt-[16px]">
-            <NButton @click="currentStep = 1">上一步</NButton>
-            <NButton type="primary" @click="currentStep = 3">已复制，下一步</NButton>
+            <n-button @click="currentStep = 1">{{ t('integrationConfig.extension.config.prev') }}</n-button>
+            <n-button type="primary" @click="currentStep = 3">
+              {{ t('integrationConfig.extension.config.next') }}
+            </n-button>
           </div>
         </div>
 
         <!-- 步骤 3: 完成配置 -->
         <div v-if="currentStep === 3">
-          <NResult status="info" title="在扩展中完成配置" description="请按以下步骤完成最后的配置">
+          <n-result
+            status="info"
+            :title="t('integrationConfig.extension.complete.title')"
+            :description="t('integrationConfig.extension.complete.desc')"
+          >
             <template #footer>
               <ol class="list-decimal pl-[20px] text-left">
-                <li class="mb-[12px]">点击浏览器右上角的扩展图标</li>
-                <li class="mb-[12px]">找到「爱企查 CRM 助手」扩展并点击</li>
-                <li class="mb-[12px]">在弹出窗口中点击「粘贴配置」按钮</li>
-                <li class="mb-[12px]">点击「连接测试」验证配置是否正确</li>
-                <li>测试成功后点击「保存设置」</li>
+                <li class="mb-[12px]">{{ t('integrationConfig.extension.complete.step1') }}</li>
+                <li class="mb-[12px]">{{ t('integrationConfig.extension.complete.step2') }}</li>
+                <li class="mb-[12px]">{{ t('integrationConfig.extension.complete.step3') }}</li>
+                <li class="mb-[12px]">{{ t('integrationConfig.extension.complete.step4') }}</li>
+                <li>{{ t('integrationConfig.extension.complete.step5') }}</li>
               </ol>
             </template>
-          </NResult>
+          </n-result>
 
-          <NAlert type="warning" class="mt-[16px]">
-            <template #header>安全提示</template>
-            Token 是您的身份凭证，请勿泄露给他人。Token 有效期与登录会话一致。
-          </NAlert>
+          <n-alert type="warning" class="mt-[16px]">
+            <template #header>{{ t('integrationConfig.extension.complete.security') }}</template>
+            {{ t('integrationConfig.extension.complete.securityTip') }}
+          </n-alert>
 
           <div class="mt-[24px] flex justify-end gap-[16px] border-t border-[var(--border-color)] pt-[16px]">
-            <NButton @click="currentStep = 2">上一步</NButton>
-            <NButton type="primary" @click="currentStep = 1">重新开始</NButton>
+            <n-button @click="currentStep = 2">{{ t('integrationConfig.extension.config.prev') }}</n-button>
+            <n-button type="primary" @click="currentStep = 1">
+              {{ t('integrationConfig.extension.complete.restart') }}
+            </n-button>
           </div>
         </div>
       </CrmCard>
 
       <!-- 爱企查配置 -->
       <CrmCard v-if="activeTab === 'iqicha'" hide-footer auto-height>
-        <NForm :model="iqichaConfig" label-placement="left" label-width="120">
-          <NFormItem :label="t('integrationConfig.iqicha.cookie')">
-            <NInput
+        <n-form :model="iqichaConfig" label-placement="left" label-width="120">
+          <n-form-item :label="t('integrationConfig.iqicha.cookie')">
+            <n-input
               v-model:value="iqichaConfig.cookie"
               type="password"
               show-password-on="click"
               :placeholder="t('integrationConfig.iqicha.cookiePlaceholder')"
               style="max-width: 500px"
             />
-          </NFormItem>
-          <NFormItem>
-            <NSpace>
-              <NButton :loading="testingIqicha" @click="handleTestIqicha">
+          </n-form-item>
+          <n-form-item>
+            <n-space>
+              <n-button :loading="testingIqicha" @click="handleTestIqicha">
                 {{ t('integrationConfig.testConnection') }}
-              </NButton>
-              <NButton type="primary" :loading="savingIqicha" @click="handleSaveIqicha">
+              </n-button>
+              <n-button type="primary" :loading="savingIqicha" @click="handleSaveIqicha">
                 {{ t('integrationConfig.save') }}
-              </NButton>
-            </NSpace>
-          </NFormItem>
-        </NForm>
-        <NAlert type="info" :title="t('integrationConfig.iqicha.cookieTip')" class="mt-[16px]" />
+              </n-button>
+            </n-space>
+          </n-form-item>
+        </n-form>
+        <n-alert type="info" :title="t('integrationConfig.iqicha.cookieTip')" class="mt-[16px]" />
       </CrmCard>
 
       <!-- AI 服务配置 -->
       <CrmCard v-if="activeTab === 'ai'" hide-footer auto-height>
-        <NForm :model="aiConfig" label-placement="left" label-width="120">
-          <NFormItem :label="t('integrationConfig.ai.provider')">
-            <NSelect
+        <n-form :model="aiConfig" label-placement="left" label-width="120">
+          <n-form-item :label="t('integrationConfig.ai.provider')">
+            <n-select
               v-model:value="aiConfig.provider"
               :options="providerOptions"
               :placeholder="t('integrationConfig.ai.providerPlaceholder')"
               style="max-width: 300px"
               @update:value="handleProviderChange"
             />
-          </NFormItem>
+          </n-form-item>
 
-          <NFormItem :label="t('integrationConfig.ai.apiKey')">
-            <NInput
+          <n-form-item :label="t('integrationConfig.ai.apiKey')">
+            <n-input
               v-model:value="aiConfig.apiKey"
               type="password"
               show-password-on="click"
               :placeholder="t('integrationConfig.ai.apiKeyPlaceholder')"
               style="max-width: 500px"
             />
-          </NFormItem>
+          </n-form-item>
 
-          <NFormItem :label="t('integrationConfig.ai.model')">
-            <NSelect
+          <n-form-item :label="t('integrationConfig.ai.model')">
+            <n-select
               v-model:value="aiConfig.model"
               :options="modelOptions"
               :placeholder="t('integrationConfig.ai.modelPlaceholder')"
               style="max-width: 300px"
             />
-          </NFormItem>
+          </n-form-item>
 
-          <NFormItem :label="t('integrationConfig.ai.temperature')">
+          <n-form-item :label="t('integrationConfig.ai.temperature')">
             <div class="flex w-full max-w-[400px] items-center gap-[16px]">
-              <NSlider v-model:value="aiConfig.temperature" :min="0" :max="2" :step="0.1" class="flex-1" />
+              <n-slider v-model:value="aiConfig.temperature" :min="0" :max="2" :step="0.1" class="flex-1" />
               <span class="w-[40px] text-right font-medium">{{ aiConfig.temperature }}</span>
             </div>
-          </NFormItem>
-          <NFormItem>
-            <NText depth="3" class="text-[12px]">
+          </n-form-item>
+          <n-form-item>
+            <n-text depth="3" class="text-[12px]">
               {{ t('integrationConfig.ai.temperatureTip') }}
-            </NText>
-          </NFormItem>
+            </n-text>
+          </n-form-item>
 
-          <NFormItem :label="t('integrationConfig.ai.maxTokens')">
-            <NInputNumber v-model:value="aiConfig.maxTokens" :min="100" :max="32000" :step="100" style="width: 200px" />
-          </NFormItem>
-          <NFormItem>
-            <NText depth="3" class="text-[12px]">
+          <n-form-item :label="t('integrationConfig.ai.maxTokens')">
+            <n-input-number
+              v-model:value="aiConfig.maxTokens"
+              :min="100"
+              :max="32000"
+              :step="100"
+              style="width: 200px"
+            />
+          </n-form-item>
+          <n-form-item>
+            <n-text depth="3" class="text-[12px]">
               {{ t('integrationConfig.ai.maxTokensTip') }}
-            </NText>
-          </NFormItem>
+            </n-text>
+          </n-form-item>
 
-          <NFormItem>
-            <NSpace>
-              <NButton :loading="testingAI" @click="handleTestAI">
+          <n-form-item>
+            <n-space>
+              <n-button :loading="testingAI" @click="handleTestAI">
                 {{ t('integrationConfig.testConnection') }}
-              </NButton>
-              <NButton type="primary" :loading="savingAI" @click="handleSaveAI">
+              </n-button>
+              <n-button type="primary" :loading="savingAI" @click="handleSaveAI">
                 {{ t('integrationConfig.save') }}
-              </NButton>
-            </NSpace>
-          </NFormItem>
-        </NForm>
+              </n-button>
+            </n-space>
+          </n-form-item>
+        </n-form>
       </CrmCard>
     </div>
   </n-scrollbar>
 </template>
 
 <script lang="ts" setup>
+  import { computed, onMounted, ref } from 'vue';
   import {
     NAlert,
     NButton,
@@ -261,7 +286,7 @@
   async function handleCopyConfig() {
     const token = getToken();
     if (!token) {
-      message.warning('未找到有效的 Token，请确保已登录');
+      message.warning(t('integrationConfig.extension.config.noToken'));
       return;
     }
     copyingConfig.value = true;
@@ -269,31 +294,35 @@
       const config = { crmUrl: crmUrl.value, token, timestamp: Date.now() };
       await navigator.clipboard.writeText(JSON.stringify(config));
       configCopied.value = true;
-      message.success('配置已复制，请在 Chrome 扩展中粘贴');
+      message.success(t('integrationConfig.extension.config.copySuccess'));
       setTimeout(() => {
         configCopied.value = false;
       }, 3000);
     } catch {
-      message.error('复制失败，请手动复制');
+      message.error(t('integrationConfig.extension.config.copyFailed'));
     } finally {
       copyingConfig.value = false;
     }
   }
 
-  function handleCopyToken() {
+  async function handleCopyToken() {
     const token = getToken();
     if (!token) {
-      message.warning('未找到有效的 Token，请确保已登录');
+      message.warning(t('integrationConfig.extension.config.noToken'));
       return;
     }
-    navigator.clipboard.writeText(token);
-    message.success('Token 已复制到剪贴板');
+    try {
+      await navigator.clipboard.writeText(token);
+      message.success(t('integrationConfig.extension.config.tokenCopied'));
+    } catch {
+      message.error(t('integrationConfig.extension.config.copyFailed'));
+    }
   }
 
   function initTokenDisplay() {
     const token = getToken();
     if (!token) {
-      tokenDisplay.value = '未登录';
+      tokenDisplay.value = t('integrationConfig.extension.config.notLoggedIn');
       return;
     }
     tokenDisplay.value =
@@ -326,20 +355,20 @@
   const modelOptions = computed(() => {
     const models: Record<string, Array<{ label: string; value: string }>> = {
       openai: [
-        { label: 'GPT-4', value: 'gpt-4' },
-        { label: 'GPT-4 Turbo', value: 'gpt-4-turbo' },
-        { label: 'GPT-3.5 Turbo', value: 'gpt-3.5-turbo' },
+        { label: t('integrationConfig.model.gpt4'), value: 'gpt-4' },
+        { label: t('integrationConfig.model.gpt4turbo'), value: 'gpt-4-turbo' },
+        { label: t('integrationConfig.model.gpt35turbo'), value: 'gpt-3.5-turbo' },
       ],
       claude: [
-        { label: 'Claude 3 Opus', value: 'claude-3-opus' },
-        { label: 'Claude 3 Sonnet', value: 'claude-3-sonnet' },
-        { label: 'Claude 3 Haiku', value: 'claude-3-haiku' },
+        { label: t('integrationConfig.model.claude3opus'), value: 'claude-3-opus' },
+        { label: t('integrationConfig.model.claude3sonnet'), value: 'claude-3-sonnet' },
+        { label: t('integrationConfig.model.claude3haiku'), value: 'claude-3-haiku' },
       ],
-      maxkb: [{ label: 'MaxKB Default', value: 'maxkb-default' }],
+      maxkb: [{ label: t('integrationConfig.model.maxkbDefault'), value: 'maxkb-default' }],
       local: [
-        { label: 'Llama 3', value: 'llama-3' },
-        { label: 'Qwen 2', value: 'qwen-2' },
-        { label: 'ChatGLM 4', value: 'chatglm-4' },
+        { label: t('integrationConfig.model.llama3'), value: 'llama-3' },
+        { label: t('integrationConfig.model.qwen2'), value: 'qwen-2' },
+        { label: t('integrationConfig.model.chatglm4'), value: 'chatglm-4' },
       ],
     };
     return models[aiConfig.value.provider] || [];

@@ -149,10 +149,26 @@ public class RestControllerExceptionHandler {
                         e.getMessage(), getStackTraceAsString(e)));
     }
 
-    @ExceptionHandler({NoResourceFoundException.class, UnavailableSecurityManagerException.class})
-    public ResponseEntity<ResultHolder> handleNoResourceFoundException(NoResourceFoundException e) {
-        LogUtils.error("No static resource");
-        return null;
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ResultHolder> handleNoResourceFoundException(HttpServletRequest request, NoResourceFoundException e) {
+        String uri = request != null ? request.getRequestURI() : "unknown";
+        String method = request != null ? request.getMethod() : "unknown";
+        LogUtils.error("No static resource: " + method + " " + uri + " - " + e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ResultHolder.error(
+                        CrmHttpResultCode.NOT_FOUND.getCode(),
+                        getNotFoundMessage(CrmHttpResultCode.NOT_FOUND.getMessage()),
+                        uri));
+    }
+
+    @ExceptionHandler(UnavailableSecurityManagerException.class)
+    public ResponseEntity<ResultHolder> handleUnavailableSecurityManagerException(HttpServletRequest request, UnavailableSecurityManagerException e) {
+        String uri = request != null ? request.getRequestURI() : "unknown";
+        LogUtils.error("Security manager unavailable for: " + uri + " - " + e.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ResultHolder.error(
+                        HttpStatus.UNAUTHORIZED.value(),
+                        Translator.get("security.context.unavailable", "Security context not available")));
     }
 
     /**

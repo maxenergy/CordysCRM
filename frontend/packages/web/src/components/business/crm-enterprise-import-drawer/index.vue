@@ -245,28 +245,37 @@
     searching.value = true;
     hasSearched.value = true;
 
-    // 模拟搜索
-    setTimeout(() => {
-      searchResults.value = [
-        {
-          id: '1',
-          name: `${searchKeyword.value}科技有限公司`,
-          creditCode: '91110000MA00XXXXX',
-          legalPerson: '张三',
-          address: '北京市朝阳区xxx路xxx号',
-          industry: '软件和信息技术服务业',
-        },
-        {
-          id: '2',
-          name: `${searchKeyword.value}网络科技有限公司`,
-          creditCode: '91110000MA00YYYYY',
-          legalPerson: '李四',
-          address: '上海市浦东新区xxx路xxx号',
-          industry: '互联网和相关服务',
-        },
-      ];
+    try {
+      const response = await fetch(
+        `/api/enterprise/search?keyword=${encodeURIComponent(searchKeyword.value)}&page=1&pageSize=20`
+      );
+      const result = await response.json();
+
+      if (result.success && result.items) {
+        searchResults.value = result.items.map((item: any) => ({
+          id: item.pid || item.creditCode,
+          name: item.name,
+          creditCode: item.creditCode,
+          legalPerson: item.legalPerson,
+          address: item.address,
+          industry: item.industry || '',
+          status: item.status,
+          establishDate: item.establishDate,
+          registeredCapital: item.registeredCapital,
+        }));
+      } else {
+        searchResults.value = [];
+        if (result.message) {
+          Message.warning(result.message);
+        }
+      }
+    } catch (error) {
+      console.error('搜索失败:', error);
+      Message.error('搜索失败，请检查网络连接');
+      searchResults.value = [];
+    } finally {
       searching.value = false;
-    }, 500);
+    }
   }
 
   // 选择企业

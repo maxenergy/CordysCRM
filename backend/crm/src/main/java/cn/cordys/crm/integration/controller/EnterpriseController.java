@@ -5,13 +5,14 @@ import cn.cordys.crm.integration.domain.EnterpriseProfile;
 import cn.cordys.crm.integration.dto.request.EnterpriseImportRequest;
 import cn.cordys.crm.integration.dto.response.EnterpriseImportResponse;
 import cn.cordys.crm.integration.service.EnterpriseService;
+import cn.cordys.crm.integration.service.IqichaSearchService;
+import cn.cordys.crm.integration.service.IqichaSearchService.SearchResult;
+import cn.cordys.crm.integration.service.IqichaSearchService.EnterpriseDetail;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 /**
  * 企业信息导入控制器
@@ -28,6 +29,9 @@ public class EnterpriseController {
 
     @Resource
     private EnterpriseService enterpriseService;
+
+    @Resource
+    private IqichaSearchService iqichaSearchService;
 
     /**
      * 导入企业信息
@@ -92,5 +96,34 @@ public class EnterpriseController {
     public EnterpriseProfile getProfileByCreditCode(@PathVariable String creditCode) {
         String organizationId = OrganizationContext.getOrganizationId();
         return enterpriseService.findByCreditCode(creditCode, organizationId);
+    }
+
+    /**
+     * 搜索爱企查企业
+     * 
+     * @param keyword 搜索关键词
+     * @param page 页码（默认1）
+     * @param pageSize 每页数量（默认10）
+     * @return 搜索结果
+     */
+    @GetMapping("/search")
+    @Operation(summary = "搜索爱企查企业", description = "通过爱企查搜索企业信息")
+    public SearchResult searchEnterprise(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        return iqichaSearchService.searchEnterprise(keyword, page, pageSize);
+    }
+
+    /**
+     * 获取爱企查企业详情
+     * 
+     * @param pid 爱企查企业ID
+     * @return 企业详情
+     */
+    @GetMapping("/detail/{pid}")
+    @Operation(summary = "获取爱企查企业详情", description = "根据爱企查企业ID获取详细信息")
+    public EnterpriseDetail getEnterpriseDetail(@PathVariable String pid) {
+        return iqichaSearchService.getEnterpriseDetail(pid);
     }
 }

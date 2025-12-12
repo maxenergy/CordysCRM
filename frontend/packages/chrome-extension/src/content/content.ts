@@ -138,19 +138,26 @@ class ImportButtonManager {
   private isLoading = false;
   private isCopying = false;
 
+  /** 检测是否在爱企查网站 */
+  isAiqichaPage(): boolean {
+    return window.location.hostname.includes('aiqicha.baidu.com');
+  }
+
   /** 检测是否在企业详情页 */
   isEnterpriseDetailPage(): boolean {
     const url = window.location.href;
     return (
       url.includes('aiqicha.baidu.com/company_detail_') ||
-      url.includes('aiqicha.baidu.com/company/')
+      url.includes('aiqicha.baidu.com/company/') ||
+      url.includes('aiqicha.baidu.com/brand/detail') ||
+      url.includes('aiqicha.baidu.com/detail/')
     );
   }
 
   /** 初始化按钮 */
   async init(): Promise<void> {
-    // 如果不在企业详情页，移除按钮
-    if (!this.isEnterpriseDetailPage()) {
+    // 如果不在爱企查网站，移除按钮
+    if (!this.isAiqichaPage()) {
       this.destroy();
       return;
     }
@@ -164,7 +171,7 @@ class ImportButtonManager {
     await waitForPageLoad();
 
     this.createButton();
-    console.log('[CRM Extension] 导入按钮已注入');
+    console.log('[CRM Extension] 按钮已注入');
   }
 
   /** 创建按钮 */
@@ -185,18 +192,19 @@ class ImportButtonManager {
     const buttonContainer = document.createElement('div');
     buttonContainer.className = 'crm-import-container';
 
-    // 创建按钮
-    this.button = document.createElement('button');
-    this.button.className = 'crm-import-btn';
-    this.button.innerHTML = `
-      <span class="crm-import-btn-icon">${IMPORT_ICON}</span>
-      <span class="crm-import-btn-text">导入到 CRM</span>
-    `;
-    this.button.addEventListener('click', () => this.handleImport());
+    // 只在企业详情页显示"导入到 CRM"按钮
+    if (this.isEnterpriseDetailPage()) {
+      this.button = document.createElement('button');
+      this.button.className = 'crm-import-btn';
+      this.button.innerHTML = `
+        <span class="crm-import-btn-icon">${IMPORT_ICON}</span>
+        <span class="crm-import-btn-text">导入到 CRM</span>
+      `;
+      this.button.addEventListener('click', () => this.handleImport());
+      buttonContainer.appendChild(this.button);
+    }
 
-    buttonContainer.appendChild(this.button);
-
-    // 创建复制 Cookie 按钮
+    // 在所有爱企查页面显示"复制 Cookie"按钮
     this.copyButton = document.createElement('button');
     this.copyButton.className = 'crm-import-btn crm-copy-btn';
     this.copyButton.innerHTML = `

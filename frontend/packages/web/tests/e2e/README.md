@@ -88,10 +88,12 @@ npx playwright test --project=chromium-real-extension
 | 变量 | 说明 | 默认值 |
 |------|------|--------|
 | `CRM_BASE_URL` | CRM 前端地址 | `http://localhost:5173` |
-| `API_BASE_URL` | 后端 API 地址 | `http://localhost:8081` |
+| `E2E_API_BASE_URL` | 后端 API 地址 | `http://localhost:8081` |
 | `EXTENSION_PATH` | Chrome 扩展路径 | `../chrome-extension/dist` |
-| `TEST_USERNAME` | 测试账号用户名 | `admin` |
-| `TEST_PASSWORD` | 测试账号密码 | `admin123` |
+| `E2E_USERNAME` | 测试账号用户名 | `admin` |
+| `E2E_PASSWORD` | 测试账号密码 | `CordysCRM` |
+
+> **注意**: 所有 E2E 测试相关的环境变量统一使用 `E2E_` 前缀，以便区分和管理。
 
 ## Fake Extension Bridge
 

@@ -30,3 +30,11 @@ coverage
 pnpm-lock.yaml
 package-lock.json
 yarn.lock
+
+# E2E Test artifacts
+tests/e2e/.auth/
+tests/e2e/playwright-report/
+tests/e2e/test-results/
+tests/e2e/test-results.json
+**/test-results/
+**/playwright-report/

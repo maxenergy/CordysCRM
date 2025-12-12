@@ -33,6 +33,7 @@
     "vue3-colorpicker": "^2.3.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@types/sortablejs": "^1.15.6",
     "@vitejs/plugin-legacy": "^7.2.1",
     "@vitejs/plugin-vue": "^6.0.1",

@@ -180,7 +180,34 @@ function parseClipboardConfig(text: string): CRMConfigClipboard | null {
 /** 粘贴配置 */
 async function handlePasteConfig(elements: DOMElements): Promise<void> {
   try {
-    const text = await navigator.clipboard.readText();
+    let text = '';
+    
+    // 尝试使用 Clipboard API
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      try {
+        text = await navigator.clipboard.readText();
+      } catch (clipboardError) {
+        console.warn('Clipboard API failed, trying fallback:', clipboardError);
+        // 如果 Clipboard API 失败，提示用户手动粘贴
+        showStatus(
+          elements.statusMessage,
+          '无法自动读取剪贴板。请手动粘贴：先点击 CRM 地址输入框，然后按 Ctrl+V',
+          'error',
+          8000
+        );
+        elements.crmUrlInput.focus();
+        return;
+      }
+    } else {
+      showStatus(
+        elements.statusMessage,
+        '浏览器不支持剪贴板 API，请手动粘贴配置',
+        'error',
+        5000
+      );
+      return;
+    }
+    
     const config = parseClipboardConfig(text);
     
     if (!config) {
@@ -210,7 +237,7 @@ async function handlePasteConfig(elements: DOMElements): Promise<void> {
     // 可能是权限问题
     showStatus(
       elements.statusMessage,
-      '无法读取剪贴板，请确保已授予权限',
+      '无法读取剪贴板，请手动粘贴配置到输入框',
       'error',
       5000
     );
@@ -279,6 +306,32 @@ async function handleTest(elements: DOMElements): Promise<void> {
   }
 }
 
+/** 处理手动粘贴事件 - 自动解析 JSON 配置 */
+function handleManualPaste(event: ClipboardEvent, elements: DOMElements): void {
+  const text = event.clipboardData?.getData('text');
+  if (!text) return;
+  
+  const config = parseClipboardConfig(text);
+  if (config) {
+    // 阻止默认粘贴行为
+    event.preventDefault();
+    
+    // 填充表单
+    elements.crmUrlInput.value = config.crmUrl;
+    elements.jwtTokenInput.value = config.token;
+    
+    // 验证填充的值
+    const urlValid = handleUrlValidation(elements.crmUrlInput, elements.urlError);
+    const tokenValid = handleTokenValidation(elements.jwtTokenInput, elements.tokenError);
+    
+    if (urlValid && tokenValid) {
+      showStatus(elements.statusMessage, '配置已自动填充，请点击「连接测试」验证', 'success', 5000);
+    } else {
+      showStatus(elements.statusMessage, '配置已填充，但部分内容可能无效', 'error', 5000);
+    }
+  }
+}
+
 /** 初始化 */
 function init(): void {
   const elements = getDOMElements();
@@ -289,6 +342,14 @@ function init(): void {
   // 粘贴配置按钮
   elements.pasteConfigBtn.addEventListener('click', () => {
     handlePasteConfig(elements);
+  });
+
+  // 监听手动粘贴事件 - 在任意输入框粘贴 JSON 配置时自动解析
+  elements.crmUrlInput.addEventListener('paste', (e) => {
+    handleManualPaste(e, elements);
+  });
+  elements.jwtTokenInput.addEventListener('paste', (e) => {
+    handleManualPaste(e, elements);
   });
 
   // URL 输入验证

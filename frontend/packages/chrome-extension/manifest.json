@@ -3,7 +3,7 @@
   "name": "爱企查 CRM 助手",
   "version": "1.0.0",
   "description": "从爱企查网站一键导入企业信息到 CordysCRM 系统",
-  "permissions": ["storage", "activeTab", "clipboardRead"],
+  "permissions": ["storage", "activeTab", "clipboardRead", "cookies"],
   "host_permissions": ["*://*.aiqicha.baidu.com/*"],
   "action": {
     "default_popup": "src/popup/popup.html",

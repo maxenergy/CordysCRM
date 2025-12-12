@@ -20,7 +20,11 @@ interface TestConnectionMessage {
   type: 'TEST_CONNECTION';
 }
 
-type ExtensionMessage = ImportMessage | TestConnectionMessage;
+interface CookieRequestMessage {
+  type: 'GET_AIQICHA_COOKIES';
+}
+
+type ExtensionMessage = ImportMessage | TestConnectionMessage | CookieRequestMessage;
 
 /** 请求超时时间（毫秒） */
 const REQUEST_TIMEOUT = 10000;
@@ -212,6 +216,36 @@ chrome.runtime.onMessage.addListener(
           sendResponse({
             success: false,
             message: error instanceof Error ? error.message : '连接测试失败',
+          });
+        }
+      })();
+
+      return true;
+    }
+
+    if (message.type === 'GET_AIQICHA_COOKIES') {
+      // 异步获取爱企查 Cookie
+      (async () => {
+        try {
+          const cookies = await chrome.cookies.getAll({ url: 'https://aiqicha.baidu.com/' });
+          const cookieString = cookies.map((c) => `${c.name}=${c.value}`).join('; ');
+
+          if (!cookieString) {
+            sendResponse({
+              success: false,
+              message: '未获取到 Cookie，请确认已登录爱企查',
+            });
+            return;
+          }
+
+          sendResponse({
+            success: true,
+            cookies: cookieString,
+          });
+        } catch (error) {
+          sendResponse({
+            success: false,
+            message: error instanceof Error ? error.message : '获取 Cookie 失败',
           });
         }
       })();

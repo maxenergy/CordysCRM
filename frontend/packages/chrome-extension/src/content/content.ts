@@ -7,6 +7,13 @@ import { extractEnterpriseData, validateExtractedData, waitForPageLoad } from '.
 import { toast } from './toast';
 import type { EnterpriseImportRequest, EnterpriseImportResponse } from '../types/config';
 
+/** Cookie 响应类型 */
+interface CookieResponse {
+  success: boolean;
+  cookies?: string;
+  message?: string;
+}
+
 /** 按钮容器 ID */
 const BUTTON_CONTAINER_ID = 'crm-import-button-container';
 
@@ -17,6 +24,10 @@ const BUTTON_STYLES = `
     right: 24px;
     bottom: 120px;
     z-index: 2147483646;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-end;
   }
 
   .crm-import-btn {
@@ -91,6 +102,19 @@ const BUTTON_STYLES = `
     width: 24px;
     height: 24px;
   }
+
+  .crm-copy-btn {
+    background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+    box-shadow: 0 4px 16px rgba(82, 196, 26, 0.4);
+  }
+
+  .crm-copy-btn:hover {
+    box-shadow: 0 6px 20px rgba(82, 196, 26, 0.5);
+  }
+
+  .crm-copy-btn:active {
+    box-shadow: 0 2px 8px rgba(82, 196, 26, 0.4);
+  }
 `;
 
 /** 图标 SVG */
@@ -100,12 +124,19 @@ const IMPORT_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" 
   <line x1="12" y1="15" x2="12" y2="3"/>
 </svg>`;
 
+const COOKIE_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
+  <rect x="7" y="7" width="10" height="10" rx="1"/>
+</svg>`;
+
 /** 按钮管理器 */
 class ImportButtonManager {
   private container: HTMLElement | null = null;
   private shadowRoot: ShadowRoot | null = null;
   private button: HTMLButtonElement | null = null;
+  private copyButton: HTMLButtonElement | null = null;
   private isLoading = false;
+  private isCopying = false;
 
   /** 检测是否在企业详情页 */
   isEnterpriseDetailPage(): boolean {
@@ -164,6 +195,17 @@ class ImportButtonManager {
     this.button.addEventListener('click', () => this.handleImport());
 
     buttonContainer.appendChild(this.button);
+
+    // 创建复制 Cookie 按钮
+    this.copyButton = document.createElement('button');
+    this.copyButton.className = 'crm-import-btn crm-copy-btn';
+    this.copyButton.innerHTML = `
+      <span class="crm-import-btn-icon">${COOKIE_ICON}</span>
+      <span class="crm-import-btn-text">复制 Cookie</span>
+    `;
+    this.copyButton.addEventListener('click', () => this.handleCopyCookies());
+    buttonContainer.appendChild(this.copyButton);
+
     this.shadowRoot.appendChild(buttonContainer);
     document.body.appendChild(this.container);
   }
@@ -267,12 +309,88 @@ class ImportButtonManager {
     });
   }
 
+  /** 处理复制 Cookie */
+  private async handleCopyCookies(): Promise<void> {
+    if (this.isCopying) return;
+    this.isCopying = true;
+
+    const loadingToast = toast.loading('正在获取 Cookie...');
+
+    try {
+      const cookies = await this.requestCookies();
+      await this.copyTextToClipboard(cookies);
+
+      toast.update(loadingToast, {
+        type: 'success',
+        message: 'Cookie 已复制到剪贴板，请粘贴到 CRM 系统设置中',
+        duration: 5000,
+      });
+    } catch (error) {
+      console.error('[CRM Extension] Copy cookies error:', error);
+      toast.update(loadingToast, {
+        type: 'error',
+        message: error instanceof Error ? error.message : '获取 Cookie 失败',
+      });
+    } finally {
+      this.isCopying = false;
+    }
+  }
+
+  /** 请求 Background 获取 Cookie */
+  private requestCookies(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        { type: 'GET_AIQICHA_COOKIES' },
+        (response: CookieResponse) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+            return;
+          }
+
+          if (response?.success && response.cookies) {
+            resolve(response.cookies);
+          } else {
+            reject(new Error(response?.message || '未能获取 Cookie'));
+          }
+        }
+      );
+    });
+  }
+
+  /** 复制文本到剪贴板 */
+  private async copyTextToClipboard(text: string): Promise<void> {
+    if (!text) {
+      throw new Error('Cookie 为空，无法复制');
+    }
+
+    // 优先使用 Clipboard API
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    // 降级方案：使用 textarea
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const success = document.execCommand('copy');
+    textarea.remove();
+
+    if (!success) {
+      throw new Error('浏览器阻止了复制操作，请重试');
+    }
+  }
+
   /** 销毁按钮 */
   destroy(): void {
     this.container?.remove();
     this.container = null;
     this.shadowRoot = null;
     this.button = null;
+    this.copyButton = null;
   }
 }
 

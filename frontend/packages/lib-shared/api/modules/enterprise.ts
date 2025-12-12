@@ -4,6 +4,8 @@ import type { CordysAxios } from '@lib/shared/api/http/Axios';
 const EnterpriseSearchUrl = '/api/enterprise/search';
 const EnterpriseDetailUrl = '/api/enterprise/detail';
 const EnterpriseImportUrl = '/api/enterprise/import';
+const EnterpriseCookieUrl = '/api/enterprise/config/cookie';
+const EnterpriseCookieStatusUrl = '/api/enterprise/config/cookie/status';
 
 /** 企业搜索结果项 */
 export interface EnterpriseSearchItem {
@@ -74,9 +76,32 @@ export default function useEnterpriseApi(CDR: CordysAxios) {
     });
   }
 
+  /**
+   * 保存爱企查 Cookie
+   */
+  async function saveIqichaCookie(
+    cookie: string
+  ): Promise<{ success: boolean; message?: string }> {
+    return CDR.post({
+      url: EnterpriseCookieUrl,
+      data: { cookie },
+    });
+  }
+
+  /**
+   * 检查爱企查 Cookie 配置状态
+   */
+  async function checkIqichaCookieStatus(): Promise<{ configured: boolean }> {
+    return CDR.get({
+      url: EnterpriseCookieStatusUrl,
+    });
+  }
+
   return {
     searchEnterprise,
     getEnterpriseDetail,
     importEnterprise,
+    saveIqichaCookie,
+    checkIqichaCookieStatus,
   };
 }

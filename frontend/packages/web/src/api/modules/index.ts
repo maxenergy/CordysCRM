@@ -643,4 +643,5 @@ export const {
   getMkApplication,
 } = agentApi;
 
-export const { searchEnterprise, getEnterpriseDetail, importEnterprise } = enterpriseApi;
+export const { searchEnterprise, getEnterpriseDetail, importEnterprise, saveIqichaCookie, checkIqichaCookieStatus } =
+  enterpriseApi;

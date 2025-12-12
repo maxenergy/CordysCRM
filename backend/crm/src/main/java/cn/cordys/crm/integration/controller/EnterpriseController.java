@@ -5,6 +5,7 @@ import cn.cordys.crm.integration.domain.EnterpriseProfile;
 import cn.cordys.crm.integration.dto.request.EnterpriseImportRequest;
 import cn.cordys.crm.integration.dto.response.EnterpriseImportResponse;
 import cn.cordys.crm.integration.service.EnterpriseService;
+import cn.cordys.crm.integration.service.IntegrationConfigService;
 import cn.cordys.crm.integration.service.IqichaSearchService;
 import cn.cordys.crm.integration.service.IqichaSearchService.SearchResult;
 import cn.cordys.crm.integration.service.IqichaSearchService.EnterpriseDetail;
@@ -13,6 +14,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 /**
  * 企业信息导入控制器
@@ -32,6 +35,9 @@ public class EnterpriseController {
 
     @Resource
     private IqichaSearchService iqichaSearchService;
+
+    @Resource
+    private IntegrationConfigService integrationConfigService;
 
     /**
      * 导入企业信息
@@ -125,5 +131,37 @@ public class EnterpriseController {
     @Operation(summary = "获取爱企查企业详情", description = "根据爱企查企业ID获取详细信息")
     public EnterpriseDetail getEnterpriseDetail(@PathVariable String pid) {
         return iqichaSearchService.getEnterpriseDetail(pid);
+    }
+
+    /**
+     * 保存爱企查 Cookie
+     * 
+     * @param request 包含 cookie 字段的请求体
+     * @return 保存结果
+     */
+    @PostMapping("/config/cookie")
+    @Operation(summary = "保存爱企查Cookie", description = "保存爱企查登录Cookie用于企业搜索")
+    public Map<String, Object> saveIqichaCookie(@RequestBody Map<String, String> request) {
+        String organizationId = OrganizationContext.getOrganizationId();
+        String cookie = request.get("cookie");
+        if (cookie == null || cookie.isBlank()) {
+            return Map.of("success", false, "message", "Cookie 不能为空");
+        }
+        integrationConfigService.saveIqichaCookie(cookie, organizationId);
+        return Map.of("success", true, "message", "保存成功");
+    }
+
+    /**
+     * 检查爱企查 Cookie 是否已配置
+     * 
+     * @return 配置状态
+     */
+    @GetMapping("/config/cookie/status")
+    @Operation(summary = "检查爱企查Cookie状态", description = "检查是否已配置爱企查Cookie")
+    public Map<String, Object> checkIqichaCookieStatus() {
+        String organizationId = OrganizationContext.getOrganizationId();
+        boolean configured = integrationConfigService.hasConfig(
+            IntegrationConfigService.KEY_IQICHA_COOKIE, organizationId);
+        return Map.of("configured", configured);
     }
 }

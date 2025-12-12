@@ -261,6 +261,8 @@
   import CrmCard from '@/components/pure/crm-card/index.vue';
   import CrmTab from '@/components/pure/crm-tab/index.vue';
 
+  import { checkIqichaCookieStatus, saveIqichaCookie } from '@/api/modules';
+
   const { t } = useI18n();
   const message = useMessage();
 
@@ -402,10 +404,18 @@
   }
 
   async function handleSaveIqicha() {
+    if (!iqichaConfig.value.cookie) {
+      message.warning(t('integrationConfig.iqicha.cookiePlaceholder'));
+      return;
+    }
     savingIqicha.value = true;
     try {
-      await delay(500);
-      message.success(t('integrationConfig.saveSuccess'));
+      const result = await saveIqichaCookie(iqichaConfig.value.cookie);
+      if (result.success) {
+        message.success(t('integrationConfig.saveSuccess'));
+      } else {
+        message.error(result.message || t('integrationConfig.saveFailed'));
+      }
     } catch {
       message.error(t('integrationConfig.saveFailed'));
     } finally {

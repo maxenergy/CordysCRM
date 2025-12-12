@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "爱企查 CRM 助手",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "从爱企查网站一键导入企业信息到 CordysCRM 系统",
   "permissions": ["storage", "activeTab", "clipboardRead", "cookies"],
   "host_permissions": ["*://*.aiqicha.baidu.com/*"],
@@ -9,7 +9,8 @@
     "matches": [
       "http://localhost:*/*",
       "https://localhost:*/*",
-      "https://*.cordys.cn/*"
+      "https://*.cordys.cn/*",
+      "https://cordys.cn/*"
     ]
   },
   "action": {
@@ -26,6 +27,16 @@
       "js": ["content.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "http://localhost:*/*",
+        "https://localhost:*/*",
+        "https://*.cordys.cn/*",
+        "https://cordys.cn/*"
+      ],
+      "js": ["crm-bridge.js"],
+      "run_at": "document_start"
     }
   ]
 }

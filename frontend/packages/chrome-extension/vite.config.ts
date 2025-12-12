@@ -52,6 +52,7 @@ export default defineConfig({
         popup: resolve(__dirname, 'src/popup/popup.html'),
         background: resolve(__dirname, 'src/background/background.ts'),
         content: resolve(__dirname, 'src/content/content.ts'),
+        'crm-bridge': resolve(__dirname, 'src/content/crm-bridge.ts'),
       },
       output: {
         entryFileNames: (chunkInfo) => {
@@ -60,6 +61,9 @@ export default defineConfig({
           }
           if (chunkInfo.name === 'content') {
             return 'content.js';
+          }
+          if (chunkInfo.name === 'crm-bridge') {
+            return 'crm-bridge.js';
           }
           return '[name].js';
         },

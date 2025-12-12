@@ -350,8 +350,16 @@ const useAppStore = defineStore('app', {
       // TODO license 先放开
       // const licenseStore = useLicenseStore();
       // if (!licenseStore.hasLicense()) return;
-      const res = await getThirdConfigByType(CompanyTypeEnum.SQLBot);
-      await loadScript(res.appSecret as string, { identifier: CompanyTypeEnum.SQLBot });
+      try {
+        const res = await getThirdConfigByType(CompanyTypeEnum.SQLBot);
+        if (res?.appSecret) {
+          await loadScript(res.appSecret as string, { identifier: CompanyTypeEnum.SQLBot });
+        }
+      } catch (error) {
+        // SQLBot 未配置时静默忽略错误
+        // eslint-disable-next-line no-console
+        console.debug('[SQLBot] Not configured, skipping initialization');
+      }
     },
 
     // 初始化页面配置

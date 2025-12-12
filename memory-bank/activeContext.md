@@ -1,9 +1,35 @@
 # σ₄: Active Context
 *v1.0 | Created: 2025-12-12 | Updated: 2025-12-12*
-*Π: DEVELOPMENT | Ω: RESEARCH*
+*Π: DEVELOPMENT | Ω: EXECUTE*
 
 ## 🔮 Current Focus
-修复爱企查 Cookie 保存功能的 "No static resource" 错误
+修复爱企查搜索功能 "解析响应失败" 错误
+
+## ✅ 已解决的问题
+
+### 问题 2: 爱企查搜索功能 - "解析响应失败"
+
+**错误现象**:
+- 用户搜索企业名称后,提示"解析响应失败"
+- 前端显示"未找到相关企业"
+
+**根本原因**:
+- 后端日志显示: `JsonParseException: Unexpected character ('<' (code 60))`
+- 爱企查返回了 HTML 页面(登录页/验证码页)而不是 JSON 数据
+- 原因: **Cookie 已过期或无效**
+
+**代码问题**:
+- `IqichaSearchService.parseSearchResponse()` 方法中
+- HTML 检查逻辑在 `try` 块内部,导致 JSON 解析先执行
+- JSON 解析失败后,HTML 检查逻辑无法执行
+
+**修复方案**:
+1. 将 HTML 检查逻辑移到 `try` 块外部,先于 JSON 解析执行
+2. 添加针对 `JsonParseException` 的专门处理
+3. 提供更友好的错误消息,引导用户重新配置 Cookie
+
+**修改文件**:
+- `backend/crm/src/main/java/cn/cordys/crm/integration/service/IqichaSearchService.java`
 
 ## 🔍 问题分析
 

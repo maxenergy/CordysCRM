@@ -54,83 +54,158 @@ export default function useEnterpriseApi(CDR: CordysAxios) {
   }
 
   /**
+   * 检查扩展是否可用（通过 content script 注入的 meta 标签）
+   */
+  function isExtensionAvailable(): boolean {
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="aiqicha-extension-ready"]');
+    return meta?.content === 'true';
+  }
+
+  /**
+   * 等待扩展就绪（通过 postMessage ping/pong）
+   */
+  function waitForExtension(timeout = 1500): Promise<boolean> {
+    return new Promise((resolve) => {
+      // 先检查 meta 标签
+      if (isExtensionAvailable()) {
+        resolve(true);
+        return;
+      }
+
+      let resolved = false;
+      let timeoutId: ReturnType<typeof setTimeout>;
+
+      // 监听 pong 响应
+      const handler = (event: MessageEvent) => {
+        // 安全检查：只接受来自同源的消息
+        if (event.origin !== location.origin || event.source !== window) {
+          return;
+        }
+        if (event.data?.type === 'AIQICHA_EXTENSION_PONG' && event.data?.available) {
+          resolved = true;
+          clearTimeout(timeoutId);
+          window.removeEventListener('message', handler);
+          resolve(true);
+        }
+      };
+      window.addEventListener('message', handler);
+
+      // 发送 ping 请求（指定 targetOrigin）
+      window.postMessage({ type: 'AIQICHA_EXTENSION_PING' }, location.origin);
+
+      // 超时处理
+      timeoutId = setTimeout(() => {
+        if (!resolved) {
+          window.removeEventListener('message', handler);
+          // 最后再检查一次 meta 标签
+          resolve(isExtensionAvailable());
+        }
+      }, timeout);
+    });
+  }
+
+  /** 生成唯一请求 ID */
+  function generateRequestId(): string {
+    return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  }
+
+  /**
    * 通过 Chrome 扩展搜索爱企查企业
-   * 利用用户浏览器环境绑过反爬虫机制
+   * 使用 window.postMessage 与 content script 通信，更安全可靠
    * @param keyword 搜索关键词
    * @param page 页码
    * @param pageSize 每页数量
-   * @param extensionId 扩展 ID（可选，用于 externally_connectable）
    */
   async function searchEnterpriseViaExtension(
     keyword: string,
     page = 1,
-    pageSize = 20,
-    extensionId?: string
+    pageSize = 20
   ): Promise<EnterpriseSearchResponse> {
-    // 检查 Chrome 扩展是否可用
-    const runtime = (globalThis as { chrome?: { runtime?: unknown } })?.chrome?.runtime as
-      | {
-          sendMessage: (
-            extensionIdOrMessage: string | object,
-            messageOrCallback: object | ((response: unknown) => void),
-            callback?: (response: unknown) => void
-          ) => void;
-          lastError?: { message?: string };
-        }
-      | undefined;
-
-    if (!runtime?.sendMessage) {
+    // 检查扩展是否可用
+    const available = await waitForExtension(1000);
+    
+    if (!available) {
       return {
         success: false,
-        message: '请安装并启用"爱企查 CRM 助手"Chrome 扩展',
+        message: '请安装并启用"爱企查 CRM 助手"Chrome 扩展，然后刷新页面',
         items: [],
         total: 0,
         errorCode: 'EXT_UNAVAILABLE',
       };
     }
 
-    const payload = {
-      type: 'SEARCH_AIQICHA',
-      keyword,
-      page,
-      pageSize,
-    };
+    const requestId = generateRequestId();
+    const REQUEST_TIMEOUT = 15000; // 15 秒超时
 
     return new Promise<EnterpriseSearchResponse>((resolve) => {
-      const callback = (response: unknown) => {
-        const lastError = runtime?.lastError;
-        if (lastError) {
-          resolve({
-            success: false,
-            message: lastError.message || '扩展通信失败，请确保扩展已启用',
-            items: [],
-            total: 0,
-            errorCode: 'EXT_COMMUNICATION_ERROR',
-          });
+      let resolved = false;
+      let timeoutId: ReturnType<typeof setTimeout>;
+
+      // 监听响应
+      const handler = (event: MessageEvent) => {
+        // 安全检查：只接受来自同源的消息
+        if (event.origin !== location.origin || event.source !== window) {
           return;
         }
+        
+        const data = event.data;
+        if (data?.type === 'AIQICHA_SEARCH_RESPONSE' && data?.requestId === requestId) {
+          resolved = true;
+          clearTimeout(timeoutId);
+          window.removeEventListener('message', handler);
+          
+          if (data.success) {
+            resolve({
+              success: true,
+              items: (data.items || []).map((item: Record<string, unknown>) => ({
+                pid: String(item?.pid || ''),
+                name: String(item?.name || ''),
+                creditCode: item?.creditCode as string | undefined,
+                legalPerson: item?.legalPerson as string | undefined,
+                address: item?.address as string | undefined,
+                status: item?.status as string | undefined,
+                establishDate: item?.establishDate as string | undefined,
+                registeredCapital: item?.registeredCapital as string | undefined,
+                industry: item?.industry as string | undefined,
+              })),
+              total: Number(data.total || 0),
+            });
+          } else {
+            resolve({
+              success: false,
+              message: data.message || '搜索失败',
+              items: [],
+              total: 0,
+            });
+          }
+        }
+      };
+      window.addEventListener('message', handler);
 
-        if (!response) {
+      // 发送搜索请求（指定 targetOrigin）
+      // eslint-disable-next-line no-console
+      console.log('[Enterprise Search] Sending search request via postMessage');
+      window.postMessage({
+        type: 'AIQICHA_SEARCH_REQUEST',
+        requestId,
+        keyword,
+        page,
+        pageSize,
+      }, location.origin);
+
+      // 超时处理
+      timeoutId = setTimeout(() => {
+        if (!resolved) {
+          window.removeEventListener('message', handler);
           resolve({
             success: false,
-            message: '扩展未响应，请确保扩展已正确安装',
+            message: '搜索请求超时，请重试',
             items: [],
             total: 0,
             errorCode: 'EXT_NO_RESPONSE',
           });
-          return;
         }
-
-        resolve(response as EnterpriseSearchResponse);
-      };
-
-      // 如果提供了扩展 ID，使用 externally_connectable 方式
-      if (extensionId) {
-        runtime.sendMessage(extensionId, payload, callback);
-      } else {
-        // 否则尝试直接发送（需要在扩展的 content script 中）
-        runtime.sendMessage(payload, callback);
-      }
+      }, REQUEST_TIMEOUT);
     });
   }
 

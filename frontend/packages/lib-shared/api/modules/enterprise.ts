@@ -1,50 +1,82 @@
 import type { CordysAxios } from '@lib/shared/api/http/Axios';
-import {
-  SearchEnterpriseUrl,
-  ImportEnterpriseUrl,
-  CheckEnterpriseUrl,
-} from '@lib/shared/api/requrls/enterprise';
-import type {
-  EnterpriseSearchResult,
-  EnterpriseImportParams,
-  EnterpriseImportResponse,
-  EnterpriseCheckResult,
-} from '@lib/shared/models/enterprise';
+
+/** 企业搜索 API URLs */
+const EnterpriseSearchUrl = '/api/enterprise/search';
+const EnterpriseDetailUrl = '/api/enterprise/detail';
+const EnterpriseImportUrl = '/api/enterprise/import';
+
+/** 企业搜索结果项 */
+export interface EnterpriseSearchItem {
+  pid: string;
+  name: string;
+  creditCode?: string;
+  legalPerson?: string;
+  address?: string;
+  status?: string;
+  establishDate?: string;
+  registeredCapital?: string;
+  industry?: string;
+}
+
+/** 企业搜索响应 */
+export interface EnterpriseSearchResponse {
+  success: boolean;
+  message?: string;
+  items: EnterpriseSearchItem[];
+  total: number;
+}
+
+/** 企业详情 */
+export interface EnterpriseDetail extends EnterpriseSearchItem {
+  phone?: string;
+  email?: string;
+  website?: string;
+  scope?: string;
+}
 
 export default function useEnterpriseApi(CDR: CordysAxios) {
   /**
-   * 搜索企业
+   * 搜索爱企查企业
    */
-  function searchEnterprise(keyword: string) {
-    return CDR.get<EnterpriseSearchResult[]>({
-      url: SearchEnterpriseUrl,
-      params: { keyword },
+  async function searchEnterprise(
+    keyword: string,
+    page = 1,
+    pageSize = 20
+  ): Promise<EnterpriseSearchResponse> {
+    return CDR.get<EnterpriseSearchResponse>({
+      url: EnterpriseSearchUrl,
+      params: { keyword, page, pageSize },
     });
   }
 
   /**
-   * 导入企业
+   * 获取企业详情
    */
-  function importEnterprise(data: EnterpriseImportParams) {
-    return CDR.post<EnterpriseImportResponse>({
-      url: ImportEnterpriseUrl,
+  async function getEnterpriseDetail(pid: string): Promise<EnterpriseDetail | null> {
+    return CDR.get<EnterpriseDetail | null>({
+      url: `${EnterpriseDetailUrl}/${pid}`,
+    });
+  }
+
+  /**
+   * 导入企业到 CRM
+   */
+  async function importEnterprise(data: {
+    companyName: string;
+    creditCode?: string;
+    legalPerson?: string;
+    address?: string;
+    industry?: string;
+  }): Promise<{ success: boolean; message?: string; customerId?: string }> {
+    return CDR.post({
+      url: EnterpriseImportUrl,
       data,
-    });
-  }
-
-  /**
-   * 检查企业是否已存在
-   */
-  function checkEnterprise(creditCode: string) {
-    return CDR.get<EnterpriseCheckResult>({
-      url: CheckEnterpriseUrl,
-      params: { creditCode },
     });
   }
 
   return {
     searchEnterprise,
+    getEnterpriseDetail,
     importEnterprise,
-    checkEnterprise,
   };
 }

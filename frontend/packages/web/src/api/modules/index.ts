@@ -4,6 +4,7 @@ import useClueApi from '@lib/shared/api/modules/clue';
 import useContractApi from '@lib/shared/api/modules/contract';
 import useCustomerApi from '@lib/shared/api/modules/customer';
 import useDashboard from '@lib/shared/api/modules/dashboard';
+import useEnterpriseApi from '@lib/shared/api/modules/enterprise';
 import useFollowApi from '@lib/shared/api/modules/follow';
 import useHomeApi from '@lib/shared/api/modules/home';
 import useOpportunityApi from '@lib/shared/api/modules/opportunity';
@@ -45,6 +46,7 @@ const businessApi = useBusinessApi(CDR);
 const dashboardApi = useDashboard(CDR);
 const opportunityApi = useOpportunityApi(CDR);
 const contractApi = useContractApi(CDR);
+const enterpriseApi = useEnterpriseApi(CDR);
 
 export const {
   getFollowPlanTab,
@@ -640,3 +642,5 @@ export const {
   agentApplicationOptions,
   getMkApplication,
 } = agentApi;
+
+export const { searchEnterprise, getEnterpriseDetail, importEnterprise } = enterpriseApi;

@@ -151,6 +151,8 @@
 
   import { useI18n } from '@lib/shared/hooks/useI18n';
 
+  import { searchEnterprise } from '@/api/modules';
+
   interface EnterpriseItem {
     id: string;
     name: string;
@@ -246,22 +248,16 @@
     hasSearched.value = true;
 
     try {
-      const response = await fetch(
-        `/api/enterprise/search?keyword=${encodeURIComponent(searchKeyword.value)}&page=1&pageSize=20`
-      );
-      const result = await response.json();
+      const result = await searchEnterprise(searchKeyword.value.trim(), 1, 20);
 
       if (result.success && result.items) {
-        searchResults.value = result.items.map((item: any) => ({
-          id: item.pid || item.creditCode,
+        searchResults.value = result.items.map((item) => ({
+          id: item.pid || item.creditCode || '',
           name: item.name,
           creditCode: item.creditCode,
           legalPerson: item.legalPerson,
           address: item.address,
           industry: item.industry || '',
-          status: item.status,
-          establishDate: item.establishDate,
-          registeredCapital: item.registeredCapital,
         }));
       } else {
         searchResults.value = [];
@@ -269,9 +265,10 @@
           Message.warning(result.message);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('搜索失败:', error);
-      Message.error('搜索失败，请检查网络连接');
+      const errorMsg = error?.message || error?.msg || '搜索失败，请检查网络连接';
+      Message.error(errorMsg);
       searchResults.value = [];
     } finally {
       searching.value = false;

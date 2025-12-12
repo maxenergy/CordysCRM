@@ -205,7 +205,29 @@
 </template>
 
 <script lang="ts" setup>
-  import { NScrollbar, useMessage } from 'naive-ui';
+  import {
+    NAlert,
+    NButton,
+    NCard,
+    NCollapse,
+    NCollapseItem,
+    NDescriptions,
+    NDescriptionsItem,
+    NForm,
+    NFormItem,
+    NIcon,
+    NInput,
+    NInputNumber,
+    NResult,
+    NScrollbar,
+    NSelect,
+    NSlider,
+    NSpace,
+    NStep,
+    NSteps,
+    NText,
+    useMessage,
+  } from 'naive-ui';
   import { CheckmarkCircleOutline, CopyOutline, FlashOutline } from '@vicons/ionicons5';
 
   import { useI18n } from '@lib/shared/hooks/useI18n';

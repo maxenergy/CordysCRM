@@ -19,7 +19,16 @@ export default mergeConfig(
         '/front/api': {
           target: process.env.VITE_DEV_DOMAIN,
           changeOrigin: true,
-          rewrite: (path: string) => path.replace(/^\/front/, ''),
+          rewrite: (path: string) => {
+            const newPath = path.replace(/^\/front/, '');
+            console.log(`[Vite Proxy] /front/api: ${path} -> ${newPath}`);
+            return newPath;
+          },
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq, req) => {
+              console.log(`[Vite Proxy] Forwarding: ${req.method} ${req.url} -> ${proxyReq.path}`);
+            });
+          },
         },
         '/front/sse': {
           target: process.env.VITE_DEV_DOMAIN,

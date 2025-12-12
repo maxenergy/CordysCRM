@@ -162,7 +162,7 @@
     - 实现保存按钮，数据存储到 chrome.storage.local
     - 实现连接测试功能
     - _Requirements: 2.1_
-  - [ ]* 12.3 编写配置存储的属性测试
+  - [x]* 12.3 编写配置存储的属性测试
     - **Property 5: 配置存储往返一致性**
     - **Validates: Requirements 2.1**
 
@@ -180,7 +180,7 @@
     - 提取注册地址、行业、人员规模
     - 使用 MutationObserver 处理动态加载
     - _Requirements: 2.3_
-  - [ ]* 13.3 编写 DOM 提取的属性测试
+  - [x]* 13.3 编写 DOM 提取的属性测试
     - **Property 6: DOM数据提取完整性**
     - **Validates: Requirements 2.3**
   - [x] 13.4 实现反馈 Toast 组件
@@ -197,7 +197,7 @@
     - 使用 fetch 调用 POST /api/enterprise/import
     - 设置 Authorization: Bearer {token} 头
     - _Requirements: 2.4_
-  - [ ]* 14.2 编写 API 请求格式的属性测试
+  - [x]* 14.2 编写 API 请求格式的属性测试
     - **Property 7: API请求格式正确性**
     - **Validates: Requirements 2.4**
   - [x] 14.3 实现错误处理和重试逻辑
@@ -273,7 +273,7 @@
     - 实现 CRUD 操作
     - 实现按 syncStatus 查询待同步数据
     - _Requirements: 1.6_
-  - [ ]* 18.3 编写离线缓存的属性测试
+  - [x]* 18.3 编写离线缓存的属性测试
     - **Property 3: 离线数据缓存完整性**
     - **Validates: Requirements 1.6**
 
@@ -292,7 +292,7 @@
     - 实现下拉刷新 RefreshIndicator
     - 列表项显示：客户名称、联系人、最近跟进时间
     - _Requirements: 1.3_
-  - [ ]* 20.2 编写分页数据的属性测试
+  - [x]* 20.2 编写分页数据的属性测试
     - **Property 1: 分页数据一致性**
     - **Validates: Requirements 1.3**
   - [x] 20.3 创建客户详情页面
@@ -308,7 +308,7 @@
     - 实现验证规则：手机号格式、邮箱格式
     - 保存时调用 API 或存入本地队列（离线时）
     - _Requirements: 1.4_
-  - [ ]* 20.5 编写表单验证的属性测试
+  - [x]* 20.5 编写表单验证的属性测试
     - **Property 2: 表单验证规则一致性**
     - **Validates: Requirements 1.4**
 
@@ -344,7 +344,7 @@
     - 上传本地 syncStatus = pending 的数据
     - 处理冲突：服务器优先或提示用户选择
     - _Requirements: 1.7_
-  - [ ]* 22.3 编写同步数据一致性的属性测试
+  - [x]* 22.3 编写同步数据一致性的属性测试
     - **Property 4: 离线同步数据一致性**
     - **Validates: Requirements 1.7**
 
@@ -368,7 +368,7 @@
     - 存储到 FlutterSecureStorage（加密）
     - 下次打开时自动恢复 Cookie（支持多域名）
     - _Requirements: 3.2_
-  - [ ]* 24.3 编写会话持久性的属性测试
+  - [x]* 24.3 编写会话持久性的属性测试
     - **Property 10: WebView会话持久性**
     - **Validates: Requirements 3.2**
   - [x] 24.4 实现 JavaScript 注入
@@ -383,7 +383,7 @@
     - 提供"关联现有客户"或"创建新客户"选项
     - 确认后调用 POST /api/enterprise/import
     - _Requirements: 3.5, 3.6_
-  - [ ]* 24.6 编写数据保存的属性测试
+  - [x]* 24.6 编写数据保存的属性测试
     - **Property 11: 企业数据保存完整性**
     - **Validates: Requirements 3.6**
   - [x] 24.7 实现会话失效检测
@@ -392,7 +392,7 @@
     - 检测 401/403 响应
     - 显示 Dialog 提示用户重新登录
     - _Requirements: 3.7_
-  - [ ]* 24.8 编写会话失效检测的属性测试
+  - [x]* 24.8 编写会话失效检测的属性测试
     - **Property 12: 会话失效检测准确性**
     - **Validates: Requirements 3.7**
 
@@ -403,7 +403,7 @@
     - 应用进入前台时检测
     - 显示提示"检测到企业信息，是否搜索？"
     - _Requirements: 4.1_
-  - [ ]* 25.2 编写企业名称识别的属性测试
+  - [x]* 25.2 编写企业名称识别的属性测试
     - **Property 13: 剪贴板企业名称识别**
     - **Validates: Requirements 4.1**
   - [x] 25.3 实现分享接收
@@ -412,7 +412,7 @@
     - 解析 aiqicha.baidu.com/company_detail_* 链接
     - 提取企业 ID 并跳转到 WebView
     - _Requirements: 4.2_
-  - [ ]* 25.4 编写链接解析的属性测试
+  - [x]* 25.4 编写链接解析的属性测试
     - **Property 14: 爱企查链接解析**
     - **Validates: Requirements 4.2**
   - [x] 25.5 实现手动搜索
@@ -422,7 +422,7 @@
     - 显示候选企业列表（名称、信用代码、法人）
     - 点击跳转到 WebView 详情页
     - _Requirements: 4.3_
-  - [ ]* 25.6 编写搜索结果的属性测试
+  - [x]* 25.6 编写搜索结果的属性测试
     - **Property 15: 企业搜索结果相关性**
     - **Validates: Requirements 4.3**
 
@@ -542,7 +542,7 @@
     - 支持搜索、启用/禁用、删除操作
     - 添加路由配置
     - _Requirements: 7.1_
-  - [ ]* 33.2 编写模板分类的属性测试
+  - [x]* 33.2 编写模板分类的属性测试
     - **Property 24: 模板列表分类正确性**
     - **Validates: Requirements 7.1**
   - [x] 33.3 创建模板编辑页面
@@ -552,7 +552,7 @@
     - 变量列表提示
     - 预览功能
     - _Requirements: 7.2, 7.3_
-  - [ ]* 33.4 编写模板状态的属性测试
+  - [x]* 33.4 编写模板状态的属性测试
     - **Property 25: 模板状态影响可用性**
     - **Validates: Requirements 7.5**
 

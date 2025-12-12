@@ -82,19 +82,10 @@ export default function useEnterpriseApi(CDR: CordysAxios) {
   async function saveIqichaCookie(
     cookie: string
   ): Promise<{ success: boolean; message?: string }> {
-    console.log('[DEBUG API] 发送保存Cookie请求, URL:', EnterpriseCookieUrl);
-    console.log('[DEBUG API] 请求数据:', { cookie: cookie.substring(0, 50) + '...' });
-    try {
-      const result = await CDR.post<{ success: boolean; message?: string }>({
-        url: EnterpriseCookieUrl,
-        data: { cookie },
-      });
-      console.log('[DEBUG API] 响应结果:', result);
-      return result;
-    } catch (error) {
-      console.error('[DEBUG API] 请求异常:', error);
-      throw error;
-    }
+    return CDR.post<{ success: boolean; message?: string }>({
+      url: EnterpriseCookieUrl,
+      data: { cookie },
+    });
   }
 
   /**

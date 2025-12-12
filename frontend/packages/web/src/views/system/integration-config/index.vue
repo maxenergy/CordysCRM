@@ -409,17 +409,14 @@
       return;
     }
     savingIqicha.value = true;
-    console.log('[DEBUG] 开始保存爱企查Cookie, cookie长度:', iqichaConfig.value.cookie.length);
     try {
       const result = await saveIqichaCookie(iqichaConfig.value.cookie);
-      console.log('[DEBUG] 保存爱企查Cookie响应:', result);
       if (result.success) {
         message.success(t('integrationConfig.saveSuccess'));
       } else {
         message.error(result.message || t('integrationConfig.saveFailed'));
       }
-    } catch (error) {
-      console.error('[DEBUG] 保存爱企查Cookie异常:', error);
+    } catch {
       message.error(t('integrationConfig.saveFailed'));
     } finally {
       savingIqicha.value = false;

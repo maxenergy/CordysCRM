@@ -68,6 +68,10 @@ public class ShiroConfig {
 
         chain.putAll(ShiroFilter.loadBaseFilterChain());
         chain.putAll(ShiroFilter.ignoreCsrfFilter());
+        
+        // 企业集成配置接口：需要认证但跳过 CSRF 验证
+        // 必须在 /** 规则之前添加，否则会被覆盖
+        chain.put("/api/enterprise/config/**", "apikey, authc");
 
         // 配置自定义的过滤器链
         configureXFilter(chain, filters);

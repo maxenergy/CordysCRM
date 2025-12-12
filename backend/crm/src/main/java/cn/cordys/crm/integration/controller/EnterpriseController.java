@@ -136,16 +136,6 @@ public class EnterpriseController {
     }
 
     /**
-     * 测试端点 - 用于验证路由是否正确注册
-     */
-    @GetMapping("/config/test")
-    @Operation(summary = "测试端点", description = "用于验证路由是否正确注册")
-    public Map<String, Object> testEndpoint() {
-        log.info("[DEBUG] 测试端点被调用");
-        return Map.of("success", true, "message", "路由正常", "timestamp", System.currentTimeMillis());
-    }
-
-    /**
      * 保存爱企查 Cookie
      * 
      * @param request 包含 cookie 字段的请求体
@@ -154,7 +144,6 @@ public class EnterpriseController {
     @PostMapping("/config/cookie")
     @Operation(summary = "保存爱企查Cookie", description = "保存爱企查登录Cookie用于企业搜索")
     public Map<String, Object> saveIqichaCookie(@RequestBody(required = false) Map<String, String> request) {
-        log.info("[DEBUG] saveIqichaCookie 方法被调用, request={}", request);
         try {
             // 验证请求参数
             if (request == null) {

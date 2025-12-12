@@ -266,7 +266,6 @@
         }
       }
     } catch (error: any) {
-      console.error('搜索失败:', error);
       const errorMsg = error?.message || error?.msg || '搜索失败，请检查网络连接';
       Message.error(errorMsg);
       searchResults.value = [];

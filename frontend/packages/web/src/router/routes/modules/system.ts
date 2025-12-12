@@ -76,6 +76,15 @@ const system: AppRouteRecordRaw = {
         permissions: ['OPERATION_LOG:READ'],
       },
     },
+    {
+      path: 'integration',
+      name: SystemRouteEnum.SYSTEM_INTEGRATION,
+      component: () => import('@/views/system/integration-config/index.vue'),
+      meta: {
+        locale: 'menu.settings.integration',
+        permissions: ['SYSTEM_SETTING:READ'],
+      },
+    },
   ],
 };
 

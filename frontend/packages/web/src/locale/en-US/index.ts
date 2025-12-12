@@ -39,6 +39,7 @@ export default {
     'menu.settings.license': 'License',
     'menu.settings.messageSetting': 'Notification',
     'menu.settings.log': 'Logs',
+    'menu.settings.integration': 'Integration',
     'navbar.action.locale': 'Switch to English',
     ...sys,
     ...localeSettings,

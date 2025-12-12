@@ -109,6 +109,12 @@ public class IntegrationConfigService {
             valueToStore = encryptionService.encrypt(configValue);
         }
 
+        // 获取用户ID，如果为空则使用系统用户
+        String userId = SessionUtils.getUserId();
+        if (userId == null || userId.isBlank()) {
+            userId = "system";
+        }
+        
         IntegrationConfig config = new IntegrationConfig();
         config.setId(IDGenerator.nextStr());
         config.setConfigKey(configKey);
@@ -118,8 +124,8 @@ public class IntegrationConfigService {
         config.setDescription(description);
         config.setCreateTime(System.currentTimeMillis());
         config.setUpdateTime(System.currentTimeMillis());
-        config.setCreateUser(SessionUtils.getUserId());
-        config.setUpdateUser(SessionUtils.getUserId());
+        config.setCreateUser(userId);
+        config.setUpdateUser(userId);
 
         extConfigMapper.upsert(config);
     }

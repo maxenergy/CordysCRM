@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -25,6 +26,7 @@ import java.util.Map;
  * @author cordys
  * @date 2025-12-10
  */
+@Slf4j
 @Tag(name = "企业信息导入")
 @RestController
 @RequestMapping("/api/enterprise")
@@ -142,13 +144,27 @@ public class EnterpriseController {
     @PostMapping("/config/cookie")
     @Operation(summary = "保存爱企查Cookie", description = "保存爱企查登录Cookie用于企业搜索")
     public Map<String, Object> saveIqichaCookie(@RequestBody Map<String, String> request) {
-        String organizationId = OrganizationContext.getOrganizationId();
-        String cookie = request.get("cookie");
-        if (cookie == null || cookie.isBlank()) {
-            return Map.of("success", false, "message", "Cookie 不能为空");
+        try {
+            String organizationId = OrganizationContext.getOrganizationId();
+            if (organizationId == null || organizationId.isBlank()) {
+                return Map.of("success", false, "message", "无法获取组织信息，请重新登录");
+            }
+            
+            if (request == null) {
+                return Map.of("success", false, "message", "请求参数不能为空");
+            }
+            
+            String cookie = request.get("cookie");
+            if (cookie == null || cookie.isBlank()) {
+                return Map.of("success", false, "message", "Cookie 不能为空");
+            }
+            
+            integrationConfigService.saveIqichaCookie(cookie, organizationId);
+            return Map.of("success", true, "message", "保存成功");
+        } catch (Exception e) {
+            log.error("保存爱企查Cookie失败", e);
+            return Map.of("success", false, "message", "保存失败: " + e.getMessage());
         }
-        integrationConfigService.saveIqichaCookie(cookie, organizationId);
-        return Map.of("success", true, "message", "保存成功");
     }
 
     /**

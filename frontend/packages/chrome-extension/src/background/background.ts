@@ -24,6 +24,14 @@ interface CookieRequestMessage {
   type: 'GET_AIQICHA_COOKIES';
 }
 
+/** 外部搜索消息（来自 CRM 前端） */
+interface ExternalSearchMessage {
+  type: 'SEARCH_AIQICHA';
+  keyword: string;
+  page?: number;
+  pageSize?: number;
+}
+
 type ExtensionMessage = ImportMessage | TestConnectionMessage | CookieRequestMessage;
 
 /** 请求超时时间（毫秒） */
@@ -254,6 +262,148 @@ chrome.runtime.onMessage.addListener(
     }
 
     return false;
+  }
+);
+
+/**
+ * 处理来自外部网页（CRM 前端）的消息
+ * 使用 externally_connectable 机制
+ */
+chrome.runtime.onMessageExternal.addListener(
+  (
+    message: ExternalSearchMessage,
+    _sender: chrome.runtime.MessageSender,
+    sendResponse: (response: unknown) => void
+  ) => {
+    // 只处理搜索请求
+    if (message?.type !== 'SEARCH_AIQICHA') {
+      return false;
+    }
+
+    (async () => {
+      try {
+        const keyword = (message.keyword || '').trim();
+        const page = Number(message.page ?? 1);
+        const pageSize = Number(message.pageSize ?? 20);
+
+        if (!keyword) {
+          sendResponse({
+            success: false,
+            message: '请输入搜索关键词',
+            items: [],
+            total: 0,
+          });
+          return;
+        }
+
+        console.log(`[CRM Extension] 搜索爱企查: ${keyword}, page=${page}, pageSize=${pageSize}`);
+
+        const url = `https://aiqicha.baidu.com/s/advanceFilterAjax?q=${encodeURIComponent(keyword)}&p=${page}&s=${pageSize}`;
+        
+        const response = await fetchWithTimeout(
+          url,
+          {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+              'Accept': 'application/json, text/plain, */*',
+              'Referer': `https://aiqicha.baidu.com/s?q=${encodeURIComponent(keyword)}`,
+            },
+          },
+          REQUEST_TIMEOUT
+        );
+
+        // 检查是否被重定向到验证码页面
+        if (response.redirected || response.url.includes('captcha') || response.url.includes('wappass')) {
+          sendResponse({
+            success: false,
+            message: '爱企查需要验证码验证，请先在爱企查网站完成验证',
+            items: [],
+            total: 0,
+          });
+          return;
+        }
+
+        if (!response.ok) {
+          sendResponse({
+            success: false,
+            message: `搜索请求失败 (${response.status})`,
+            items: [],
+            total: 0,
+          });
+          return;
+        }
+
+        // 检查响应类型
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          const text = await response.text();
+          if (text.includes('captcha') || text.includes('wappass') || text.startsWith('<')) {
+            sendResponse({
+              success: false,
+              message: '爱企查需要验证码验证，请先在爱企查网站完成验证',
+              items: [],
+              total: 0,
+            });
+            return;
+          }
+          sendResponse({
+            success: false,
+            message: '爱企查返回了无效的响应格式',
+            items: [],
+            total: 0,
+          });
+          return;
+        }
+
+        const json = await response.json();
+        
+        if (json?.status !== 0) {
+          sendResponse({
+            success: false,
+            message: json?.msg || '搜索失败',
+            items: [],
+            total: 0,
+          });
+          return;
+        }
+
+        // 解析搜索结果
+        const data = json?.data || {};
+        const resultList = Array.isArray(data?.resultList) ? data.resultList : [];
+        
+        const items = resultList.map((item: Record<string, unknown>) => ({
+          pid: String(item?.pid || ''),
+          name: String(item?.titleName || item?.entName || ''),
+          creditCode: item?.unifiedCode as string | undefined,
+          legalPerson: item?.legalPerson as string | undefined,
+          address: item?.regAddr as string | undefined,
+          status: item?.openStatus as string | undefined,
+          establishDate: item?.startDate as string | undefined,
+          registeredCapital: item?.regCapital as string | undefined,
+          industry: item?.industry as string | undefined,
+        }));
+
+        console.log(`[CRM Extension] 搜索成功，返回 ${items.length} 条结果`);
+
+        sendResponse({
+          success: true,
+          items,
+          total: Number(data?.total || 0),
+        });
+      } catch (error) {
+        console.error('[CRM Extension] 搜索失败:', error);
+        sendResponse({
+          success: false,
+          message: error instanceof Error ? error.message : '搜索失败',
+          items: [],
+          total: 0,
+        });
+      }
+    })();
+
+    // 返回 true 表示异步响应
+    return true;
   }
 );
 

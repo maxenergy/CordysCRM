@@ -172,10 +172,11 @@
 
   import { useI18n } from '@lib/shared/hooks/useI18n';
 
-  import { searchEnterprise } from '@/api/modules';
+  import { searchEnterprise, searchEnterpriseViaExtension } from '@/api/modules';
 
   interface EnterpriseItem {
     id: string;
+    pid?: string;
     name: string;
     creditCode?: string;
     legalPerson?: string;
@@ -310,11 +311,20 @@
     errorType.value = '';
 
     try {
-      const result = await searchEnterprise(searchKeyword.value.trim(), 1, 20);
+      // 优先尝试通过 Chrome 扩展搜索（利用用户浏览器环境）
+      let result = await searchEnterpriseViaExtension(searchKeyword.value.trim(), 1, 20);
+
+      // 如果扩展不可用或通信失败，回退到后端 API
+      const extErrorCodes = ['EXT_UNAVAILABLE', 'EXT_COMMUNICATION_ERROR', 'EXT_NO_RESPONSE'];
+      if (!result.success && result.errorCode && extErrorCodes.includes(result.errorCode)) {
+        // eslint-disable-next-line no-console
+        console.log('[Enterprise Search] 扩展不可用，回退到后端 API');
+        result = await searchEnterprise(searchKeyword.value.trim(), 1, 20);
+      }
 
       if (result.success && result.items) {
         searchResults.value = result.items.map((item) => ({
-          id: item.pid || item.creditCode || '',
+          id: (item as { pid?: string }).pid || item.creditCode || '',
           name: item.name,
           creditCode: item.creditCode,
           legalPerson: item.legalPerson,

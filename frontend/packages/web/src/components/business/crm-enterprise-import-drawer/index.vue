@@ -9,10 +9,10 @@
               v-model:value="searchKeyword"
               :placeholder="t('enterprise.import.searchPlaceholder')"
               clearable
-              @keyup.enter="handleSearch"
+              @keyup.enter="debouncedSearch"
             >
               <template #suffix>
-                <n-icon class="cursor-pointer" @click="handleSearch">
+                <n-icon class="cursor-pointer" @click="debouncedSearch">
                   <SearchOutline />
                 </n-icon>
               </template>
@@ -38,6 +38,26 @@
                   </div>
                 </div>
               </div>
+            </div>
+            <!-- 搜索错误提示 -->
+            <div v-else-if="hasSearched && !searching && searchError" class="search-error">
+              <n-alert :type="errorType === 'captcha' ? 'warning' : 'error'" :show-icon="true">
+                <template #header>{{ t(errorI18nKey) }}</template>
+                <n-space size="small" class="mt-2">
+                  <n-button size="small" @click="debouncedSearch">{{ t('enterprise.import.retrySearch') }}</n-button>
+                  <n-button size="small" type="primary" @click="openAiqichaInBrowser">
+                    {{ t('enterprise.import.openInBrowser') }}
+                  </n-button>
+                  <n-button
+                    v-if="errorType === 'cookieNotConfigured' || errorType === 'cookieExpired'"
+                    size="small"
+                    @click="goToSettings"
+                  >
+                    {{ t('enterprise.import.goToSettings') }}
+                  </n-button>
+                </n-space>
+                <div v-if="searchError" class="search-error-detail">{{ searchError }}</div>
+              </n-alert>
             </div>
             <n-empty v-else-if="hasSearched && !searching" :description="t('enterprise.import.noResult')" />
           </n-spin>
@@ -126,6 +146,7 @@
 
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue';
+  import { useDebounceFn } from '@vueuse/core';
   import {
     NAlert,
     NButton,
@@ -188,6 +209,43 @@
   const searchResults = ref<EnterpriseItem[]>([]);
   const searching = ref(false);
   const hasSearched = ref(false);
+  const searchError = ref('');
+
+  // 错误类型
+  type SearchErrorType = '' | 'captcha' | 'cookieExpired' | 'cookieNotConfigured' | 'timeout' | 'network' | 'unknown';
+  const errorType = ref<SearchErrorType>('');
+
+  /** 根据错误消息解析错误类型 */
+  function resolveSearchErrorType(message: string): SearchErrorType {
+    const msg = (message || '').toLowerCase();
+    // 验证码相关（注意避免误伤"参数验证"等）
+    if (msg.includes('验证码') || msg.includes('captcha')) return 'captcha';
+    // Cookie 未配置（匹配后端返回的多种表述）
+    if (msg.includes('未配置') || msg.includes('请先') || msg.includes('配置爱企查')) return 'cookieNotConfigured';
+    // Cookie 过期或无效
+    if (msg.includes('cookie') && (msg.includes('过期') || msg.includes('无效') || msg.includes('expired')))
+      return 'cookieExpired';
+    // 连接超时
+    if (msg.includes('超时') || msg.includes('timeout') || msg.includes('timed out')) return 'timeout';
+    // 网络错误
+    if (msg.includes('网络') || msg.includes('连接') || msg.includes('network') || msg.includes('无法连接'))
+      return 'network';
+    return 'unknown';
+  }
+
+  /** 错误类型对应的 i18n key */
+  const errorI18nKey = computed(() => {
+    const keyMap: Record<SearchErrorType, string> = {
+      '': 'enterprise.import.error.unknown',
+      'captcha': 'enterprise.import.error.captcha',
+      'cookieExpired': 'enterprise.import.error.cookieExpired',
+      'cookieNotConfigured': 'enterprise.import.error.cookieNotConfigured',
+      'timeout': 'enterprise.import.error.timeout',
+      'network': 'enterprise.import.error.network',
+      'unknown': 'enterprise.import.error.unknown',
+    };
+    return keyMap[errorType.value] || 'enterprise.import.error.unknown';
+  });
 
   // 链接解析
   const aiqichaLink = ref('');
@@ -228,6 +286,8 @@
     searchKeyword.value = '';
     searchResults.value = [];
     hasSearched.value = false;
+    searchError.value = '';
+    errorType.value = '';
     aiqichaLink.value = '';
     selectedEnterprise.value = null;
     importOption.value = 'create';
@@ -246,6 +306,8 @@
 
     searching.value = true;
     hasSearched.value = true;
+    searchError.value = '';
+    errorType.value = '';
 
     try {
       const result = await searchEnterprise(searchKeyword.value.trim(), 1, 20);
@@ -261,17 +323,36 @@
         }));
       } else {
         searchResults.value = [];
-        if (result.message) {
-          Message.warning(result.message);
-        }
+        const msg = result.message || t('enterprise.import.error.unknown');
+        searchError.value = msg;
+        errorType.value = resolveSearchErrorType(msg);
       }
     } catch (error: any) {
-      const errorMsg = error?.message || error?.msg || '搜索失败，请检查网络连接';
-      Message.error(errorMsg);
+      const errorMsg = error?.message || error?.msg || t('enterprise.import.error.unknown');
+      searchError.value = errorMsg;
+      errorType.value = resolveSearchErrorType(errorMsg);
       searchResults.value = [];
     } finally {
       searching.value = false;
     }
+  }
+
+  /** 防抖搜索（300ms） */
+  const debouncedSearch = useDebounceFn(() => {
+    handleSearch();
+  }, 300);
+
+  /** 在浏览器中打开爱企查 */
+  function openAiqichaInBrowser() {
+    const keyword = searchKeyword.value.trim();
+    const url = keyword ? `https://aiqicha.baidu.com/s?q=${encodeURIComponent(keyword)}` : 'https://aiqicha.baidu.com';
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  /** 前往系统设置页面 */
+  function goToSettings() {
+    showDrawer.value = false;
+    window.location.hash = '#/system/integration';
   }
 
   // 选择企业
@@ -360,6 +441,15 @@
     .label {
       color: #9ca3af;
     }
+  }
+  .search-error {
+    padding: 8px 0;
+  }
+  .search-error-detail {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #6b7280;
+    word-break: break-word;
   }
   .link-hint {
     margin-top: 16px;

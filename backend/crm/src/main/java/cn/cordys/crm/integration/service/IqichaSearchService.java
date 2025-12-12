@@ -3,13 +3,16 @@ package cn.cordys.crm.integration.service;
 import cn.cordys.context.OrganizationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.*;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.HttpURLConnection;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -19,7 +22,7 @@ import java.util.Optional;
 /**
  * 爱企查搜索服务
  * 通过爱企查 API 搜索企业信息
- * 
+ *
  * @author cordys
  * @date 2025-12-12
  */
@@ -36,7 +39,43 @@ public class IqichaSearchService {
     @Resource
     private ObjectMapper objectMapper;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private RestTemplate restTemplate;
+
+    /**
+     * 初始化 RestTemplate，禁用自动重定向以便检测验证码
+     */
+    @PostConstruct
+    public void init() {
+        // 创建自定义的请求工厂，禁用自动重定向
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory() {
+            @Override
+            protected void prepareConnection(HttpURLConnection connection, String httpMethod) throws java.io.IOException {
+                super.prepareConnection(connection, httpMethod);
+                // 禁用自动重定向
+                connection.setInstanceFollowRedirects(false);
+            }
+        };
+        factory.setConnectTimeout(10000);  // 10秒连接超时
+        factory.setReadTimeout(30000);      // 30秒读取超时
+
+        this.restTemplate = new RestTemplate(factory);
+
+        // 设置自定义错误处理器，不对 3xx/4xx 响应抛出异常
+        this.restTemplate.setErrorHandler(new org.springframework.web.client.ResponseErrorHandler() {
+            @Override
+            public boolean hasError(org.springframework.http.client.ClientHttpResponse response) throws java.io.IOException {
+                // 只对 5xx 错误抛出异常，3xx 和 4xx 由业务代码处理
+                return response.getStatusCode().is5xxServerError();
+            }
+
+            @Override
+            public void handleError(org.springframework.http.client.ClientHttpResponse response) throws java.io.IOException {
+                log.error("爱企查服务器错误: {}", response.getStatusCode());
+            }
+        });
+
+        log.info("IqichaSearchService 初始化完成，已禁用自动重定向");
+    }
 
     /**
      * 搜索企业
@@ -61,18 +100,39 @@ public class IqichaSearchService {
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("Cookie", cookieOpt.get());
-            headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
-            headers.set("Referer", "https://aiqicha.baidu.com/");
-            headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+            headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+            headers.set("Referer", "https://aiqicha.baidu.com/s?q=" + encodedKeyword);
+            headers.set("Accept", "application/json, text/plain, */*");
+            headers.set("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8");
+            headers.set("sec-ch-ua", "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\"");
+            headers.set("sec-ch-ua-mobile", "?0");
+            headers.set("sec-ch-ua-platform", "\"Windows\"");
+            headers.set("sec-fetch-dest", "empty");
+            headers.set("sec-fetch-mode", "cors");
+            headers.set("sec-fetch-site", "same-origin");
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
 
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 return parseSearchResponse(response.getBody());
+            } else if (response.getStatusCode().is3xxRedirection()) {
+                String location = response.getHeaders().getLocation() != null 
+                    ? response.getHeaders().getLocation().toString() : "";
+                log.warn("爱企查返回重定向，可能触发了验证码: {}", location);
+                if (location.contains("captcha") || location.contains("wappass")) {
+                    return SearchResult.error("爱企查需要验证码验证，请在浏览器中完成验证后重试");
+                }
+                return SearchResult.error("爱企查服务暂时不可用，请稍后重试");
             } else {
                 return SearchResult.error("搜索请求失败: " + response.getStatusCode());
             }
+        } catch (org.springframework.web.client.ResourceAccessException e) {
+            log.error("爱企查连接失败: {}", e.getMessage());
+            if (e.getMessage() != null && e.getMessage().contains("timed out")) {
+                return SearchResult.error("连接爱企查超时，请检查网络或稍后重试");
+            }
+            return SearchResult.error("无法连接爱企查服务，请检查网络");
         } catch (Exception e) {
             log.error("爱企查搜索失败", e);
             return SearchResult.error("搜索失败: " + e.getMessage());
@@ -118,6 +178,23 @@ public class IqichaSearchService {
      * 解析搜索响应
      */
     private SearchResult parseSearchResponse(String responseBody) {
+        // 检查响应是否为空
+        if (StringUtils.isBlank(responseBody)) {
+            log.warn("爱企查返回空响应");
+            return SearchResult.error("爱企查返回空响应");
+        }
+
+        // 检查是否返回了 HTML（可能是登录页面或错误页面）
+        String trimmedBody = responseBody.trim();
+        if (trimmedBody.startsWith("<") || trimmedBody.startsWith("<!")) {
+            log.warn("爱企查返回了 HTML 页面，可能 Cookie 已过期。响应前200字符: {}",
+                trimmedBody.substring(0, Math.min(200, trimmedBody.length())));
+            return SearchResult.error("Cookie 已过期或无效，请重新配置爱企查 Cookie");
+        }
+
+        // 记录原始响应用于调试
+        log.debug("爱企查原始响应: {}", trimmedBody.substring(0, Math.min(500, trimmedBody.length())));
+
         try {
             JsonNode root = objectMapper.readTree(responseBody);
             
@@ -125,6 +202,7 @@ public class IqichaSearchService {
             int status = root.path("status").asInt(-1);
             if (status != 0) {
                 String msg = root.path("msg").asText("未知错误");
+                log.warn("爱企查返回错误状态: {}, 消息: {}", status, msg);
                 return SearchResult.error(msg);
             }
 
@@ -148,10 +226,21 @@ public class IqichaSearchService {
             }
 
             int total = data.path("total").asInt(0);
+            log.info("爱企查搜索成功，返回 {} 条结果，总计 {} 条", items.size(), total);
             return SearchResult.success(items, total);
+        } catch (com.fasterxml.jackson.core.JsonParseException e) {
+            // JSON 解析失败，通常是因为返回了 HTML 页面
+            log.error("解析搜索响应失败（JSON格式错误），响应内容前200字符: {}",
+                responseBody.substring(0, Math.min(200, responseBody.length())), e);
+            // 检查是否是 HTML 响应
+            if (responseBody.contains("<html") || responseBody.contains("<!DOCTYPE")) {
+                return SearchResult.error("Cookie 已过期或无效，请在系统设置中重新配置爱企查 Cookie");
+            }
+            return SearchResult.error("爱企查返回了无效的响应格式，请稍后重试");
         } catch (Exception e) {
-            log.error("解析搜索响应失败", e);
-            return SearchResult.error("解析响应失败");
+            log.error("解析搜索响应失败，响应内容前200字符: {}",
+                responseBody.substring(0, Math.min(200, responseBody.length())), e);
+            return SearchResult.error("解析响应失败: " + e.getMessage());
         }
     }
 

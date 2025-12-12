@@ -31,4 +31,16 @@ export default {
   'enterprise.import.downloadExtension': '下载扩展',
   'enterprise.import.viewInAiqicha': '在爱企查查看',
   'enterprise.import.required': '必填',
+  // 错误提示
+  'enterprise.import.error.captcha': '爱企查需要验证，请点击下方按钮在浏览器中完成验证后重试',
+  'enterprise.import.error.cookieExpired': 'Cookie 已过期，请在系统设置中重新配置',
+  'enterprise.import.error.cookieNotConfigured': '请先在系统设置中配置爱企查 Cookie',
+  'enterprise.import.error.timeout': '连接超时，请检查网络后重试',
+  'enterprise.import.error.network': '网络连接失败，请检查网络',
+  'enterprise.import.error.unknown': '搜索失败，请稍后重试',
+  // 备选方案
+  'enterprise.import.openInBrowser': '在浏览器中打开爱企查',
+  'enterprise.import.openInBrowserTip': '如果搜索失败，可以在浏览器中直接访问爱企查',
+  'enterprise.import.retrySearch': '重试搜索',
+  'enterprise.import.goToSettings': '前往设置',
 };

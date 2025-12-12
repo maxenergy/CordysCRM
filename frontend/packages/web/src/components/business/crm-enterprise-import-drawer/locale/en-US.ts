@@ -31,4 +31,17 @@ export default {
   'enterprise.import.downloadExtension': 'Download Extension',
   'enterprise.import.viewInAiqicha': 'View in Aiqicha',
   'enterprise.import.required': 'Required',
+  // Error messages
+  'enterprise.import.error.captcha':
+    'Aiqicha requires verification. Please click the button below to verify in browser and retry',
+  'enterprise.import.error.cookieExpired': 'Cookie expired. Please reconfigure in system settings',
+  'enterprise.import.error.cookieNotConfigured': 'Please configure Aiqicha Cookie in system settings first',
+  'enterprise.import.error.timeout': 'Connection timeout. Please check network and retry',
+  'enterprise.import.error.network': 'Network connection failed. Please check network',
+  'enterprise.import.error.unknown': 'Search failed. Please try again later',
+  // Fallback options
+  'enterprise.import.openInBrowser': 'Open Aiqicha in Browser',
+  'enterprise.import.openInBrowserTip': 'If search fails, you can visit Aiqicha directly in browser',
+  'enterprise.import.retrySearch': 'Retry Search',
+  'enterprise.import.goToSettings': 'Go to Settings',
 };

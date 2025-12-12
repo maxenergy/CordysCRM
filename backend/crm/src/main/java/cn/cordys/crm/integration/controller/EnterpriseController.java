@@ -38,7 +38,7 @@ public class EnterpriseController {
     @Resource
     private IqichaSearchService iqichaSearchService;
 
-    @Resource
+    @Resource(name = "aiIntegrationConfigService")
     private IntegrationConfigService integrationConfigService;
 
     /**

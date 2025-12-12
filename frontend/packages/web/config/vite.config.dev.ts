@@ -15,14 +15,7 @@ export default mergeConfig(
         strict: true,
       },
       proxy: {
-        '/api': {
-          target: process.env.VITE_DEV_DOMAIN,
-          changeOrigin: true,
-        },
-        '/sse': {
-          target: process.env.VITE_DEV_DOMAIN,
-          changeOrigin: true,
-        },
+        // 注意：更具体的路径必须放在前面，否则会被更短的路径先匹配
         '/front/api': {
           target: process.env.VITE_DEV_DOMAIN,
           changeOrigin: true,
@@ -37,6 +30,14 @@ export default mergeConfig(
           target: process.env.VITE_DEV_DOMAIN,
           changeOrigin: true,
           rewrite: (path: string) => path.replace(/^\/front/, ''),
+        },
+        '/api': {
+          target: process.env.VITE_DEV_DOMAIN,
+          changeOrigin: true,
+        },
+        '/sse': {
+          target: process.env.VITE_DEV_DOMAIN,
+          changeOrigin: true,
         },
         '/pic': {
           target: process.env.VITE_DEV_DOMAIN,

@@ -15,6 +15,10 @@ export default mergeConfig(
         strict: true,
       },
       proxy: {
+        '/api': {
+          target: process.env.VITE_DEV_DOMAIN,
+          changeOrigin: true,
+        },
         '/sse': {
           target: process.env.VITE_DEV_DOMAIN,
           changeOrigin: true,

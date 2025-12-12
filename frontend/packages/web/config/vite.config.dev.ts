@@ -23,6 +23,16 @@ export default mergeConfig(
           target: process.env.VITE_DEV_DOMAIN,
           changeOrigin: true,
         },
+        '/front/api': {
+          target: process.env.VITE_DEV_DOMAIN,
+          changeOrigin: true,
+          rewrite: (path: string) => path.replace(/^\/front/, ''),
+        },
+        '/front/sse': {
+          target: process.env.VITE_DEV_DOMAIN,
+          changeOrigin: true,
+          rewrite: (path: string) => path.replace(/^\/front/, ''),
+        },
         '/front': {
           target: process.env.VITE_DEV_DOMAIN,
           changeOrigin: true,

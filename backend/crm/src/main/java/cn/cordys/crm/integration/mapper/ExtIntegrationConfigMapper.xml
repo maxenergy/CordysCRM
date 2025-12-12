@@ -3,14 +3,28 @@
 
 <mapper namespace="cn.cordys.crm.integration.mapper.ExtIntegrationConfigMapper">
 
-    <select id="selectByKey" resultType="cn.cordys.crm.integration.domain.IntegrationConfig">
+    <!-- 结果映射，处理下划线到驼峰的转换 -->
+    <resultMap id="IntegrationConfigResultMap" type="cn.cordys.crm.integration.domain.IntegrationConfig">
+        <id property="id" column="id"/>
+        <result property="configKey" column="config_key"/>
+        <result property="configValue" column="config_value"/>
+        <result property="encrypted" column="encrypted"/>
+        <result property="organizationId" column="organization_id"/>
+        <result property="description" column="description"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="createUser" column="create_user"/>
+        <result property="updateUser" column="update_user"/>
+    </resultMap>
+
+    <select id="selectByKey" resultMap="IntegrationConfigResultMap">
         SELECT id, config_key, config_value, encrypted, organization_id,
                description, create_time, update_time, create_user, update_user
         FROM integration_config
         WHERE config_key = #{configKey} AND organization_id = #{orgId}
     </select>
 
-    <select id="selectByOrganization" resultType="cn.cordys.crm.integration.domain.IntegrationConfig">
+    <select id="selectByOrganization" resultMap="IntegrationConfigResultMap">
         SELECT id, config_key, config_value, encrypted, organization_id,
                description, create_time, update_time, create_user, update_user
         FROM integration_config

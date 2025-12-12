@@ -143,27 +143,45 @@ public class EnterpriseController {
      */
     @PostMapping("/config/cookie")
     @Operation(summary = "保存爱企查Cookie", description = "保存爱企查登录Cookie用于企业搜索")
-    public Map<String, Object> saveIqichaCookie(@RequestBody Map<String, String> request) {
+    public Map<String, Object> saveIqichaCookie(@RequestBody(required = false) Map<String, String> request) {
         try {
-            String organizationId = OrganizationContext.getOrganizationId();
-            if (organizationId == null || organizationId.isBlank()) {
-                return Map.of("success", false, "message", "无法获取组织信息，请重新登录");
-            }
-            
+            // 验证请求参数
             if (request == null) {
+                log.warn("保存爱企查Cookie失败: 请求参数为空");
                 return Map.of("success", false, "message", "请求参数不能为空");
             }
             
             String cookie = request.get("cookie");
             if (cookie == null || cookie.isBlank()) {
+                log.warn("保存爱企查Cookie失败: Cookie为空");
                 return Map.of("success", false, "message", "Cookie 不能为空");
             }
             
+            // 获取组织ID
+            String organizationId;
+            try {
+                organizationId = OrganizationContext.getOrganizationId();
+            } catch (Exception e) {
+                log.warn("保存爱企查Cookie失败: 无法获取组织信息 - {}", e.getMessage());
+                return Map.of("success", false, "message", "无法获取组织信息，请重新登录");
+            }
+            
+            if (organizationId == null || organizationId.isBlank()) {
+                log.warn("保存爱企查Cookie失败: 组织ID为空");
+                return Map.of("success", false, "message", "无法获取组织信息，请重新登录");
+            }
+            
+            // 保存Cookie
             integrationConfigService.saveIqichaCookie(cookie, organizationId);
+            log.info("保存爱企查Cookie成功, organizationId={}", organizationId);
             return Map.of("success", true, "message", "保存成功");
         } catch (Exception e) {
             log.error("保存爱企查Cookie失败", e);
-            return Map.of("success", false, "message", "保存失败: " + e.getMessage());
+            String errorMsg = e.getMessage();
+            if (errorMsg == null || errorMsg.isBlank()) {
+                errorMsg = e.getClass().getSimpleName();
+            }
+            return Map.of("success", false, "message", "保存失败: " + errorMsg);
         }
     }
 

@@ -7,7 +7,7 @@
 /** 检查 origin 是否在白名单中 */
 function isAllowedOrigin(origin: string): boolean {
   try {
-    const { protocol, hostname, port } = new URL(origin);
+    const { protocol, hostname } = new URL(origin);
     
     // localhost（任意端口，http/https 都允许）
     if (hostname === 'localhost' || hostname === '127.0.0.1') {

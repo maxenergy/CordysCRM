@@ -7,7 +7,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as fc from 'fast-check';
 import type { CRMConfig } from '../types/config';
-import { CONFIG_KEYS } from '../types/config';
 
 // Mock chrome.storage.local
 const mockStorage: Record<string, string> = {};

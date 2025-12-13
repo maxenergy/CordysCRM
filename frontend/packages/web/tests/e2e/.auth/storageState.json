@@ -1,0 +1,46 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:5173",
+      "localStorage": [
+        {
+          "name": "app",
+          "value": "{\"menuIconStatus\":{},\"pageConfig\":{\"style\":\"default\",\"customStyle\":\"#f9fbfb\",\"theme\":\"default\",\"customTheme\":\"#008d91\",\"title\":\"Cordys CRM\",\"icon\":[],\"loginLogo\":[],\"loginImage\":[],\"slogan\":\"新一代的开源 AI CRM 系统\",\"logoPlatform\":[],\"helpDoc\":\"https://cordys.cn/docs/\"},\"moduleConfigList\":[{\"id\":\"558740885479424\",\"createUser\":\"admin\",\"updateUser\":\"admin\",\"createTime\":1764810123154,\"updateTime\":1764810123154,\"organizationId\":\"100001\",\"moduleKey\":\"home\",\"enable\":true,\"pos\":1,\"disabled\":false},{\"id\":\"558740885479425\",\"createUser\":\"admin\",\"updateUser\":\"admin\",\"createTime\":1764810123155,\"updateTime\":1764810123155,\"organizationId\":\"100001\",\"moduleKey\":\"clue\",\"enable\":true,\"pos\":2,\"disabled\":false},{\"id\":\"558740885479426\",\"createUser\":\"admin\",\"updateUser\":\"admin\",\"createTime\":1764810123155,\"updateTime\":1764810123155,\"organizationId\":\"100001\",\"moduleKey\":\"customer\",\"enable\":true,\"pos\":3,\"disabled\":false},{\"id\":\"558740885479427\",\"createUser\":\"admin\",\"updateUser\":\"admin\",\"createTime\":1764810123155,\"updateTime\":1764810123155,\"organizationId\":\"100001\",\"moduleKey\":\"business\",\"enable\":true,\"pos\":4,\"disabled\":false},{\"id\":\"558740885479428\",\"createUser\":\"admin\",\"updateUser\":\"admin\",\"createTime\":1764810123155,\"updateTime\":1764810123155,\"organizationId\":\"100001\",\"moduleKey\":\"product\",\"enable\":true,\"pos\":5,\"disabled\":false},{\"id\":\"558740885479429\",\"createUser\":\"admin\",\"updateUser\":\"admin\",\"createTime\":1764810123155,\"updateTime\":1764810123155,\"organizationId\":\"100001\",\"moduleKey\":\"setting\",\"enable\":true,\"pos\":6,\"disabled\":false},{\"id\":\"101659935678398980\",\"createUser\":\"admin\",\"updateUser\":\"admin\",\"createTime\":1764809965000,\"updateTime\":1764809965000,\"organizationId\":\"100001\",\"moduleKey\":\"dashboard\",\"enable\":true,\"pos\":7,\"disabled\":true},{\"id\":\"101659935678399013\",\"createUser\":\"admin\",\"updateUser\":\"admin\",\"createTime\":1764809967000,\"updateTime\":1764809967000,\"organizationId\":\"100001\",\"moduleKey\":\"agent\",\"enable\":true,\"pos\":8,\"disabled\":false},{\"id\":\"101659935678399030\",\"createUser\":\"admin\",\"updateUser\":\"admin\",\"createTime\":1764809971000,\"updateTime\":1764809971000,\"organizationId\":\"100001\",\"moduleKey\":\"contract\",\"enable\":false,\"pos\":9,\"disabled\":false}],\"navTopConfigList\":[{\"id\":\"101659935678399020\",\"createUser\":null,\"updateUser\":null,\"createTime\":null,\"updateTime\":null,\"organizationId\":\"100001\",\"navigationKey\":\"search\",\"enable\":true,\"pos\":1},{\"id\":\"101659935678399028\",\"createUser\":null,\"updateUser\":null,\"createTime\":null,\"updateTime\":null,\"organizationId\":\"100001\",\"navigationKey\":\"event\",\"enable\":true,\"pos\":2},{\"id\":\"101659935678399021\",\"createUser\":null,\"updateUser\":null,\"createTime\":null,\"updateTime\":null,\"organizationId\":\"100001\",\"navigationKey\":\"agent\",\"enable\":true,\"pos\":3},{\"id\":\"101659935678399022\",\"createUser\":null,\"updateUser\":null,\"createTime\":null,\"updateTime\":null,\"organizationId\":\"100001\",\"navigationKey\":\"notify\",\"enable\":true,\"pos\":4},{\"id\":\"101659935678399023\",\"createUser\":null,\"updateUser\":null,\"createTime\":null,\"updateTime\":null,\"organizationId\":\"100001\",\"navigationKey\":\"about\",\"enable\":true,\"pos\":5},{\"id\":\"101659935678399024\",\"createUser\":null,\"updateUser\":null,\"createTime\":null,\"updateTime\":null,\"organizationId\":\"100001\",\"navigationKey\":\"language\",\"enable\":true,\"pos\":6},{\"id\":\"101659935678399025\",\"createUser\":null,\"updateUser\":null,\"createTime\":null,\"updateTime\":null,\"organizationId\":\"100001\",\"navigationKey\":\"help\",\"enable\":true,\"pos\":7}],\"activePlatformResource\":{\"id\":\"2008292348100608\",\"createUser\":\"admin\",\"updateUser\":\"admin\",\"createTime\":1765499298083,\"updateTime\":1765499298083,\"type\":\"THIRD\",\"organizationId\":\"100001\",\"sync\":false,\"syncResource\":null,\"enable\":false}}"
+        },
+        {
+          "name": "csrfToken",
+          "value": "CYkmuI1mO+hY8wOKqbrORlCqUQ05I5ktq2DRjS/GCpPvDLXbcRGenLLAAO/WI6lsqEzUK8fWPt7jm7MKWizXX5aLlu8jBoUeHvCfPhK/HQ=="
+        },
+        {
+          "name": "license",
+          "value": "{\"licenseInfo\":{\"corporation\":\"CORDYS\",\"expired\":null,\"product\":\"CRM\",\"edition\":null,\"licenseVersion\":null,\"count\":0,\"status\":\"not_found\"},\"expiredDuring\":false,\"expiredDays\":0}"
+        },
+        {
+          "name": "loginType",
+          "value": "LOCAL"
+        },
+        {
+          "name": "user",
+          "value": "{\"loginType\":[],\"userInfo\":{\"id\":\"admin\",\"name\":\"Administrator\",\"email\":\"admin@cordys-crm.io\",\"password\":\"4706261da78b85ec9553be61a15f924c\",\"enable\":null,\"createTime\":1716175907000,\"updateTime\":1729752373360,\"language\":\"zh_CN\",\"lastOrganizationId\":\"100001\",\"phone\":\"4000520755\",\"source\":null,\"createUser\":\"717345437786112\",\"updateUser\":\"admin\",\"platformInfo\":null,\"avatar\":null,\"permissionIds\":[],\"organizationIds\":[\"100001\"],\"csrfToken\":\"CYkmuI1mO+hY8wOKqbrORlCqUQ05I5ktq2DRjS/GCpPvDLXbcRGenLLAAO/WI6lsqEzUK8fWPt7jm7MKWizXX5aLlu8jBoUeHvCfPhK/HQ==\",\"sessionId\":\"5908329d-caca-4b6d-b08a-3f8ed1fc6941\",\"roles\":[],\"departmentId\":null,\"departmentName\":null,\"defaultPwd\":true},\"clientIdRandomId\":\"176557830653600000\",\"notify\":null,\"apiKeyList\":[]}"
+        },
+        {
+          "name": "sessionId",
+          "value": "5908329d-caca-4b6d-b08a-3f8ed1fc6941"
+        },
+        {
+          "name": "publicKey",
+          "value": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDuz2z8gIe2LmXWXT2AX+c6Vip6i10i8tQ1tKX3h9jzyxRsNKooDwU1kKtoLqDyFGihTvcl0fU+d0Fj0QiF5pBWPGvCW6ic3PN56XgT0Dyr3tYtUzL6bV9svNR+MVssO4Gn38qjgABWe1LnnI21CeYaal18lR9VE7OrTh7DLZMUQwIDAQAB"
+        },
+        {
+          "name": "loginExpires",
+          "value": "1765578306549"
+        },
+        {
+          "name": "CRM-locale",
+          "value": "zh-CN"
+        }
+      ]
+    }
+  ]
+}

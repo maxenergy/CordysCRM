@@ -4,7 +4,7 @@
  * **Validates: Requirements 2.4**
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
 import type { CRMConfig, EnterpriseImportRequest } from '../types/config';
 
@@ -27,7 +27,7 @@ const jwtTokenArbitrary = fc.string({ minLength: 20, maxLength: 500 })
   .filter((s) => !s.includes(' '));
 
 // 生成 CRM URL
-const crmUrlArbitrary = fc.webUrl({ withPath: false });
+const crmUrlArbitrary = fc.webUrl();
 
 // 生成企业导入请求
 const enterpriseImportRequestArbitrary = fc.record({

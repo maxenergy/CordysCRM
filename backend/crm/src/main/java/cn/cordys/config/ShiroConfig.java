@@ -26,6 +26,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -59,22 +60,40 @@ public class ShiroConfig {
         bean.setUnauthorizedUrl("/403");
         bean.setSuccessUrl("/");
 
-        final Map<String, String> chain = bean.getFilterChainDefinitionMap();
+        // 必须使用有序 Map，保证 Shiro 按插入顺序匹配时具体规则先于 /** 生效
+        final Map<String, String> chain = new LinkedHashMap<>();
         final Map<String, Filter> filters = bean.getFilters();
 
         filters.put("apikey", new ApiKeyFilter());
         filters.put("csrf", new CsrfFilter());
         filters.put("authc", new AuthFilter());
+        
+        // 为 /api/user/current 配置特殊的过滤器，使用 apikey 过滤器进行 Session ID 认证
+        // 这个路径需要在 loadBaseFilterChain() 之前配置，确保优先级
+        chain.put("/api/user/current", "apikey");
+        chain.put("/api/user/current/**", "apikey");
 
         chain.putAll(ShiroFilter.loadBaseFilterChain());
         chain.putAll(ShiroFilter.ignoreCsrfFilter());
-        
+
         // 企业集成配置接口：需要认证但跳过 CSRF 验证
         // 必须在 /** 规则之前添加，否则会被覆盖
         chain.put("/api/enterprise/config/**", "apikey, authc");
 
-        // 配置自定义的过滤器链
+        // 配置自定义的过滤器链（包含 /** 规则，必须最后添加）
         configureXFilter(chain, filters);
+        
+        // 一次性设置，避免 getFilterChainDefinitionMap() 的实现差异导致顺序异常
+        bean.setFilterChainDefinitionMap(chain);
+
+        // 打印过滤器链配置
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n========== Shiro Filter Chain Configuration ==========\n");
+        chain.forEach((url, filterChain) -> sb.append("  ").append(url).append(" -> ").append(filterChain).append("\n"));
+        sb.append("======================================================");
+        // 使用 System.out 确保日志输出
+        System.out.println(sb.toString());
+        org.slf4j.LoggerFactory.getLogger(ShiroConfig.class).warn(sb.toString());
 
         return bean;
     }

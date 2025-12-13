@@ -24,6 +24,8 @@ import org.springframework.http.HttpHeaders;
  */
 public class CsrfFilter extends AnonymousFilter {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(CsrfFilter.class);
+
     /**
      * 在处理请求之前进行 CSRF 校验。
      * 如果请求没有通过认证或请求头中包含有效的 CSRF token，则允许请求继续。
@@ -38,6 +40,14 @@ public class CsrfFilter extends AnonymousFilter {
     @Override
     protected boolean onPreHandle(ServletRequest request, ServletResponse response, Object mappedValue) {
         HttpServletRequest httpServletRequest = WebUtils.toHttp(request);
+        String uri = httpServletRequest.getRequestURI();
+
+        // 允许 /api/user/current 路径通过，由 Controller 自行处理认证
+        // 这是为了支持 Chrome 扩展等外部客户端使用 Bearer token 认证
+        if (uri.startsWith("/api/user/current")) {
+            log.info("[CsrfFilter] Allowing /api/user/current to pass through");
+            return true;
+        }
 
         // 如果用户未认证，返回认证无效状态
         if (!SecurityUtils.getSubject().isAuthenticated()) {
@@ -50,8 +60,8 @@ public class CsrfFilter extends AnonymousFilter {
             return true;
         }
 
-        // API 请求无需 CSRF 校验
-        if (ApiKeyHandler.isApiKeyCall(httpServletRequest)) {
+        // API 请求无需 CSRF 校验（包括 API Key 和 Session ID 认证）
+        if (ApiKeyHandler.isApiKeyCall(httpServletRequest) || isSessionIdAuth(httpServletRequest)) {
             return true;
         }
 
@@ -77,6 +87,21 @@ public class CsrfFilter extends AnonymousFilter {
         validateReferer(httpServletRequest);
 
         return true;
+    }
+
+    /**
+     * 检查请求是否使用 Session ID 认证（Bearer token 或 Session token）。
+     * 用于 Chrome 扩展等外部客户端的认证。
+     *
+     * @param request HttpServletRequest 请求
+     * @return true 如果是 Session ID 认证请求
+     */
+    private boolean isSessionIdAuth(HttpServletRequest request) {
+        String authorization = request.getHeader(ApiKeyHandler.AUTHORIZATION);
+        if (StringUtils.isBlank(authorization)) {
+            return false;
+        }
+        return authorization.startsWith("Bearer ") || authorization.startsWith("Session ");
     }
 
     /**

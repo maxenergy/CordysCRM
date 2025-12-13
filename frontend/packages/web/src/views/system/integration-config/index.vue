@@ -278,7 +278,15 @@
   const currentStep = ref(1);
   const copyingConfig = ref(false);
   const configCopied = ref(false);
-  const crmUrl = computed(() => window.location.origin);
+  // 开发环境下使用后端地址，生产环境使用当前地址
+  const crmUrl = computed(() => {
+    const isDev = import.meta.env.DEV;
+    if (isDev) {
+      // 开发环境：使用后端地址
+      return import.meta.env.VITE_DEV_DOMAIN || 'http://localhost:8081';
+    }
+    return window.location.origin;
+  });
   const tokenDisplay = ref('');
 
   function getToken(): string {

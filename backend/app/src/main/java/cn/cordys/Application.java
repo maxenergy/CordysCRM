@@ -11,7 +11,9 @@ import org.springframework.context.annotation.PropertySource;
 @SpringBootApplication(exclude = {
         QuartzAutoConfiguration.class,
         LdapAutoConfiguration.class,
-        Neo4jAutoConfiguration.class
+        Neo4jAutoConfiguration.class,
+        org.apache.shiro.spring.boot.autoconfigure.ShiroAutoConfiguration.class,
+        org.apache.shiro.spring.boot.autoconfigure.ShiroAnnotationProcessorAutoConfiguration.class
 })
 @PropertySource(value = {
         "classpath:commons.properties",

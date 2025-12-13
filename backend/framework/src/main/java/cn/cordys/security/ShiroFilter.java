@@ -1,6 +1,7 @@
 package cn.cordys.security;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -9,7 +10,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * 包含加载基础过滤器链和忽略 CSRF 过滤器链的方法。
  */
 public final class ShiroFilter {
-    private static final Map<String, String> FILTER_CHAIN_DEFINITION_MAP = new ConcurrentHashMap<>();
+    /**
+     * 运行时动态追加的过滤规则（不保证顺序）。
+     * 基础规则的顺序由 loadBaseFilterChain() 内部用 LinkedHashMap 固定。
+     */
+    private static final Map<String, String> EXTRA_FILTER_CHAIN_DEFINITION_MAP = new ConcurrentHashMap<>();
 
     // 私有构造函数防止实例化
     private ShiroFilter() {
@@ -24,82 +29,93 @@ public final class ShiroFilter {
      */
     public static void putFilter(String url, String rule) {
         if (url != null && rule != null) {
-            FILTER_CHAIN_DEFINITION_MAP.put(url, rule);
+            EXTRA_FILTER_CHAIN_DEFINITION_MAP.put(url, rule);
         }
     }
 
     /**
      * 加载应用程序的基础过滤器链。
      * 该过滤器链是一个映射，关联 URL 模式和过滤规则。
+     * 使用 LinkedHashMap 保证顺序，确保具体规则在 /** 之前被匹配。
      *
      * @return 返回一个不可变Map，包含过滤器链定义，键是 URL 模式，值是关联的过滤规则。
      */
     public static Map<String, String> loadBaseFilterChain() {
+        // 必须使用有序 Map，保证 Shiro 按插入顺序匹配时具体规则先于 /** 生效
+        final Map<String, String> chain = new LinkedHashMap<>();
+        
         // 静态资源路径
-        addStaticResourceFilters();
+        addStaticResourceFilters(chain);
 
         // 认证相关路径
-        addAuthenticationFilters();
+        addAuthenticationFilters(chain);
 
         // 其他公共路径
-        addPublicPathFilters();
+        addPublicPathFilters(chain);
 
-        return Collections.unmodifiableMap(FILTER_CHAIN_DEFINITION_MAP);
+        // 添加运行时动态追加的规则
+        chain.putAll(EXTRA_FILTER_CHAIN_DEFINITION_MAP);
+        
+        return Collections.unmodifiableMap(chain);
     }
+
 
     /**
      * 添加静态资源过滤器规则
      */
-    private static void addStaticResourceFilters() {
-        FILTER_CHAIN_DEFINITION_MAP.put("/web/**", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/mobile/**", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/static/**", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/templates/**", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/*.html", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/css/**", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/js/**", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/images/**", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/assets/**", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/fonts/**", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/favicon.ico", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/logo.*", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/base-display/**", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/cordys/**", "anon");
+    private static void addStaticResourceFilters(Map<String, String> chain) {
+        chain.put("/web/**", "anon");
+        chain.put("/mobile/**", "anon");
+        chain.put("/static/**", "anon");
+        chain.put("/templates/**", "anon");
+        chain.put("/*.html", "anon");
+        chain.put("/css/**", "anon");
+        chain.put("/js/**", "anon");
+        chain.put("/images/**", "anon");
+        chain.put("/assets/**", "anon");
+        chain.put("/fonts/**", "anon");
+        chain.put("/favicon.ico", "anon");
+        chain.put("/logo.*", "anon");
+        chain.put("/base-display/**", "anon");
+        chain.put("/cordys/**", "anon");
     }
 
     /**
      * 添加认证相关过滤器规则
      */
-    private static void addAuthenticationFilters() {
-        FILTER_CHAIN_DEFINITION_MAP.put("/login", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/logout", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/is-login", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/get-key", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/403", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/sso/callback/**", "anon");
+    private static void addAuthenticationFilters(Map<String, String> chain) {
+        chain.put("/login", "anon");
+        chain.put("/logout", "anon");
+        chain.put("/is-login", "anon");
+        // Chrome 扩展通过 Authorization: Bearer/Session {sessionId} 调用该接口
+        // 使用 anon 跳过 Shiro 认证，在 Controller 中手动验证 Session ID
+        chain.put("/api/user/current", "anon");
+        chain.put("/api/user/current/**", "anon");
+        chain.put("/get-key", "anon");
+        chain.put("/403", "anon");
+        chain.put("/sso/callback/**", "anon");
     }
 
     /**
      * 添加其他公共路径过滤器规则
      */
-    private static void addPublicPathFilters() {
-        FILTER_CHAIN_DEFINITION_MAP.put("/display/info", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/pic/preview/**", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/attachment/preview/**", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/ui/display/preview", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/ui/display/info", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/anonymous/**", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/system/version/current", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/sse/subscribe/**", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/sse/close/**", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/sse/broadcast/**", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/organization/settings/third-party/types", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/organization/settings/third-party/get/**", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/organization/settings/third-party/sync/resource", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/license/validate/**", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/mcp/**", "anon");
-        FILTER_CHAIN_DEFINITION_MAP.put("/opportunity/stage/get", "anon");
-        
+    private static void addPublicPathFilters(Map<String, String> chain) {
+        chain.put("/display/info", "anon");
+        chain.put("/pic/preview/**", "anon");
+        chain.put("/attachment/preview/**", "anon");
+        chain.put("/ui/display/preview", "anon");
+        chain.put("/ui/display/info", "anon");
+        chain.put("/anonymous/**", "anon");
+        chain.put("/system/version/current", "anon");
+        chain.put("/sse/subscribe/**", "anon");
+        chain.put("/sse/close/**", "anon");
+        chain.put("/sse/broadcast/**", "anon");
+        chain.put("/organization/settings/third-party/types", "anon");
+        chain.put("/organization/settings/third-party/get/**", "anon");
+        chain.put("/organization/settings/third-party/sync/resource", "anon");
+        chain.put("/license/validate/**", "anon");
+        chain.put("/mcp/**", "anon");
+        chain.put("/opportunity/stage/get", "anon");
     }
 
     /**
@@ -108,6 +124,10 @@ public final class ShiroFilter {
      * @return 返回一个不可变Map，包含应绕过 CSRF 检查的 URL 路径的过滤器链定义。
      */
     public static Map<String, String> ignoreCsrfFilter() {
-        return Map.of("/", "apikey, authc", "/language", "apikey, authc", "/mock", "apikey, authc");
+        final Map<String, String> chain = new LinkedHashMap<>();
+        chain.put("/", "apikey, authc");
+        chain.put("/language", "apikey, authc");
+        chain.put("/mock", "apikey, authc");
+        return Collections.unmodifiableMap(chain);
     }
 }

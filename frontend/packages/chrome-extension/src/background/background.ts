@@ -158,19 +158,21 @@ async function importEnterprise(
 }
 
 /**
- * 获取爱企查 Cookie 字符串
+ * 检查用户是否已登录爱企查
  */
-async function getAiqichaCookies(): Promise<string> {
+async function isAiqichaLoggedIn(): Promise<boolean> {
   try {
     const cookies = await chrome.cookies.getAll({ url: 'https://aiqicha.baidu.com/' });
-    return cookies.map((c) => `${c.name}=${c.value}`).join('; ');
+    // 检查是否有登录相关的 cookie（如 BAIDUID, BDUSS 等）
+    return cookies.some(c => c.name === 'BDUSS' || c.name === 'BAIDUID');
   } catch {
-    return '';
+    return false;
   }
 }
 
 /**
  * 执行爱企查搜索的核心逻辑
+ * 使用 credentials: 'include' 让浏览器自动携带 Cookie
  */
 async function performAiqichaSearch(
   keyword: string,
@@ -195,9 +197,9 @@ async function performAiqichaSearch(
 
   console.log(`[CRM Extension] 搜索爱企查: ${trimmedKeyword}, page=${page}, pageSize=${pageSize}`);
 
-  // 获取爱企查 Cookie
-  const cookieString = await getAiqichaCookies();
-  if (!cookieString) {
+  // 检查用户是否已登录爱企查
+  const loggedIn = await isAiqichaLoggedIn();
+  if (!loggedIn) {
     return {
       success: false,
       message: '请先在爱企查网站登录，然后刷新页面重试',
@@ -208,43 +210,23 @@ async function performAiqichaSearch(
 
   const url = `https://aiqicha.baidu.com/s/advanceFilterAjax?q=${encodeURIComponent(trimmedKeyword)}&p=${page}&s=${pageSize}`;
   
-  const response = await fetchWithTimeout(
-    url,
-    {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json, text/plain, */*',
-        'Referer': `https://aiqicha.baidu.com/s?q=${encodeURIComponent(trimmedKeyword)}`,
-        'Cookie': cookieString,
+  try {
+    // 使用 credentials: 'include' 让浏览器自动携带 Cookie
+    // 注意：Cookie 是 forbidden header，不能手动设置
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json, text/plain, */*',
+        },
+        credentials: 'include',
       },
-    },
-    REQUEST_TIMEOUT
-  );
+      REQUEST_TIMEOUT
+    );
 
-  // 检查是否被重定向到验证码页面
-  if (response.redirected || response.url.includes('captcha') || response.url.includes('wappass')) {
-    return {
-      success: false,
-      message: '爱企查需要验证码验证，请先在爱企查网站完成验证',
-      items: [],
-      total: 0,
-    };
-  }
-
-  if (!response.ok) {
-    return {
-      success: false,
-      message: `搜索请求失败 (${response.status})`,
-      items: [],
-      total: 0,
-    };
-  }
-
-  // 检查响应类型
-  const contentType = response.headers.get('content-type') || '';
-  if (!contentType.includes('application/json')) {
-    const text = await response.text();
-    if (text.includes('captcha') || text.includes('wappass') || text.startsWith('<')) {
+    // 检查是否被重定向到验证码页面
+    if (response.redirected || response.url.includes('captcha') || response.url.includes('wappass')) {
       return {
         success: false,
         message: '爱企查需要验证码验证，请先在爱企查网站完成验证',
@@ -252,48 +234,81 @@ async function performAiqichaSearch(
         total: 0,
       };
     }
+
+    if (!response.ok) {
+      console.error(`[CRM Extension] 搜索请求失败: ${response.status} ${response.statusText}`);
+      return {
+        success: false,
+        message: `搜索请求失败 (${response.status})`,
+        items: [],
+        total: 0,
+      };
+    }
+
+    // 检查响应类型
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      const text = await response.text();
+      console.error(`[CRM Extension] 非 JSON 响应: ${text.substring(0, 200)}`);
+      if (text.includes('captcha') || text.includes('wappass') || text.startsWith('<')) {
+        return {
+          success: false,
+          message: '爱企查需要验证码验证，请先在爱企查网站完成验证',
+          items: [],
+          total: 0,
+        };
+      }
+      return {
+        success: false,
+        message: '爱企查返回了无效的响应格式',
+        items: [],
+        total: 0,
+      };
+    }
+
+    const json = await response.json();
+    
+    if (json?.status !== 0) {
+      return {
+        success: false,
+        message: json?.msg || '搜索失败',
+        items: [],
+        total: 0,
+      };
+    }
+
+    // 解析搜索结果
+    const data = json?.data || {};
+    const resultList = Array.isArray(data?.resultList) ? data.resultList : [];
+    
+    const items = resultList.map((item: Record<string, unknown>) => ({
+      pid: String(item?.pid || ''),
+      name: String(item?.titleName || item?.entName || ''),
+      creditCode: item?.unifiedCode as string | undefined,
+      legalPerson: item?.legalPerson as string | undefined,
+      address: item?.regAddr as string | undefined,
+      status: item?.openStatus as string | undefined,
+      establishDate: item?.startDate as string | undefined,
+      registeredCapital: item?.regCapital as string | undefined,
+      industry: item?.industry as string | undefined,
+    }));
+
+    console.log(`[CRM Extension] 搜索成功，返回 ${items.length} 条结果`);
+
+    return {
+      success: true,
+      items,
+      total: Number(data?.total || 0),
+    };
+  } catch (error) {
+    console.error('[CRM Extension] 搜索异常:', error);
     return {
       success: false,
-      message: '爱企查返回了无效的响应格式',
+      message: error instanceof Error ? error.message : '搜索失败',
       items: [],
       total: 0,
     };
   }
-
-  const json = await response.json();
-  
-  if (json?.status !== 0) {
-    return {
-      success: false,
-      message: json?.msg || '搜索失败',
-      items: [],
-      total: 0,
-    };
-  }
-
-  // 解析搜索结果
-  const data = json?.data || {};
-  const resultList = Array.isArray(data?.resultList) ? data.resultList : [];
-  
-  const items = resultList.map((item: Record<string, unknown>) => ({
-    pid: String(item?.pid || ''),
-    name: String(item?.titleName || item?.entName || ''),
-    creditCode: item?.unifiedCode as string | undefined,
-    legalPerson: item?.legalPerson as string | undefined,
-    address: item?.regAddr as string | undefined,
-    status: item?.openStatus as string | undefined,
-    establishDate: item?.startDate as string | undefined,
-    registeredCapital: item?.regCapital as string | undefined,
-    industry: item?.industry as string | undefined,
-  }));
-
-  console.log(`[CRM Extension] 搜索成功，返回 ${items.length} 条结果`);
-
-  return {
-    success: true,
-    items,
-    total: Number(data?.total || 0),
-  };
 }
 
 /**
@@ -398,28 +413,27 @@ chrome.runtime.onMessage.addListener(
     }
 
     if (message.type === 'GET_AIQICHA_COOKIES') {
-      // 异步获取爱企查 Cookie
+      // 检查爱企查登录状态
       (async () => {
         try {
-          const cookies = await chrome.cookies.getAll({ url: 'https://aiqicha.baidu.com/' });
-          const cookieString = cookies.map((c) => `${c.name}=${c.value}`).join('; ');
+          const loggedIn = await isAiqichaLoggedIn();
 
-          if (!cookieString) {
+          if (!loggedIn) {
             sendResponse({
               success: false,
-              message: '未获取到 Cookie，请确认已登录爱企查',
+              message: '未检测到登录状态，请确认已登录爱企查',
             });
             return;
           }
 
           sendResponse({
             success: true,
-            cookies: cookieString,
+            cookies: 'logged_in', // 不再返回实际 cookie，只返回登录状态
           });
         } catch (error) {
           sendResponse({
             success: false,
-            message: error instanceof Error ? error.message : '获取 Cookie 失败',
+            message: error instanceof Error ? error.message : '检查登录状态失败',
           });
         }
       })();

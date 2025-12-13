@@ -8,14 +8,22 @@ import cn.cordys.common.util.rsa.RsaKey;
 import cn.cordys.common.util.rsa.RsaUtils;
 import cn.cordys.context.OrganizationContext;
 import cn.cordys.crm.system.service.UserLoginService;
+import cn.cordys.security.SessionConstants;
 import cn.cordys.security.SessionUser;
 import cn.cordys.security.SessionUtils;
 import cn.cordys.security.UserDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.shiro.SecurityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.session.Session;
+import org.springframework.session.data.redis.RedisIndexedSessionRepository;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,8 +38,15 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "登录")
 public class LoginController {
 
+    private static final Logger log = LoggerFactory.getLogger(LoginController.class);
+    private static final String SESSION_AUTH_PREFIX = "Session ";
+    private static final String BEARER_AUTH_PREFIX = "Bearer ";
+
     @Resource
     private UserLoginService userLoginService;
+
+    @Resource
+    private RedisIndexedSessionRepository redisIndexedSessionRepository;
 
     /**
      * 检查用户是否已登录。
@@ -52,6 +67,102 @@ public class LoginController {
             return sessionUser;
         }
         return null;
+    }
+
+    /**
+     * 获取当前用户信息（用于 Chrome 扩展等外部客户端）。
+     * <p>
+     * 支持两种认证方式：
+     * 1. Authorization: Bearer {sessionId}
+     * 2. Authorization: Session {sessionId}
+     * </p>
+     *
+     * @param authorization Authorization 请求头
+     * @return 当前用户信息；未认证返回 401
+     */
+    @GetMapping(value = "/api/user/current")
+    @Operation(summary = "获取当前用户（Bearer/Session Token）")
+    public ResponseEntity<SessionUser> currentUser(
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+        return doGetCurrentUser(authorization);
+    }
+
+    /**
+     * 获取当前用户信息（公开端点，用于 Chrome 扩展等外部客户端）。
+     * <p>
+     * 这是 /api/user/current 的别名，使用 /anonymous/ 前缀以绕过 Shiro 认证。
+     * </p>
+     *
+     * @param authorization Authorization 请求头
+     * @return 当前用户信息；未认证返回 401
+     */
+    @GetMapping(value = "/anonymous/user/current")
+    @Operation(summary = "获取当前用户（公开端点）")
+    public ResponseEntity<SessionUser> currentUserPublic(
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+        return doGetCurrentUser(authorization);
+    }
+
+    /**
+     * 获取当前用户信息的内部实现。
+     */
+    private ResponseEntity<SessionUser> doGetCurrentUser(String authorization) {
+        String sessionId = extractSessionId(authorization);
+        if (StringUtils.isBlank(sessionId)) {
+            log.debug("[currentUser] Authorization header is missing or invalid");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            Session session = redisIndexedSessionRepository.findById(sessionId);
+            if (session == null) {
+                log.debug("[currentUser] Session not found: {}...{}", 
+                        maskSessionId(sessionId), sessionId.substring(sessionId.length() - 4));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            SessionUser sessionUser = session.getAttribute(SessionConstants.ATTR_USER);
+            if (sessionUser == null || StringUtils.isBlank(sessionUser.getId())) {
+                log.debug("[currentUser] No valid user in session");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            // 确保返回的 sessionId 与请求一致
+            sessionUser.setSessionId(sessionId);
+            log.debug("[currentUser] User authenticated: {}", sessionUser.getId());
+            return ResponseEntity.ok(sessionUser);
+        } catch (Exception e) {
+            log.error("[currentUser] Error validating session: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+    }
+
+    /**
+     * 从 Authorization 头中提取 Session ID。
+     * 支持大小写不敏感的 Bearer/Session 前缀。
+     */
+    private String extractSessionId(String authorization) {
+        if (StringUtils.isBlank(authorization)) {
+            return null;
+        }
+        String trimmed = authorization.trim();
+        if (StringUtils.startsWithIgnoreCase(trimmed, BEARER_AUTH_PREFIX)) {
+            return StringUtils.trimToNull(trimmed.substring(BEARER_AUTH_PREFIX.length()));
+        }
+        if (StringUtils.startsWithIgnoreCase(trimmed, SESSION_AUTH_PREFIX)) {
+            return StringUtils.trimToNull(trimmed.substring(SESSION_AUTH_PREFIX.length()));
+        }
+        return null;
+    }
+
+    /**
+     * 对 Session ID 进行脱敏处理，只保留前4位。
+     */
+    private String maskSessionId(String sessionId) {
+        if (sessionId == null || sessionId.length() <= 8) {
+            return "****";
+        }
+        return sessionId.substring(0, 4);
     }
 
     /**

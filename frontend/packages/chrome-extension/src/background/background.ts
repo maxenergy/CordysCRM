@@ -158,6 +158,18 @@ async function importEnterprise(
 }
 
 /**
+ * 获取爱企查 Cookie 字符串
+ */
+async function getAiqichaCookies(): Promise<string> {
+  try {
+    const cookies = await chrome.cookies.getAll({ url: 'https://aiqicha.baidu.com/' });
+    return cookies.map((c) => `${c.name}=${c.value}`).join('; ');
+  } catch {
+    return '';
+  }
+}
+
+/**
  * 执行爱企查搜索的核心逻辑
  */
 async function performAiqichaSearch(
@@ -183,16 +195,27 @@ async function performAiqichaSearch(
 
   console.log(`[CRM Extension] 搜索爱企查: ${trimmedKeyword}, page=${page}, pageSize=${pageSize}`);
 
+  // 获取爱企查 Cookie
+  const cookieString = await getAiqichaCookies();
+  if (!cookieString) {
+    return {
+      success: false,
+      message: '请先在爱企查网站登录，然后刷新页面重试',
+      items: [],
+      total: 0,
+    };
+  }
+
   const url = `https://aiqicha.baidu.com/s/advanceFilterAjax?q=${encodeURIComponent(trimmedKeyword)}&p=${page}&s=${pageSize}`;
   
   const response = await fetchWithTimeout(
     url,
     {
       method: 'GET',
-      credentials: 'include',
       headers: {
         'Accept': 'application/json, text/plain, */*',
         'Referer': `https://aiqicha.baidu.com/s?q=${encodeURIComponent(trimmedKeyword)}`,
+        'Cookie': cookieString,
       },
     },
     REQUEST_TIMEOUT

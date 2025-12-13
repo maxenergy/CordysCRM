@@ -101,6 +101,7 @@ void main() {
       test('should reject invalid phone numbers', () {
         for (var i = 0; i < 100; i++) {
           final phone = generateInvalidPhone();
+          // ignore: unused_local_variable
           final result = Validators.validatePhone(phone);
           // 无效手机号应该返回错误信息或被 isValidPhone 拒绝
           if (phone.length == 11 && RegExp(r'^1[3-9]\d{9}$').hasMatch(phone)) {

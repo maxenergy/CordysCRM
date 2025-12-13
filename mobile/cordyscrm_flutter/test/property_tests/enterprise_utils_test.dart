@@ -141,6 +141,7 @@ void main() {
   }
 
   /// 生成无效的企业名称
+  // ignore: unused_element
   String generateInvalidCompanyName() {
     final types = [
       // 太短

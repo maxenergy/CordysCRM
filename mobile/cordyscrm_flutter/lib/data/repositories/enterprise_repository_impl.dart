@@ -49,13 +49,14 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
         final responseData = response.data as Map<String, dynamic>;
         
         // 后端使用 ResultHolder 包装响应，格式为 { code, message, data }
-        // 需要从 data 字段中提取实际的搜索结果
+        // 成功码为 100200（不是 HTTP 200），需要从 data 字段中提取实际的搜索结果
         Map<String, dynamic> searchData;
         if (responseData.containsKey('code') && responseData.containsKey('data')) {
           // ResultHolder 包装格式
           final code = responseData['code'] as int?;
-          if (code != null && code != 200) {
-            final message = responseData['message'] as String? ?? '服务器错误';
+          // 后端成功码是 100200，不是 200
+          if (code != null && code != 100200) {
+            final message = responseData['message'] as String? ?? '服务器错误 (code: $code)';
             _logger.w('搜索失败: code=$code, message=$message');
             return EnterpriseSearchResult.error(message);
           }

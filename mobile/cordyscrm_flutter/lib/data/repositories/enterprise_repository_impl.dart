@@ -46,9 +46,26 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        final result = EnterpriseSearchResult.fromJson(
-          response.data as Map<String, dynamic>,
-        );
+        final responseData = response.data as Map<String, dynamic>;
+        
+        // 后端使用 ResultHolder 包装响应，格式为 { code, message, data }
+        // 需要从 data 字段中提取实际的搜索结果
+        Map<String, dynamic> searchData;
+        if (responseData.containsKey('code') && responseData.containsKey('data')) {
+          // ResultHolder 包装格式
+          final code = responseData['code'] as int?;
+          if (code != null && code != 200) {
+            final message = responseData['message'] as String? ?? '服务器错误';
+            _logger.w('搜索失败: code=$code, message=$message');
+            return EnterpriseSearchResult.error(message);
+          }
+          searchData = responseData['data'] as Map<String, dynamic>? ?? {};
+        } else {
+          // 直接返回格式（兼容）
+          searchData = responseData;
+        }
+        
+        final result = EnterpriseSearchResult.fromJson(searchData);
         _logger.i('搜索结果: ${result.items.length} 条, 总计 ${result.total} 条');
         return result;
       }
@@ -64,13 +81,15 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
       
       final errorData = e.response?.data;
       if (errorData is Map<String, dynamic>) {
-        final message = errorData['message'] as String?;
-        if (message != null) {
+        // 尝试从 ResultHolder 格式中提取错误信息
+        final message = errorData['message'] as String? ?? 
+                        (errorData['data'] as Map<String, dynamic>?)?['message'] as String?;
+        if (message != null && message.isNotEmpty) {
           return EnterpriseSearchResult.error(message);
         }
       }
       
-      return EnterpriseSearchResult.error('搜索失败: ${e.message}');
+      return EnterpriseSearchResult.error('搜索失败: ${e.message ?? '网络错误'}');
     } catch (e) {
       _logger.e('搜索企业异常: $e');
       return EnterpriseSearchResult.error('搜索失败: $e');

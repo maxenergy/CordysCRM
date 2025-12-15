@@ -212,6 +212,10 @@ public class EnterpriseService {
     /**
      * 企业搜索：优先本地数据库（enterprise_profile），不足再调用爱企查补充。
      *
+     * 搜索策略：
+     * - 第1页：先查本地，不足再调用爱企查补充，按信用代码去重
+     * - 第2页及以后：直接调用爱企查（保持向后兼容）
+     *
      * 返回结果中每条记录带来源标识：
      * - local：本地数据库
      * - iqicha：爱企查
@@ -223,25 +227,38 @@ public class EnterpriseService {
      * @return 搜索结果
      */
     public SearchResult searchEnterprise(String keyword, int page, int pageSize, String organizationId) {
-        int safePage = Math.max(page, 1);
-        int safePageSize = pageSize > 0 ? pageSize : 10;
+        // 参数校验
+        if (StringUtils.isBlank(keyword) || keyword.trim().length() < 2) {
+            return SearchResult.error("搜索关键词至少需要2个字符");
+        }
 
+        int safePage = Math.max(page, 1);
+        int safePageSize = pageSize > 0 ? Math.min(pageSize, 50) : 10;
+
+        // 第2页及以后：直接调用爱企查（保持向后兼容）
+        if (safePage > 1) {
+            return iqichaSearchService.searchEnterprise(keyword, safePage, safePageSize);
+        }
+
+        // 第1页：先本地后爱企查
         List<EnterpriseItem> items = new ArrayList<>();
-        int localTotal = 0;
+        java.util.Set<String> seenCreditCodes = new java.util.HashSet<>();
 
         // 1) 本地优先：按企业名称模糊查询
-        if (StringUtils.isNotBlank(keyword) && StringUtils.isNotBlank(organizationId)) {
+        if (StringUtils.isNotBlank(organizationId)) {
             List<EnterpriseProfile> localProfiles = extEnterpriseProfileMapper.searchByCompanyName(keyword, organizationId);
-            if (localProfiles != null) {
-                localTotal = localProfiles.size();
-                log.info("本地搜索 '{}' 找到 {} 条记录", keyword, localTotal);
+            if (localProfiles != null && !localProfiles.isEmpty()) {
+                log.info("本地搜索 '{}' 找到 {} 条记录", keyword, localProfiles.size());
 
-                // 简单分页：在本地结果集合上切片
-                int fromIndex = Math.max(0, (safePage - 1) * safePageSize);
-                if (fromIndex < localProfiles.size()) {
-                    int toIndex = Math.min(fromIndex + safePageSize, localProfiles.size());
-                    for (EnterpriseProfile profile : localProfiles.subList(fromIndex, toIndex)) {
-                        items.add(toLocalEnterpriseItem(profile));
+                for (EnterpriseProfile profile : localProfiles) {
+                    if (items.size() >= safePageSize) break;
+                    
+                    EnterpriseItem item = toLocalEnterpriseItem(profile);
+                    items.add(item);
+                    
+                    // 记录信用代码用于去重
+                    if (StringUtils.isNotBlank(item.getCreditCode())) {
+                        seenCreditCodes.add(item.getCreditCode());
                     }
                 }
             }
@@ -250,32 +267,40 @@ public class EnterpriseService {
         // 2) 不足再补：调用爱企查补足到 pageSize
         int remaining = safePageSize - items.size();
         if (remaining > 0) {
-            log.info("本地结果不足，调用爱企查补充 {} 条", remaining);
-            SearchResult remote = iqichaSearchService.searchEnterprise(keyword, safePage, remaining);
-            if (remote != null && remote.isSuccess()) {
-                if (remote.getItems() != null) {
-                    // 过滤掉本地已有的（按信用代码去重）
-                    for (EnterpriseItem remoteItem : remote.getItems()) {
-                        boolean existsLocally = items.stream()
-                                .anyMatch(local -> StringUtils.isNotBlank(local.getCreditCode()) 
-                                        && local.getCreditCode().equals(remoteItem.getCreditCode()));
-                        if (!existsLocally) {
-                            items.add(remoteItem);
-                        }
+            log.info("本地结果 {} 条，调用爱企查补充", items.size());
+            // 多请求一些以便去重后仍有足够结果
+            SearchResult remote = iqichaSearchService.searchEnterprise(keyword, 1, remaining + 10);
+            
+            if (remote != null && remote.isSuccess() && remote.getItems() != null) {
+                for (EnterpriseItem remoteItem : remote.getItems()) {
+                    if (items.size() >= safePageSize) break;
+                    
+                    // 按信用代码去重
+                    String creditCode = remoteItem.getCreditCode();
+                    if (StringUtils.isNotBlank(creditCode) && seenCreditCodes.contains(creditCode)) {
+                        log.debug("跳过重复企业: {} ({})", remoteItem.getName(), creditCode);
+                        continue;
+                    }
+                    
+                    items.add(remoteItem);
+                    if (StringUtils.isNotBlank(creditCode)) {
+                        seenCreditCodes.add(creditCode);
                     }
                 }
-                return SearchResult.success(items, localTotal + remote.getTotal());
+                
+                // total 使用爱企查的 total（因为本地数据有限，爱企查更能反映真实数量）
+                return SearchResult.success(items, remote.getTotal());
             } else if (remote != null && !remote.isSuccess()) {
-                // 远端失败但本地有结果：返回本地结果
+                // 爱企查失败但本地有结果：返回本地结果
                 if (!items.isEmpty()) {
                     log.warn("爱企查搜索失败，返回本地结果: {}", remote.getMessage());
-                    return SearchResult.success(items, localTotal);
+                    return SearchResult.success(items, items.size());
                 }
                 return remote;
             }
         }
 
-        return SearchResult.success(items, localTotal);
+        return SearchResult.success(items, items.size());
     }
 
     /**

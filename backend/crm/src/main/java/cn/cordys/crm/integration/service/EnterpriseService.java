@@ -312,7 +312,12 @@ public class EnterpriseService {
         if (profile == null) {
             return item;
         }
-        item.setPid(profile.getIqichaId());
+        // 优先使用 iqichaId，如果为空则使用 id 作为备选（确保 pid 不为空）
+        String pid = profile.getIqichaId();
+        if (StringUtils.isBlank(pid)) {
+            pid = profile.getId();
+        }
+        item.setPid(pid);
         item.setName(profile.getCompanyName());
         item.setCreditCode(profile.getCreditCode());
         item.setLegalPerson(profile.getLegalPerson());

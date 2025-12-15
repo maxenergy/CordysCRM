@@ -162,33 +162,48 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
 
   final EnterpriseRepository _repository;
   final Ref _ref;
+  
+  /// 当前搜索请求的序号，用于处理竞态条件
+  int _searchRequestId = 0;
 
   /// 搜索企业
   ///
   /// 在演示模式下返回模拟数据，真实模式下调用后端 API
   Future<void> search(String keyword) async {
-    if (keyword.trim().length < 2) {
+    final trimmedKeyword = keyword.trim();
+    
+    if (trimmedKeyword.length < 2) {
+      // 递增请求序号，使任何进行中的搜索请求失效
+      _searchRequestId++;
       state = const EnterpriseSearchState();
       return;
     }
 
     final isMockMode = _ref.read(isMockModeProvider);
+    
+    // 递增请求序号，用于处理竞态条件
+    final currentRequestId = ++_searchRequestId;
 
     state = state.copyWith(
       isSearching: true,
-      keyword: keyword,
+      keyword: trimmedKeyword,
       clearError: true,
     );
 
     try {
       // 演示模式：返回模拟数据
       if (isMockMode) {
-        await _searchMockData(keyword);
+        await _searchMockData(trimmedKeyword, currentRequestId);
         return;
       }
 
       // 真实模式：调用后端 API
-      final result = await _repository.searchEnterprise(keyword: keyword);
+      final result = await _repository.searchEnterprise(keyword: trimmedKeyword);
+      
+      // 检查是否已被新请求取代或 Provider 已销毁
+      if (!mounted || currentRequestId != _searchRequestId) {
+        return;
+      }
 
       if (result.success) {
         state = state.copyWith(
@@ -201,26 +216,33 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
           isSearching: false,
           error: result.message ?? '搜索失败',
           results: [],
+          total: 0,
         );
       }
     } catch (e) {
+      // 检查是否已被新请求取代或 Provider 已销毁
+      if (!mounted || currentRequestId != _searchRequestId) {
+        return;
+      }
+      
       state = state.copyWith(
         isSearching: false,
         error: '搜索失败: $e',
         results: [],
+        total: 0,
       );
     }
   }
 
   /// 演示模式下的模拟搜索
-  Future<void> _searchMockData(String keyword) async {
+  Future<void> _searchMockData(String keyword, int requestId) async {
     // 模拟网络延迟
     await Future.delayed(const Duration(milliseconds: 300));
 
-    // 检查 Provider 是否已销毁
-    if (!mounted) return;
+    // 检查 Provider 是否已销毁或请求已被取代
+    if (!mounted || requestId != _searchRequestId) return;
 
-    final kw = keyword.trim().toLowerCase();
+    final kw = keyword.toLowerCase();
 
     // 在模拟数据中搜索匹配的企业（统一使用小写比对）
     final results = _mockEnterprises.where((enterprise) {
@@ -231,8 +253,8 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
           enterprise.industry.toLowerCase().contains(kw);
     }).toList();
 
-    // 再次检查 mounted 状态
-    if (!mounted) return;
+    // 再次检查 mounted 状态和请求序号
+    if (!mounted || requestId != _searchRequestId) return;
 
     state = state.copyWith(
       isSearching: false,
@@ -243,6 +265,8 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
 
   /// 清除搜索结果
   void clear() {
+    // 递增请求序号，使任何进行中的搜索请求失效
+    _searchRequestId++;
     state = const EnterpriseSearchState();
   }
 }

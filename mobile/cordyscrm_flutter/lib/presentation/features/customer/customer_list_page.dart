@@ -7,6 +7,7 @@ import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
 import '../../../domain/entities/customer.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/skeleton_loading.dart';
 import 'customer_provider.dart';
 import 'widgets/customer_list_item.dart';
 import 'widgets/filter_bottom_sheet.dart';
@@ -95,18 +96,8 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage> {
               customer: customer,
               onTap: () => context.push('/customers/${customer.id}'),
             ),
-            firstPageProgressIndicatorBuilder: (_) => const Center(
-              child: Padding(
-                padding: EdgeInsets.all(32),
-                child: CircularProgressIndicator(),
-              ),
-            ),
-            newPageProgressIndicatorBuilder: (_) => const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: CircularProgressIndicator(),
-              ),
-            ),
+            firstPageProgressIndicatorBuilder: (_) => const CustomerListSkeleton(),
+            newPageProgressIndicatorBuilder: (_) => const PageLoadingSkeleton(),
             noItemsFoundIndicatorBuilder: (_) => _buildEmptyState(),
             noMoreItemsIndicatorBuilder: (_) => const Center(
               child: Padding(

@@ -10,7 +10,7 @@ class LoginSettingsService {
   static const _keyUsername = 'saved_username';
   static const _keyPassword = 'saved_password';
   
-  static const _defaultServerUrl = 'http://192.168.1.226:8081';
+  static const _defaultServerUrl = 'http://192.168.31.22:8081';
   
   final FlutterSecureStorage _secureStorage;
   SharedPreferences? _prefs;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../dashboard/dashboard_page.dart';
 import '../customer/customer_list_page.dart';
 import '../clue/clue_list_page.dart';
 import '../opportunity/opportunity_list_page.dart';
@@ -22,6 +23,11 @@ class _NavItem {
 
 /// 底部导航配置
 const List<_NavItem> _navItems = [
+  _NavItem(
+    icon: Icons.dashboard_outlined,
+    selectedIcon: Icons.dashboard,
+    label: '工作台',
+  ),
   _NavItem(
     icon: Icons.people_outline,
     selectedIcon: Icons.people,
@@ -62,6 +68,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 
   /// 页面列表 - 使用 late 延迟初始化以支持状态保持
   late final List<Widget> _pages = const [
+    DashboardPage(),
     CustomerListPage(),
     ClueListPage(),
     OpportunityListPage(),

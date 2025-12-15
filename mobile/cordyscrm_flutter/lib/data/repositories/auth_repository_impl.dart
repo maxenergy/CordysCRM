@@ -22,7 +22,7 @@ class AuthRepositoryImpl implements AuthRepository {
     final request = LoginRequest(username: username, password: password);
     
     final response = await _dioClient.dio.post(
-      '/api/auth/login',
+      '/login',
       data: request.toJson(),
     );
 
@@ -46,7 +46,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> logout() async {
     try {
-      await _dioClient.dio.post('/api/auth/logout');
+      await _dioClient.dio.get('/logout');
     } catch (_) {
       // 忽略登出 API 错误
     } finally {
@@ -63,18 +63,15 @@ class AuthRepositoryImpl implements AuthRepository {
       throw Exception('No refresh token available');
     }
 
-    final response = await _dioClient.dio.post(
-      '/api/auth/refresh',
-      data: {'refreshToken': refreshToken},
-    );
+    // 后端使用 Session 机制，不需要刷新 Token
+    // 直接返回当前 Token
+    final accessToken = await _storage.read(key: StorageKeys.accessToken);
+    if (accessToken == null) {
+      throw Exception('No access token available');
+    }
+    return accessToken;
 
-    final newAccessToken = response.data['accessToken'] ?? response.data['access_token'];
-    final newRefreshToken = response.data['refreshToken'] ?? response.data['refresh_token'] ?? refreshToken;
 
-    await saveToken(newAccessToken, newRefreshToken);
-    _dioClient.updateToken(newAccessToken);
-
-    return newAccessToken;
   }
 
   @override

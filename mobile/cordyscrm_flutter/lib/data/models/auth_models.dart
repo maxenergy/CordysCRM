@@ -4,46 +4,56 @@ import '../../domain/entities/user.dart';
 class LoginRequest {
   final String username;
   final String password;
+  final String platform;
 
   const LoginRequest({
     required this.username,
     required this.password,
+    this.platform = 'mobile',
   });
 
   Map<String, dynamic> toJson() => {
         'username': username,
         'password': password,
+        'platform': platform,
       };
 }
 
 /// 登录响应
+/// 后端返回包装格式: { code: 100200, data: SessionUser }
 class LoginResponse {
-  final String accessToken;
-  final String refreshToken;
-  final int expiresIn;
+  final String csrfToken;
+  final String sessionId;
   final UserModel user;
 
   const LoginResponse({
-    required this.accessToken,
-    required this.refreshToken,
-    required this.expiresIn,
+    required this.csrfToken,
+    required this.sessionId,
     required this.user,
   });
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
+    // 后端返回格式: { code: 100200, data: { ...SessionUser } }
+    final data = json['data'] as Map<String, dynamic>? ?? json;
+    
     return LoginResponse(
-      accessToken: json['accessToken'] ?? json['access_token'] ?? '',
-      refreshToken: json['refreshToken'] ?? json['refresh_token'] ?? '',
-      expiresIn: json['expiresIn'] ?? json['expires_in'] ?? 7200,
-      user: UserModel.fromJson(json['user'] ?? {}),
+      csrfToken: data['csrfToken']?.toString() ?? '',
+      sessionId: data['sessionId']?.toString() ?? '',
+      user: UserModel.fromJson(data),
     );
   }
+
+  /// 使用 sessionId 作为 accessToken
+  String get accessToken => sessionId;
+
+  /// 使用 csrfToken 作为 refreshToken
+  String get refreshToken => csrfToken;
 }
 
 /// 用户模型
+/// 对应后端 UserDTO/SessionUser
 class UserModel {
-  final int id;
-  final String username;
+  final String id;
   final String? name;
   final String? email;
   final String? phone;
@@ -54,7 +64,6 @@ class UserModel {
 
   const UserModel({
     required this.id,
-    required this.username,
     this.name,
     this.email,
     this.phone,
@@ -65,22 +74,26 @@ class UserModel {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    // 从 permissionIds 提取权限列表
+    final permissionIds = json['permissionIds'];
+    final permissions = permissionIds is List
+        ? permissionIds.map((e) => e.toString()).toList()
+        : <String>[];
+
     return UserModel(
-      id: json['id'] ?? 0,
-      username: json['username'] ?? '',
+      id: json['id']?.toString() ?? '',
       name: json['name'],
       email: json['email'],
       phone: json['phone'],
       avatar: json['avatar'],
-      organizationId: json['organizationId'],
-      roles: List<String>.from(json['roles'] ?? []),
-      permissions: List<String>.from(json['permissions'] ?? []),
+      organizationId: json['lastOrganizationId'],
+      roles: <String>[],
+      permissions: permissions,
     );
   }
 
   Map<String, dynamic> toJson() => {
         'id': id,
-        'username': username,
         'name': name,
         'email': email,
         'phone': phone,
@@ -92,8 +105,8 @@ class UserModel {
 
   /// 转换为领域实体
   User toEntity() => User(
-        id: id,
-        username: username,
+        id: int.tryParse(id) ?? 0,
+        username: name ?? id,
         name: name,
         email: email,
         phone: phone,

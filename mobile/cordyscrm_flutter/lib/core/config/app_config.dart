@@ -2,7 +2,7 @@
 class AppConfig {
   /// API 基础地址
   /// 开发环境使用本地地址，生产环境使用正式地址
-  static const String baseUrl = 'http://192.168.1.181:8081'; // 本地开发服务器
+  static const String baseUrl = 'http://192.168.1.226:8081'; // 本地开发服务器
   
   /// 请求超时时间（毫秒）
   static const int connectTimeout = 15000;

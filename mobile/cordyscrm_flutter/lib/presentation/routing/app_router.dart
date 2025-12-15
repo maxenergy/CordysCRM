@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../features/auth/login_page.dart';
 import '../features/auth/auth_provider.dart';
+import '../features/home/home_shell.dart';
 import '../features/customer/customer_list_page.dart';
 import '../features/customer/customer_detail_page.dart';
 import '../features/customer/customer_edit_page.dart';
@@ -71,9 +72,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.home,
         name: 'home',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('首页 - 待实现')),
-        ),
+        builder: (context, state) => const HomeShell(),
       ),
       
       // 客户列表
@@ -209,8 +208,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     // 路由重定向（认证守卫）
     redirect: (context, state) {
       final authState = ref.read(authProvider);
-      final isLoggedIn = authState.status == AuthStatus.authenticated;
       final isLoginRoute = state.matchedLocation == AppRoutes.login;
+      
+      // 初始状态时，不进行重定向，等待认证状态检查完成
+      if (authState.status == AuthStatus.initial) {
+        return null;
+      }
+      
+      final isLoggedIn = authState.status == AuthStatus.authenticated;
       
       // 未登录且不在登录页，重定向到登录页
       if (!isLoggedIn && !isLoginRoute) {

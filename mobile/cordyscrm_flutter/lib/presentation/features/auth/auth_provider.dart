@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers/app_mode_provider.dart';
 import '../../../data/repositories/auth_repository_impl.dart';
 import '../../../domain/entities/user.dart';
 import '../../../domain/repositories/auth_repository.dart';
@@ -7,6 +8,17 @@ import '../../../domain/repositories/auth_repository.dart';
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepositoryImpl();
 });
+
+/// 模拟用户数据
+const _mockUser = User(
+  id: 1,
+  username: 'admin',
+  name: '管理员',
+  email: 'admin@cordys.cn',
+  phone: '13800138000',
+  avatar: null,
+  roles: ['admin'],
+);
 
 /// 认证状态
 enum AuthStatus {
@@ -44,13 +56,22 @@ class AuthState {
 /// 认证状态 Notifier
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository _repository;
+  final Ref _ref;
 
-  AuthNotifier(this._repository) : super(const AuthState()) {
+  AuthNotifier(this._repository, this._ref) : super(const AuthState()) {
     _checkAuthStatus();
   }
 
   /// 检查认证状态
   Future<void> _checkAuthStatus() async {
+    final isMockMode = _ref.read(isMockModeProvider);
+    
+    // 模拟模式下，默认未登录
+    if (isMockMode) {
+      state = const AuthState(status: AuthStatus.unauthenticated);
+      return;
+    }
+    
     try {
       final isLoggedIn = await _repository.isLoggedIn();
       if (isLoggedIn) {
@@ -70,7 +91,29 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// 登录
   Future<void> login(String username, String password) async {
     state = state.copyWith(status: AuthStatus.loading, error: null);
+    
+    final isMockMode = _ref.read(isMockModeProvider);
 
+    // 模拟模式登录
+    if (isMockMode) {
+      await Future.delayed(const Duration(milliseconds: 500)); // 模拟网络延迟
+      
+      if (username == 'admin' && password == 'admin123') {
+        state = const AuthState(
+          status: AuthStatus.authenticated,
+          user: _mockUser,
+        );
+        return;
+      } else {
+        state = const AuthState(
+          status: AuthStatus.unauthenticated,
+          error: '用户名或密码错误（模拟模式：admin/admin123）',
+        );
+        throw Exception('用户名或密码错误');
+      }
+    }
+
+    // 真实模式登录
     try {
       final user = await _repository.login(username, password);
       state = AuthState(
@@ -107,7 +150,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 /// 认证状态 Provider
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   final repository = ref.watch(authRepositoryProvider);
-  return AuthNotifier(repository);
+  return AuthNotifier(repository, ref);
 });
 
 /// 当前用户 Provider

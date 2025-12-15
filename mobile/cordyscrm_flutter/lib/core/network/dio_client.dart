@@ -12,6 +12,7 @@ class DioClient {
   late final Dio _dio;
   late final CookieJar _cookieJar;
   String? _csrfToken;
+  String _baseUrl = AppConfig.baseUrl;
 
   DioClient._() {
     _cookieJar = CookieJar();
@@ -30,10 +31,13 @@ class DioClient {
 
   /// 获取 CookieJar
   CookieJar get cookieJar => _cookieJar;
+  
+  /// 获取当前 baseUrl
+  String get baseUrl => _baseUrl;
 
   /// 基础配置
   BaseOptions get _baseOptions => BaseOptions(
-        baseUrl: AppConfig.baseUrl,
+        baseUrl: _baseUrl,
         connectTimeout: const Duration(milliseconds: AppConfig.connectTimeout),
         receiveTimeout: const Duration(milliseconds: AppConfig.receiveTimeout),
         sendTimeout: const Duration(milliseconds: AppConfig.sendTimeout),
@@ -42,6 +46,12 @@ class DioClient {
           'Accept': 'application/json',
         },
       );
+  
+  /// 更新服务器地址
+  void updateBaseUrl(String url) {
+    _baseUrl = url;
+    _dio.options.baseUrl = url;
+  }
 
   /// 设置拦截器
   void _setupInterceptors() {

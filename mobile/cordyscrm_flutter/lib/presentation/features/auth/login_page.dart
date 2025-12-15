@@ -1,6 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/network/dio_client.dart';
+import '../../../core/providers/app_mode_provider.dart';
+import '../../../core/services/login_settings_service.dart';
 import '../../routing/app_router.dart';
 import '../../theme/app_theme.dart';
 import 'auth_provider.dart';
@@ -17,15 +21,55 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _serverUrlController = TextEditingController();
+  final _loginSettingsService = LoginSettingsService();
   
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _rememberPassword = false;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initSettings();
+  }
+
+  Future<void> _initSettings() async {
+    await _loginSettingsService.init();
+    
+    // 加载服务器地址
+    final serverUrl = _loginSettingsService.getServerUrl();
+    _serverUrlController.text = serverUrl;
+    DioClient.instance.updateBaseUrl(serverUrl);
+    
+    // 加载记住密码设置
+    _rememberPassword = _loginSettingsService.getRememberPassword();
+    
+    // 如果记住密码，加载保存的凭据
+    if (_rememberPassword) {
+      final savedUsername = await _loginSettingsService.getSavedUsername();
+      final savedPassword = await _loginSettingsService.getSavedPassword();
+      if (savedUsername != null) {
+        _usernameController.text = savedUsername;
+      }
+      if (savedPassword != null) {
+        _passwordController.text = savedPassword;
+      }
+    } else if (kDebugMode) {
+      // 开发模式下预填用户名和密码
+      _usernameController.text = 'admin';
+      _passwordController.text = 'admin123';
+    }
+    
+    setState(() => _isInitialized = true);
+  }
 
   @override
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
+    _serverUrlController.dispose();
     super.dispose();
   }
 
@@ -35,6 +79,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
+      // 保存服务器地址
+      await _loginSettingsService.setServerUrl(_serverUrlController.text.trim());
+      DioClient.instance.updateBaseUrl(_serverUrlController.text.trim());
+      
+      // 保存记住密码设置
+      await _loginSettingsService.setRememberPassword(_rememberPassword);
+      
+      // 如果记住密码，保存凭据
+      if (_rememberPassword) {
+        await _loginSettingsService.saveCredentials(
+          _usernameController.text.trim(),
+          _passwordController.text,
+        );
+      }
+      
       await ref.read(authProvider.notifier).login(
         _usernameController.text.trim(),
         _passwordController.text,
@@ -59,9 +118,71 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
+  void _showServerSettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('服务器设置'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _serverUrlController,
+              decoration: const InputDecoration(
+                labelText: '服务器地址',
+                hintText: 'http://192.168.1.226:8081',
+                prefixIcon: Icon(Icons.dns_outlined),
+                helperText: '输入服务器IP地址或域名',
+              ),
+              keyboardType: TextInputType.url,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final url = _serverUrlController.text.trim();
+              if (url.isNotEmpty) {
+                await _loginSettingsService.setServerUrl(url);
+                DioClient.instance.updateBaseUrl(url);
+                if (!context.mounted) return;
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('服务器地址已保存')),
+                );
+              }
+            },
+            child: const Text('保存'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (!_isInitialized) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: _showServerSettingsDialog,
+            tooltip: '服务器设置',
+          ),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -70,7 +191,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 60),
+                const SizedBox(height: 20),
                 
                 // Logo
                 Center(
@@ -113,7 +234,23 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ),
                 ),
                 
-                const SizedBox(height: 48),
+                const SizedBox(height: 8),
+                
+                // 服务器地址显示
+                GestureDetector(
+                  onTap: _showServerSettingsDialog,
+                  child: Text(
+                    '服务器: ${_serverUrlController.text}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textTertiary,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 32),
                 
                 // 用户名输入框
                 TextFormField(
@@ -216,7 +353,38 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       : const Text('登录'),
                 ),
                 
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
+                
+                // 模拟模式开关
+                Consumer(
+                  builder: (context, ref, child) {
+                    final isMockMode = ref.watch(isMockModeProvider);
+                    return SwitchListTile(
+                      title: const Text(
+                        '演示模式',
+                        style: TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 14,
+                        ),
+                      ),
+                      subtitle: Text(
+                        isMockMode ? '使用模拟数据（admin/admin123）' : '连接真实服务器',
+                        style: const TextStyle(
+                          color: AppTheme.textTertiary,
+                          fontSize: 12,
+                        ),
+                      ),
+                      value: isMockMode,
+                      onChanged: (value) {
+                        ref.read(isMockModeProvider.notifier).state = value;
+                      },
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                    );
+                  },
+                ),
+                
+                const SizedBox(height: 16),
                 
                 // 版本信息
                 const Text(

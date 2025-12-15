@@ -4,6 +4,17 @@ import '../entities/enterprise.dart';
 ///
 /// 定义企业导入和 Cookie 管理功能的抽象接口
 abstract class EnterpriseRepository {
+  /// 搜索企业
+  ///
+  /// [keyword] 搜索关键词
+  /// [page] 页码（从1开始）
+  /// [pageSize] 每页数量
+  Future<EnterpriseSearchResult> searchEnterprise({
+    required String keyword,
+    int page = 1,
+    int pageSize = 10,
+  });
+
   /// 导入企业为客户
   ///
   /// [enterprise] 企业信息

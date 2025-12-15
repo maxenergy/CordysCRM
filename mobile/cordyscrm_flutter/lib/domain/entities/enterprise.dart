@@ -112,6 +112,25 @@ class Enterprise {
     );
   }
 
+  /// 从后端搜索结果解析（爱企查 API 返回格式）
+  factory Enterprise.fromSearchItem(Map<String, dynamic> json) {
+    return Enterprise(
+      id: json['pid'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      creditCode: json['creditCode'] as String? ?? '',
+      legalPerson: json['legalPerson'] as String? ?? '',
+      registeredCapital: json['registeredCapital'] as String? ?? '',
+      establishDate: json['establishDate'] as String? ?? '',
+      status: json['status'] as String? ?? '',
+      address: json['address'] as String? ?? '',
+      industry: json['industry'] as String? ?? '',
+      businessScope: json['scope'] as String? ?? '',
+      phone: json['phone'] as String? ?? '',
+      email: json['email'] as String? ?? '',
+      website: json['website'] as String? ?? '',
+    );
+  }
+
   /// 转换为 JSON
   Map<String, dynamic> toJson() {
     return {
@@ -175,6 +194,47 @@ class EnterpriseImportResult {
       customerId: json['customerId'] as String?,
       message: json['message'] as String?,
       conflictingCustomer: json['conflictingCustomer'] as Map<String, dynamic>?,
+    );
+  }
+}
+
+/// 企业搜索结果
+class EnterpriseSearchResult {
+  const EnterpriseSearchResult({
+    required this.success,
+    this.items = const [],
+    this.total = 0,
+    this.message,
+  });
+
+  /// 是否成功
+  final bool success;
+
+  /// 搜索结果列表
+  final List<Enterprise> items;
+
+  /// 总数
+  final int total;
+
+  /// 错误信息
+  final String? message;
+
+  bool get hasError => !success && message != null;
+
+  factory EnterpriseSearchResult.fromJson(Map<String, dynamic> json) {
+    final itemsList = json['items'] as List<dynamic>? ?? [];
+    return EnterpriseSearchResult(
+      success: json['success'] as bool? ?? false,
+      items: itemsList.map((e) => Enterprise.fromSearchItem(e as Map<String, dynamic>)).toList(),
+      total: json['total'] as int? ?? 0,
+      message: json['message'] as String?,
+    );
+  }
+
+  factory EnterpriseSearchResult.error(String message) {
+    return EnterpriseSearchResult(
+      success: false,
+      message: message,
     );
   }
 }

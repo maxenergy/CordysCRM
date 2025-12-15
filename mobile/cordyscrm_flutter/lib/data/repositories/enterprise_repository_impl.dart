@@ -28,6 +28,56 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
   static const _cookieKey = 'aiqicha_cookies';
 
   @override
+  Future<EnterpriseSearchResult> searchEnterprise({
+    required String keyword,
+    int page = 1,
+    int pageSize = 10,
+  }) async {
+    _logger.d('搜索企业: $keyword, page=$page, pageSize=$pageSize');
+
+    try {
+      final response = await _dio.get(
+        '$_basePath/search',
+        queryParameters: {
+          'keyword': keyword,
+          'page': page,
+          'pageSize': pageSize,
+        },
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final result = EnterpriseSearchResult.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+        _logger.i('搜索结果: ${result.items.length} 条, 总计 ${result.total} 条');
+        return result;
+      }
+
+      return EnterpriseSearchResult.error('搜索请求失败: ${response.statusCode}');
+    } on DioException catch (e) {
+      _logger.e('搜索企业失败: ${e.message}');
+      
+      // 处理特定错误
+      if (e.response?.statusCode == 401) {
+        return EnterpriseSearchResult.error('请先登录');
+      }
+      
+      final errorData = e.response?.data;
+      if (errorData is Map<String, dynamic>) {
+        final message = errorData['message'] as String?;
+        if (message != null) {
+          return EnterpriseSearchResult.error(message);
+        }
+      }
+      
+      return EnterpriseSearchResult.error('搜索失败: ${e.message}');
+    } catch (e) {
+      _logger.e('搜索企业异常: $e');
+      return EnterpriseSearchResult.error('搜索失败: $e');
+    }
+  }
+
+  @override
   Future<EnterpriseImportResult> importEnterprise({
     required Enterprise enterprise,
     bool forceOverwrite = false,
@@ -162,6 +212,72 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
 class MockEnterpriseRepository implements EnterpriseRepository {
   final _logger = Logger(printer: PrettyPrinter(methodCount: 0));
   final Map<String, String> _cookies = {};
+
+  @override
+  Future<EnterpriseSearchResult> searchEnterprise({
+    required String keyword,
+    int page = 1,
+    int pageSize = 10,
+  }) async {
+    _logger.d('[Mock] 搜索企业: $keyword');
+
+    // 模拟网络延迟
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // 模拟搜索结果
+    final mockData = [
+      const Enterprise(
+        id: 'ent_001',
+        name: '阿里巴巴集团控股有限公司',
+        creditCode: '91330100799655058B',
+        legalPerson: '蔡崇信',
+        status: '存续',
+        industry: '互联网和相关服务',
+      ),
+      const Enterprise(
+        id: 'ent_002',
+        name: '腾讯科技（深圳）有限公司',
+        creditCode: '91440300708461136T',
+        legalPerson: '马化腾',
+        status: '存续',
+        industry: '软件和信息技术服务业',
+      ),
+      const Enterprise(
+        id: 'ent_003',
+        name: '华为技术有限公司',
+        creditCode: '91440300279583285X',
+        legalPerson: '任正非',
+        status: '存续',
+        industry: '通信设备制造',
+      ),
+      const Enterprise(
+        id: 'ent_004',
+        name: '字节跳动有限公司',
+        creditCode: '91110108MA001LXLXJ',
+        legalPerson: '张利东',
+        status: '存续',
+        industry: '互联网和相关服务',
+      ),
+      const Enterprise(
+        id: 'ent_005',
+        name: '小米科技有限责任公司',
+        creditCode: '91110108551385082Q',
+        legalPerson: '雷军',
+        status: '存续',
+        industry: '计算机、通信和其他电子设备制造业',
+      ),
+    ];
+
+    final results = mockData
+        .where((e) => e.name.contains(keyword) || e.creditCode.contains(keyword))
+        .toList();
+
+    return EnterpriseSearchResult(
+      success: true,
+      items: results,
+      total: results.length,
+    );
+  }
 
   @override
   Future<EnterpriseImportResult> importEnterprise({

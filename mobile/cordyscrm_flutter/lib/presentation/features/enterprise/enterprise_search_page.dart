@@ -27,11 +27,6 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
   final _focusNode = FocusNode();
   Timer? _debounceTimer;
 
-  // 搜索状态
-  bool _isSearching = false;
-  List<Enterprise> _searchResults = [];
-  String? _error;
-
   // 剪贴板检测
   String? _clipboardContent;
   bool _showClipboardHint = false;
@@ -129,10 +124,7 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
     _debounceTimer?.cancel();
 
     if (value.trim().length < 2) {
-      setState(() {
-        _searchResults = [];
-        _error = null;
-      });
+      ref.read(enterpriseSearchProvider.notifier).clear();
       return;
     }
 
@@ -144,81 +136,7 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
   /// 执行搜索
   Future<void> _performSearch(String keyword) async {
     if (keyword.length < 2) return;
-
-    setState(() {
-      _isSearching = true;
-      _error = null;
-    });
-
-    try {
-      // TODO: 调用后端搜索 API
-      // 目前使用模拟数据
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      final results = _getMockSearchResults(keyword);
-
-      setState(() {
-        _searchResults = results;
-        _isSearching = false;
-      });
-    } catch (e) {
-      setState(() {
-        _error = '搜索失败: $e';
-        _isSearching = false;
-      });
-    }
-  }
-
-  /// 获取模拟搜索结果
-  List<Enterprise> _getMockSearchResults(String keyword) {
-    final mockData = [
-      const Enterprise(
-        id: 'ent_001',
-        name: '阿里巴巴集团控股有限公司',
-        creditCode: '91330100799655058B',
-        legalPerson: '蔡崇信',
-        status: '存续',
-        industry: '互联网和相关服务',
-      ),
-      const Enterprise(
-        id: 'ent_002',
-        name: '腾讯科技（深圳）有限公司',
-        creditCode: '91440300708461136T',
-        legalPerson: '马化腾',
-        status: '存续',
-        industry: '软件和信息技术服务业',
-      ),
-      const Enterprise(
-        id: 'ent_003',
-        name: '华为技术有限公司',
-        creditCode: '91440300279583285X',
-        legalPerson: '任正非',
-        status: '存续',
-        industry: '通信设备制造',
-      ),
-      const Enterprise(
-        id: 'ent_004',
-        name: '字节跳动有限公司',
-        creditCode: '91110108MA001LXLXJ',
-        legalPerson: '张利东',
-        status: '存续',
-        industry: '互联网和相关服务',
-      ),
-      const Enterprise(
-        id: 'ent_005',
-        name: '小米科技有限责任公司',
-        creditCode: '91110108551385082Q',
-        legalPerson: '雷军',
-        status: '存续',
-        industry: '计算机、通信和其他电子设备制造业',
-      ),
-    ];
-
-    return mockData
-        .where((e) =>
-            e.name.contains(keyword) ||
-            (e.creditCode.contains(keyword)))
-        .toList();
+    await ref.read(enterpriseSearchProvider.notifier).search(keyword);
   }
 
   /// 选择企业
@@ -264,9 +182,7 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
                         icon: const Icon(Icons.clear),
                         onPressed: () {
                           _searchController.clear();
-                          setState(() {
-                            _searchResults = [];
-                          });
+                          ref.read(enterpriseSearchProvider.notifier).clear();
                         },
                       )
                     : null,
@@ -354,35 +270,46 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
 
   /// 构建搜索结果
   Widget _buildSearchResults() {
-    if (_isSearching) {
+    final searchState = ref.watch(enterpriseSearchProvider);
+
+    if (searchState.isSearching) {
       return const Center(
         child: CircularProgressIndicator(),
       );
     }
 
-    if (_error != null) {
+    if (searchState.hasError) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 48,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: 16),
-            Text(_error!),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => _performSearch(_searchController.text.trim()),
-              child: const Text('重试'),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                searchState.error!,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                ),
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () => _performSearch(_searchController.text.trim()),
+                child: const Text('重试'),
+              ),
+            ],
+          ),
         ),
       );
     }
 
-    if (_searchResults.isEmpty) {
+    if (!searchState.hasResults) {
       if (_searchController.text.trim().length >= 2) {
         return const Center(
           child: Column(
@@ -391,6 +318,11 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
               Icon(Icons.search_off, size: 48, color: Colors.grey),
               SizedBox(height: 16),
               Text('未找到相关企业'),
+              SizedBox(height: 8),
+              Text(
+                '请检查爱企查 Cookie 是否已配置',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
             ],
           ),
         );
@@ -425,9 +357,9 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: _searchResults.length,
+      itemCount: searchState.results.length,
       itemBuilder: (context, index) {
-        final enterprise = _searchResults[index];
+        final enterprise = searchState.results[index];
         return EnterpriseSearchResultItem(
           enterprise: enterprise,
           onTap: () => _onEnterpriseSelected(enterprise),

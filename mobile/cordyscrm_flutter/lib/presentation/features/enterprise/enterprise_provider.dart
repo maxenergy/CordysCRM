@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/dio_client.dart';
 import '../../../data/repositories/enterprise_repository_impl.dart';
 import '../../../domain/entities/enterprise.dart';
 import '../../../domain/repositories/enterprise_repository.dart';
@@ -10,11 +11,105 @@ import '../../../domain/repositories/enterprise_repository.dart';
 
 /// 企业仓库 Provider
 ///
-/// 默认使用 Mock 实现，生产环境需要替换为真实实现
+/// 使用真实实现调用后端 API
 final enterpriseRepositoryProvider = Provider<EnterpriseRepository>((ref) {
-  // TODO: 生产环境替换为 EnterpriseRepositoryImpl
-  return MockEnterpriseRepository();
+  return EnterpriseRepositoryImpl(dio: DioClient.instance.dio);
 });
+
+// ==================== Search State ====================
+
+/// 企业搜索状态
+class EnterpriseSearchState {
+  const EnterpriseSearchState({
+    this.isSearching = false,
+    this.results = const [],
+    this.total = 0,
+    this.error,
+    this.keyword = '',
+  });
+
+  final bool isSearching;
+  final List<Enterprise> results;
+  final int total;
+  final String? error;
+  final String keyword;
+
+  bool get hasError => error != null;
+  bool get hasResults => results.isNotEmpty;
+
+  EnterpriseSearchState copyWith({
+    bool? isSearching,
+    List<Enterprise>? results,
+    int? total,
+    String? error,
+    String? keyword,
+    bool clearError = false,
+  }) {
+    return EnterpriseSearchState(
+      isSearching: isSearching ?? this.isSearching,
+      results: results ?? this.results,
+      total: total ?? this.total,
+      error: clearError ? null : (error ?? this.error),
+      keyword: keyword ?? this.keyword,
+    );
+  }
+}
+
+/// 企业搜索 Provider
+final enterpriseSearchProvider =
+    StateNotifierProvider<EnterpriseSearchNotifier, EnterpriseSearchState>((ref) {
+  return EnterpriseSearchNotifier(ref.read(enterpriseRepositoryProvider));
+});
+
+/// 企业搜索 Notifier
+class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
+  EnterpriseSearchNotifier(this._repository) : super(const EnterpriseSearchState());
+
+  final EnterpriseRepository _repository;
+
+  /// 搜索企业
+  Future<void> search(String keyword) async {
+    if (keyword.trim().length < 2) {
+      state = const EnterpriseSearchState();
+      return;
+    }
+
+    state = state.copyWith(
+      isSearching: true,
+      keyword: keyword,
+      clearError: true,
+    );
+
+    try {
+      final result = await _repository.searchEnterprise(keyword: keyword);
+
+      if (result.success) {
+        state = state.copyWith(
+          isSearching: false,
+          results: result.items,
+          total: result.total,
+        );
+      } else {
+        state = state.copyWith(
+          isSearching: false,
+          error: result.message ?? '搜索失败',
+          results: [],
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(
+        isSearching: false,
+        error: '搜索失败: $e',
+        results: [],
+      );
+    }
+  }
+
+  /// 清除搜索结果
+  void clear() {
+    state = const EnterpriseSearchState();
+  }
+}
 
 // ==================== WebView State ====================
 

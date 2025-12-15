@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/dio_client.dart';
+import '../../../core/providers/app_mode_provider.dart';
 import '../../../data/repositories/enterprise_repository_impl.dart';
 import '../../../domain/entities/enterprise.dart';
 import '../../../domain/repositories/enterprise_repository.dart';
@@ -15,6 +16,95 @@ import '../../../domain/repositories/enterprise_repository.dart';
 final enterpriseRepositoryProvider = Provider<EnterpriseRepository>((ref) {
   return EnterpriseRepositoryImpl(dio: DioClient.instance.dio);
 });
+
+// ==================== Mock Data (Demo Mode) ====================
+
+/// 演示模式下的模拟企业数据
+/// 包含本地数据源和爱企查数据源的示例
+const List<Enterprise> _mockEnterprises = [
+  // 本地数据源
+  Enterprise(
+    id: 'local_10001',
+    name: 'CordysCRM 示例科技有限公司',
+    creditCode: '91310115MA1K3X0X1A',
+    legalPerson: '张三',
+    registeredCapital: '1000万人民币',
+    establishDate: '2016-05-18',
+    status: '存续',
+    address: '上海市浦东新区示例路 88 号',
+    industry: '软件和信息技术服务业',
+    businessScope: '企业管理软件研发；信息技术咨询服务；系统集成服务',
+    phone: '021-88886666',
+    email: 'contact@cordyscrm.example',
+    website: 'https://cordyscrm.example',
+    source: 'local',
+  ),
+  Enterprise(
+    id: 'local_10002',
+    name: '广州启航贸易有限公司',
+    creditCode: '91440101MA5D1A2B3C',
+    legalPerson: '李四',
+    registeredCapital: '500万人民币',
+    establishDate: '2019-03-12',
+    status: '在业',
+    address: '广州市天河区示例大道 66 号',
+    industry: '批发和零售业',
+    businessScope: '日用百货批发零售；供应链管理；国内贸易代理',
+    phone: '020-66668888',
+    email: 'sales@qihang.example',
+    website: 'https://qihang.example',
+    source: 'local',
+  ),
+  // 爱企查数据源
+  Enterprise(
+    id: 'iqicha_90001',
+    name: '北京星云数据技术有限公司',
+    creditCode: '91110108MA01XYZ123',
+    legalPerson: '王五',
+    registeredCapital: '2000万人民币',
+    establishDate: '2017-11-06',
+    status: '存续',
+    address: '北京市海淀区示例科技园 1 号楼',
+    industry: '科学研究和技术服务业',
+    businessScope: '数据处理与存储服务；技术开发；技术转让；技术咨询',
+    phone: '010-99990000',
+    email: 'bd@nebula.example',
+    website: 'https://nebula.example',
+    source: 'iqicha',
+  ),
+  Enterprise(
+    id: 'iqicha_90002',
+    name: '深圳市云启智能有限公司',
+    creditCode: '91440300MA5FABCDE9',
+    legalPerson: '赵六',
+    registeredCapital: '3000万人民币',
+    establishDate: '2020-07-21',
+    status: '存续',
+    address: '深圳市南山区示例创新中心 20 层',
+    industry: '制造业',
+    businessScope: '智能硬件研发与销售；物联网应用；软件开发与系统集成',
+    phone: '0755-12345678',
+    email: 'support@yunqi.example',
+    website: 'https://yunqi.example',
+    source: 'iqicha',
+  ),
+  Enterprise(
+    id: 'iqicha_90003',
+    name: '杭州爱企查信息服务有限公司',
+    creditCode: '91330106MA2H0Q1W2E',
+    legalPerson: '钱七',
+    registeredCapital: '800万人民币',
+    establishDate: '2018-02-09',
+    status: '存续',
+    address: '杭州市西湖区示例软件园 A 座',
+    industry: '信息传输、软件和信息技术服务业',
+    businessScope: '企业信息咨询；数据服务；互联网信息服务',
+    phone: '0571-88001122',
+    email: 'hello@iqicha.example',
+    website: 'https://iqicha.example',
+    source: 'iqicha',
+  ),
+];
 
 // ==================== Search State ====================
 
@@ -57,22 +147,32 @@ class EnterpriseSearchState {
 
 /// 企业搜索 Provider
 final enterpriseSearchProvider =
-    StateNotifierProvider<EnterpriseSearchNotifier, EnterpriseSearchState>((ref) {
-  return EnterpriseSearchNotifier(ref.read(enterpriseRepositoryProvider));
+    StateNotifierProvider<EnterpriseSearchNotifier, EnterpriseSearchState>(
+        (ref) {
+  return EnterpriseSearchNotifier(
+    ref.read(enterpriseRepositoryProvider),
+    ref,
+  );
 });
 
 /// 企业搜索 Notifier
 class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
-  EnterpriseSearchNotifier(this._repository) : super(const EnterpriseSearchState());
+  EnterpriseSearchNotifier(this._repository, this._ref)
+      : super(const EnterpriseSearchState());
 
   final EnterpriseRepository _repository;
+  final Ref _ref;
 
   /// 搜索企业
+  ///
+  /// 在演示模式下返回模拟数据，真实模式下调用后端 API
   Future<void> search(String keyword) async {
     if (keyword.trim().length < 2) {
       state = const EnterpriseSearchState();
       return;
     }
+
+    final isMockMode = _ref.read(isMockModeProvider);
 
     state = state.copyWith(
       isSearching: true,
@@ -81,6 +181,13 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
     );
 
     try {
+      // 演示模式：返回模拟数据
+      if (isMockMode) {
+        await _searchMockData(keyword);
+        return;
+      }
+
+      // 真实模式：调用后端 API
       final result = await _repository.searchEnterprise(keyword: keyword);
 
       if (result.success) {
@@ -103,6 +210,35 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
         results: [],
       );
     }
+  }
+
+  /// 演示模式下的模拟搜索
+  Future<void> _searchMockData(String keyword) async {
+    // 模拟网络延迟
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    // 检查 Provider 是否已销毁
+    if (!mounted) return;
+
+    final kw = keyword.trim().toLowerCase();
+
+    // 在模拟数据中搜索匹配的企业（统一使用小写比对）
+    final results = _mockEnterprises.where((enterprise) {
+      return enterprise.name.toLowerCase().contains(kw) ||
+          enterprise.creditCode.toLowerCase().contains(kw) ||
+          enterprise.legalPerson.toLowerCase().contains(kw) ||
+          enterprise.address.toLowerCase().contains(kw) ||
+          enterprise.industry.toLowerCase().contains(kw);
+    }).toList();
+
+    // 再次检查 mounted 状态
+    if (!mounted) return;
+
+    state = state.copyWith(
+      isSearching: false,
+      results: results,
+      total: results.length,
+    );
   }
 
   /// 清除搜索结果

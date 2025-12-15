@@ -79,6 +79,10 @@ public class ShiroConfig {
         // 企业集成配置接口：需要认证但跳过 CSRF 验证
         // 必须在 /** 规则之前添加，否则会被覆盖
         chain.put("/api/enterprise/config/**", "apikey, authc");
+        
+        // 企业搜索接口：支持 Flutter App 使用 Bearer token 认证，跳过 CSRF 验证
+        chain.put("/api/enterprise/search", "apikey, authc");
+        chain.put("/api/enterprise/search/**", "apikey, authc");
 
         // 配置自定义的过滤器链（包含 /** 规则，必须最后添加）
         configureXFilter(chain, filters);

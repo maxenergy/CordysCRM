@@ -7,12 +7,18 @@ import cn.cordys.crm.integration.dto.request.EnterpriseImportRequest;
 import cn.cordys.crm.integration.dto.response.EnterpriseImportResponse;
 import cn.cordys.crm.integration.dto.response.EnterpriseImportResponse.FieldConflict;
 import cn.cordys.crm.integration.mapper.ExtEnterpriseProfileMapper;
+import cn.cordys.crm.integration.service.IqichaSearchService.EnterpriseItem;
+import cn.cordys.crm.integration.service.IqichaSearchService.SearchResult;
 import cn.cordys.mybatis.BaseMapper;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -26,6 +32,7 @@ import java.util.Objects;
  * @author cordys
  * @date 2025-12-10
  */
+@Slf4j
 @Service
 public class EnterpriseService {
 
@@ -34,6 +41,9 @@ public class EnterpriseService {
 
     @Resource
     private ExtEnterpriseProfileMapper extEnterpriseProfileMapper;
+
+    @Resource
+    private IqichaSearchService iqichaSearchService;
 
     /**
      * 导入企业信息
@@ -197,6 +207,113 @@ public class EnterpriseService {
             return null;
         }
         return extEnterpriseProfileMapper.selectByCustomerId(customerId);
+    }
+
+    /**
+     * 企业搜索：优先本地数据库（enterprise_profile），不足再调用爱企查补充。
+     *
+     * 返回结果中每条记录带来源标识：
+     * - local：本地数据库
+     * - iqicha：爱企查
+     *
+     * @param keyword 搜索关键词
+     * @param page 页码
+     * @param pageSize 每页数量
+     * @param organizationId 组织ID
+     * @return 搜索结果
+     */
+    public SearchResult searchEnterprise(String keyword, int page, int pageSize, String organizationId) {
+        int safePage = Math.max(page, 1);
+        int safePageSize = pageSize > 0 ? pageSize : 10;
+
+        List<EnterpriseItem> items = new ArrayList<>();
+        int localTotal = 0;
+
+        // 1) 本地优先：按企业名称模糊查询
+        if (StringUtils.isNotBlank(keyword) && StringUtils.isNotBlank(organizationId)) {
+            List<EnterpriseProfile> localProfiles = extEnterpriseProfileMapper.searchByCompanyName(keyword, organizationId);
+            if (localProfiles != null) {
+                localTotal = localProfiles.size();
+                log.info("本地搜索 '{}' 找到 {} 条记录", keyword, localTotal);
+
+                // 简单分页：在本地结果集合上切片
+                int fromIndex = Math.max(0, (safePage - 1) * safePageSize);
+                if (fromIndex < localProfiles.size()) {
+                    int toIndex = Math.min(fromIndex + safePageSize, localProfiles.size());
+                    for (EnterpriseProfile profile : localProfiles.subList(fromIndex, toIndex)) {
+                        items.add(toLocalEnterpriseItem(profile));
+                    }
+                }
+            }
+        }
+
+        // 2) 不足再补：调用爱企查补足到 pageSize
+        int remaining = safePageSize - items.size();
+        if (remaining > 0) {
+            log.info("本地结果不足，调用爱企查补充 {} 条", remaining);
+            SearchResult remote = iqichaSearchService.searchEnterprise(keyword, safePage, remaining);
+            if (remote != null && remote.isSuccess()) {
+                if (remote.getItems() != null) {
+                    // 过滤掉本地已有的（按信用代码去重）
+                    for (EnterpriseItem remoteItem : remote.getItems()) {
+                        boolean existsLocally = items.stream()
+                                .anyMatch(local -> StringUtils.isNotBlank(local.getCreditCode()) 
+                                        && local.getCreditCode().equals(remoteItem.getCreditCode()));
+                        if (!existsLocally) {
+                            items.add(remoteItem);
+                        }
+                    }
+                }
+                return SearchResult.success(items, localTotal + remote.getTotal());
+            } else if (remote != null && !remote.isSuccess()) {
+                // 远端失败但本地有结果：返回本地结果
+                if (!items.isEmpty()) {
+                    log.warn("爱企查搜索失败，返回本地结果: {}", remote.getMessage());
+                    return SearchResult.success(items, localTotal);
+                }
+                return remote;
+            }
+        }
+
+        return SearchResult.success(items, localTotal);
+    }
+
+    /**
+     * 将本地企业档案转换为搜索结果项
+     */
+    private EnterpriseItem toLocalEnterpriseItem(EnterpriseProfile profile) {
+        EnterpriseItem item = new EnterpriseItem();
+        item.setSource("local");
+        if (profile == null) {
+            return item;
+        }
+        item.setPid(profile.getIqichaId());
+        item.setName(profile.getCompanyName());
+        item.setCreditCode(profile.getCreditCode());
+        item.setLegalPerson(profile.getLegalPerson());
+        item.setAddress(profile.getAddress());
+        item.setStatus(profile.getStatus());
+        if (profile.getRegCapital() != null) {
+            item.setRegisteredCapital(profile.getRegCapital().toPlainString());
+        }
+        if (profile.getRegDate() != null) {
+            item.setEstablishDate(formatEpochMilliToIsoDate(profile.getRegDate()));
+        }
+        return item;
+    }
+
+    /**
+     * 将时间戳转换为 ISO 日期格式
+     */
+    private String formatEpochMilliToIsoDate(Long epochMilli) {
+        try {
+            return Instant.ofEpochMilli(epochMilli)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+                    .format(DateTimeFormatter.ISO_LOCAL_DATE);
+        } catch (Exception e) {
+            return String.valueOf(epochMilli);
+        }
     }
 
     /**

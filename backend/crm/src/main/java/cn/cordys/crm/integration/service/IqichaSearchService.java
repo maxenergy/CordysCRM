@@ -218,6 +218,7 @@ public class IqichaSearchService {
                     enterprise.setCreditCode(item.path("unifiedCode").asText());
                     enterprise.setLegalPerson(item.path("legalPerson").asText());
                     enterprise.setAddress(item.path("regAddr").asText());
+                    enterprise.setSource("iqicha"); // 标记来源为爱企查
                     enterprise.setStatus(item.path("openStatus").asText());
                     enterprise.setEstablishDate(item.path("startDate").asText());
                     enterprise.setRegisteredCapital(item.path("regCapital").asText());
@@ -330,6 +331,7 @@ public class IqichaSearchService {
         private String status;
         private String establishDate;
         private String registeredCapital;
+        private String source; // 来源: local(本地数据库) 或 iqicha(爱企查)
 
         // Getters and Setters
         public String getPid() { return pid; }
@@ -348,6 +350,8 @@ public class IqichaSearchService {
         public void setEstablishDate(String establishDate) { this.establishDate = establishDate; }
         public String getRegisteredCapital() { return registeredCapital; }
         public void setRegisteredCapital(String registeredCapital) { this.registeredCapital = registeredCapital; }
+        public String getSource() { return source; }
+        public void setSource(String source) { this.source = source; }
     }
 
     /**

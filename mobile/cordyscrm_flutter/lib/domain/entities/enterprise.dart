@@ -16,6 +16,7 @@ class Enterprise {
     this.phone = '',
     this.email = '',
     this.website = '',
+    this.source = '',
   });
 
   /// 企业 ID（爱企查 ID）
@@ -57,8 +58,17 @@ class Enterprise {
   /// 官网
   final String website;
 
+  /// 数据来源: local(本地数据库) 或 iqicha(爱企查)
+  final String source;
+
   /// 是否为存续状态
   bool get isActive => status == '存续' || status == '在业';
+
+  /// 是否来自本地数据库
+  bool get isLocal => source == 'local';
+
+  /// 是否来自爱企查
+  bool get isFromIqicha => source == 'iqicha';
 
   /// 复制并修改
   Enterprise copyWith({
@@ -75,6 +85,7 @@ class Enterprise {
     String? phone,
     String? email,
     String? website,
+    String? source,
   }) {
     return Enterprise(
       id: id ?? this.id,
@@ -90,6 +101,7 @@ class Enterprise {
       phone: phone ?? this.phone,
       email: email ?? this.email,
       website: website ?? this.website,
+      source: source ?? this.source,
     );
   }
 
@@ -109,6 +121,7 @@ class Enterprise {
       phone: json['phone'] as String? ?? '',
       email: json['email'] as String? ?? '',
       website: json['website'] as String? ?? '',
+      source: json['source'] as String? ?? '',
     );
   }
 
@@ -128,6 +141,7 @@ class Enterprise {
       phone: json['phone'] as String? ?? '',
       email: json['email'] as String? ?? '',
       website: json['website'] as String? ?? '',
+      source: json['source'] as String? ?? '',
     );
   }
 
@@ -147,6 +161,7 @@ class Enterprise {
       'phone': phone,
       'email': email,
       'website': website,
+      'source': source,
     };
   }
 

@@ -41,6 +41,8 @@ class EnterpriseSearchResultItem extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
+                  _buildSourceChip(context),
+                  const SizedBox(width: 4),
                   _buildStatusChip(context),
                 ],
               ),
@@ -89,6 +91,29 @@ class EnterpriseSearchResultItem extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建来源标签
+  Widget _buildSourceChip(BuildContext context) {
+    final isLocal = enterprise.isLocal;
+    final color = isLocal ? Colors.blue : Colors.purple;
+    final label = isLocal ? '本地' : '爱企查';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          color: color,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );

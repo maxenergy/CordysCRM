@@ -107,7 +107,12 @@ public class EnterpriseController {
     }
 
     /**
-     * 搜索爱企查企业
+     * 搜索企业
+     * 
+     * 搜索逻辑：
+     * 1. 优先搜索本地数据库（enterprise_profile 表）
+     * 2. 如果本地结果不足，再调用爱企查 API 补充
+     * 3. 返回结果带来源标识（source: local 或 iqicha）
      * 
      * @param keyword 搜索关键词
      * @param page 页码（默认1）
@@ -115,12 +120,13 @@ public class EnterpriseController {
      * @return 搜索结果
      */
     @GetMapping("/search")
-    @Operation(summary = "搜索爱企查企业", description = "通过爱企查搜索企业信息")
+    @Operation(summary = "搜索企业", description = "优先搜索本地企业档案，本地结果不足时调用爱企查补充")
     public SearchResult searchEnterprise(
             @RequestParam String keyword,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize) {
-        return iqichaSearchService.searchEnterprise(keyword, page, pageSize);
+        String organizationId = OrganizationContext.getOrganizationId();
+        return enterpriseService.searchEnterprise(keyword, page, pageSize, organizationId);
     }
 
     /**

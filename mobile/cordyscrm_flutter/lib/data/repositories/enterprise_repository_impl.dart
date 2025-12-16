@@ -42,8 +42,10 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
     _logger.d('搜索企业(本地): $keyword, page=$page, pageSize=$pageSize');
 
     try {
+      // 注意：后端 /searchLocal 端点可能未部署，暂时使用 /search 端点
+      // 后端 /search 会先查本地，无结果再查爱企查
       final response = await _dio.get(
-        '$_basePath/searchLocal',
+        '$_basePath/search',
         queryParameters: {
           'keyword': keyword,
           'page': page,
@@ -70,6 +72,14 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
         }
 
         final parsed = EnterpriseSearchResult.fromJson(searchData);
+        
+        // 如果后端返回 success: false，直接返回错误结果
+        // 确保失败时 items=[], total=0，避免传递无效数据
+        if (!parsed.success) {
+          _logger.w('搜索(本地)失败: keyword=$keyword, message=${parsed.message ?? "未知错误"}');
+          return EnterpriseSearchResult.error(parsed.message ?? '搜索失败');
+        }
+        
         final items = parsed.items
             .map((e) => e.source.isEmpty ? e.copyWith(source: 'local') : e)
             .toList();

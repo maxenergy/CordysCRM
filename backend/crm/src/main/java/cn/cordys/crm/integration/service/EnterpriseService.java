@@ -210,6 +210,51 @@ public class EnterpriseService {
     }
 
     /**
+     * 仅搜索本地数据库（enterprise_profile），不调用爱企查。
+     * 用于 Flutter 端先查本地，无结果再由客户端自行请求爱企查。
+     *
+     * @param keyword 搜索关键词
+     * @param page 页码
+     * @param pageSize 每页数量
+     * @param organizationId 组织ID
+     * @return 搜索结果
+     */
+    public SearchResult searchLocalEnterprise(String keyword, int page, int pageSize, String organizationId) {
+        // 参数校验
+        if (StringUtils.isBlank(keyword) || keyword.trim().length() < 2) {
+            return SearchResult.error("搜索关键词至少需要2个字符");
+        }
+
+        int safePage = Math.max(page, 1);
+        int safePageSize = pageSize > 0 ? Math.min(pageSize, 50) : 10;
+
+        List<EnterpriseItem> items = new ArrayList<>();
+
+        // 只查本地数据库
+        if (StringUtils.isNotBlank(organizationId)) {
+            List<EnterpriseProfile> localProfiles = extEnterpriseProfileMapper.searchByCompanyName(keyword, organizationId);
+            if (localProfiles != null && !localProfiles.isEmpty()) {
+                log.info("本地搜索 '{}' 找到 {} 条记录", keyword, localProfiles.size());
+
+                // 分页处理
+                int start = (safePage - 1) * safePageSize;
+                int end = Math.min(start + safePageSize, localProfiles.size());
+
+                if (start < localProfiles.size()) {
+                    for (int i = start; i < end; i++) {
+                        items.add(toLocalEnterpriseItem(localProfiles.get(i)));
+                    }
+                }
+
+                return SearchResult.success(items, localProfiles.size());
+            }
+        }
+
+        // 本地无数据，返回空结果（success=true，items=[]）
+        return SearchResult.success(items, 0);
+    }
+
+    /**
      * 企业搜索：优先本地数据库（enterprise_profile），不足再调用爱企查补充。
      *
      * 搜索策略：

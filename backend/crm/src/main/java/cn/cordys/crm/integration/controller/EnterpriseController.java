@@ -107,6 +107,27 @@ public class EnterpriseController {
     }
 
     /**
+     * 搜索企业（仅本地数据库）
+     * 
+     * 只搜索 CRM 本地数据库（enterprise_profile 表），不调用爱企查。
+     * 用于 Flutter 端先查本地，无结果再由客户端自行请求爱企查。
+     * 
+     * @param keyword 搜索关键词
+     * @param page 页码（默认1）
+     * @param pageSize 每页数量（默认10）
+     * @return 搜索结果
+     */
+    @GetMapping("/search-local")
+    @Operation(summary = "搜索本地企业", description = "仅搜索CRM本地企业档案，不调用爱企查")
+    public SearchResult searchLocalEnterprise(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        String organizationId = OrganizationContext.getOrganizationId();
+        return enterpriseService.searchLocalEnterprise(keyword, page, pageSize, organizationId);
+    }
+
+    /**
      * 搜索企业
      * 
      * 搜索逻辑：

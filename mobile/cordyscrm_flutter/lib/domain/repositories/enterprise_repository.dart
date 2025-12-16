@@ -4,7 +4,29 @@ import '../entities/enterprise.dart';
 ///
 /// 定义企业导入和 Cookie 管理功能的抽象接口
 abstract class EnterpriseRepository {
-  /// 搜索企业
+  /// 搜索 CRM 本地数据库
+  ///
+  /// [keyword] 搜索关键词
+  /// [page] 页码（从1开始）
+  /// [pageSize] 每页数量
+  Future<EnterpriseSearchResult> searchLocal({
+    required String keyword,
+    int page = 1,
+    int pageSize = 10,
+  });
+
+  /// 搜索爱企查（使用本地保存的 Cookie）
+  ///
+  /// [keyword] 搜索关键词
+  /// [page] 页码（从1开始）
+  /// [pageSize] 每页数量
+  Future<EnterpriseSearchResult> searchAiqicha({
+    required String keyword,
+    int page = 1,
+    int pageSize = 10,
+  });
+
+  /// 搜索企业（兼容旧接口）
   ///
   /// [keyword] 搜索关键词
   /// [page] 页码（从1开始）

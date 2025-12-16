@@ -311,17 +311,27 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
 
     if (!searchState.hasResults) {
       if (_searchController.text.trim().length >= 2) {
-        return const Center(
+        final label = searchState.dataSourceLabel;
+        final hint = switch (searchState.dataSource) {
+          EnterpriseSearchDataSource.local =>
+            'CRM 本地库无数据',
+          EnterpriseSearchDataSource.iqicha =>
+            '爱企查无匹配（或 Cookie 失效，请先登录）',
+          EnterpriseSearchDataSource.mixed => '未找到相关企业',
+          _ => '请先通过 WebView 登录爱企查',
+        };
+
+        return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.search_off, size: 48, color: Colors.grey),
-              SizedBox(height: 16),
-              Text('未找到相关企业'),
-              SizedBox(height: 8),
+              const Icon(Icons.search_off, size: 48, color: Colors.grey),
+              const SizedBox(height: 16),
+              const Text('未找到相关企业'),
+              const SizedBox(height: 8),
               Text(
-                '请检查爱企查 Cookie 是否已配置',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+                label == null ? hint : '$label：$hint',
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
           ),
@@ -355,16 +365,59 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
       );
     }
 
+    final showHeader = searchState.dataSourceLabel != null;
+    final headerOffset = showHeader ? 1 : 0;
+
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: searchState.results.length,
+      itemCount: searchState.results.length + headerOffset,
       itemBuilder: (context, index) {
-        final enterprise = searchState.results[index];
+        if (showHeader && index == 0) {
+          return _buildDataSourceBanner(searchState);
+        }
+        final enterprise = searchState.results[index - headerOffset];
         return EnterpriseSearchResultItem(
           enterprise: enterprise,
           onTap: () => _onEnterpriseSelected(enterprise),
         );
       },
+    );
+  }
+
+  /// 构建数据来源横幅
+  Widget _buildDataSourceBanner(EnterpriseSearchState state) {
+    final theme = Theme.of(context);
+    final label = state.dataSourceLabel ?? '';
+    final (icon, color) = switch (state.dataSource) {
+      EnterpriseSearchDataSource.local => (Icons.storage_outlined, Colors.blue),
+      EnterpriseSearchDataSource.iqicha => (Icons.public, Colors.purple),
+      EnterpriseSearchDataSource.mixed => (Icons.layers_outlined, Colors.teal),
+      _ => (Icons.info_outline, theme.colorScheme.primary),
+    };
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '结果来源：$label',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

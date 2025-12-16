@@ -108,6 +108,13 @@ const List<Enterprise> _mockEnterprises = [
 
 // ==================== Search State ====================
 
+/// 企业搜索数据来源
+enum EnterpriseSearchDataSource {
+  local,
+  iqicha,
+  mixed,
+}
+
 /// 企业搜索状态
 class EnterpriseSearchState {
   const EnterpriseSearchState({
@@ -116,6 +123,7 @@ class EnterpriseSearchState {
     this.total = 0,
     this.error,
     this.keyword = '',
+    this.dataSource,
   });
 
   final bool isSearching;
@@ -123,9 +131,19 @@ class EnterpriseSearchState {
   final int total;
   final String? error;
   final String keyword;
+  final EnterpriseSearchDataSource? dataSource;
 
   bool get hasError => error != null;
   bool get hasResults => results.isNotEmpty;
+
+  String? get dataSourceLabel {
+    return switch (dataSource) {
+      EnterpriseSearchDataSource.local => 'CRM 本地库',
+      EnterpriseSearchDataSource.iqicha => '爱企查',
+      EnterpriseSearchDataSource.mixed => '本地 + 爱企查',
+      _ => null,
+    };
+  }
 
   EnterpriseSearchState copyWith({
     bool? isSearching,
@@ -133,7 +151,9 @@ class EnterpriseSearchState {
     int? total,
     String? error,
     String? keyword,
+    EnterpriseSearchDataSource? dataSource,
     bool clearError = false,
+    bool clearDataSource = false,
   }) {
     return EnterpriseSearchState(
       isSearching: isSearching ?? this.isSearching,
@@ -141,6 +161,7 @@ class EnterpriseSearchState {
       total: total ?? this.total,
       error: clearError ? null : (error ?? this.error),
       keyword: keyword ?? this.keyword,
+      dataSource: clearDataSource ? null : (dataSource ?? this.dataSource),
     );
   }
 }
@@ -168,10 +189,11 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
 
   /// 搜索企业
   ///
-  /// 在演示模式下返回模拟数据，真实模式下调用后端 API
+  /// 流程：先查 CRM 本地库，无结果再查爱企查
+  /// 在演示模式下返回模拟数据
   Future<void> search(String keyword) async {
     final trimmedKeyword = keyword.trim();
-    
+
     if (trimmedKeyword.length < 2) {
       // 递增请求序号，使任何进行中的搜索请求失效
       _searchRequestId++;
@@ -180,7 +202,7 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
     }
 
     final isMockMode = _ref.read(isMockModeProvider);
-    
+
     // 递增请求序号，用于处理竞态条件
     final currentRequestId = ++_searchRequestId;
 
@@ -188,6 +210,7 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
       isSearching: true,
       keyword: trimmedKeyword,
       clearError: true,
+      clearDataSource: true,
     );
 
     try {
@@ -197,26 +220,59 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
         return;
       }
 
-      // 真实模式：调用后端 API
-      final result = await _repository.searchEnterprise(keyword: trimmedKeyword);
-      
+      // 真实模式：先查 CRM 本地库
+      final localResult = await _repository.searchLocal(keyword: trimmedKeyword);
+
       // 检查是否已被新请求取代或 Provider 已销毁
       if (!mounted || currentRequestId != _searchRequestId) {
         return;
       }
 
-      if (result.success) {
+      // 本地查询失败：直接返回错误
+      if (!localResult.success) {
         state = state.copyWith(
           isSearching: false,
-          results: result.items,
-          total: result.total,
+          error: localResult.message ?? '本地搜索失败',
+          results: [],
+          total: 0,
+          dataSource: EnterpriseSearchDataSource.local,
+        );
+        return;
+      }
+
+      // 本地有数据：直接展示
+      if (localResult.items.isNotEmpty) {
+        state = state.copyWith(
+          isSearching: false,
+          results: localResult.items,
+          total: localResult.total,
+          dataSource: EnterpriseSearchDataSource.local,
+        );
+        return;
+      }
+
+      // 本地无数据：查爱企查
+      final iqichaResult =
+          await _repository.searchAiqicha(keyword: trimmedKeyword);
+
+      if (!mounted || currentRequestId != _searchRequestId) {
+        return;
+      }
+
+      if (iqichaResult.success) {
+        state = state.copyWith(
+          isSearching: false,
+          results: iqichaResult.items,
+          total: iqichaResult.total,
+          dataSource: EnterpriseSearchDataSource.iqicha,
         );
       } else {
         state = state.copyWith(
           isSearching: false,
-          error: result.message ?? '搜索失败',
+          error: iqichaResult.message ?? '爱企查搜索失败',
           results: [],
           total: 0,
+          dataSource: EnterpriseSearchDataSource.iqicha,
         );
       }
     } catch (e) {
@@ -224,7 +280,7 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
       if (!mounted || currentRequestId != _searchRequestId) {
         return;
       }
-      
+
       state = state.copyWith(
         isSearching: false,
         error: '搜索失败: $e',
@@ -256,10 +312,23 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
     // 再次检查 mounted 状态和请求序号
     if (!mounted || requestId != _searchRequestId) return;
 
+    // 确定数据来源
+    final hasLocal = results.any((e) => e.isLocal);
+    final hasIqicha = results.any((e) => e.isFromIqicha);
+    EnterpriseSearchDataSource? source;
+    if (hasLocal && hasIqicha) {
+      source = EnterpriseSearchDataSource.mixed;
+    } else if (hasLocal) {
+      source = EnterpriseSearchDataSource.local;
+    } else if (hasIqicha) {
+      source = EnterpriseSearchDataSource.iqicha;
+    }
+
     state = state.copyWith(
       isSearching: false,
       results: results,
       total: results.length,
+      dataSource: source,
     );
   }
 

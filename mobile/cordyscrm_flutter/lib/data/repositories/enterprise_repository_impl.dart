@@ -28,6 +28,155 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
   static const _cookieKey = 'aiqicha_cookies';
 
   @override
+  Future<EnterpriseSearchResult> searchLocal({
+    required String keyword,
+    int page = 1,
+    int pageSize = 10,
+  }) async {
+    _logger.d('搜索企业(本地): $keyword, page=$page, pageSize=$pageSize');
+
+    try {
+      final response = await _dio.get(
+        '$_basePath/search-local',
+        queryParameters: {
+          'keyword': keyword,
+          'page': page,
+          'pageSize': pageSize,
+        },
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final responseData = response.data as Map<String, dynamic>;
+
+        Map<String, dynamic> searchData;
+        if (responseData.containsKey('code') &&
+            responseData.containsKey('data')) {
+          final code = responseData['code'] as int?;
+          if (code != null && code != 100200) {
+            final message =
+                responseData['message'] as String? ?? '服务器错误 (code: $code)';
+            _logger.w('搜索(本地)失败: code=$code, message=$message');
+            return EnterpriseSearchResult.error(message);
+          }
+          searchData = responseData['data'] as Map<String, dynamic>? ?? {};
+        } else {
+          searchData = responseData;
+        }
+
+        final parsed = EnterpriseSearchResult.fromJson(searchData);
+        final items = parsed.items
+            .map((e) => e.source.isEmpty ? e.copyWith(source: 'local') : e)
+            .toList();
+
+        final result = EnterpriseSearchResult(
+          success: parsed.success,
+          items: items,
+          total: parsed.total,
+          message: parsed.message,
+        );
+
+        _logger.i('搜索(本地)结果: ${result.items.length} 条, 总计 ${result.total} 条');
+        return result;
+      }
+
+      return EnterpriseSearchResult.error('搜索(本地)请求失败: ${response.statusCode}');
+    } on DioException catch (e) {
+      _logger.e('搜索企业(本地)失败: ${e.message}');
+      if (e.response?.statusCode == 401) {
+        return EnterpriseSearchResult.error('请先登录');
+      }
+      final errorData = e.response?.data;
+      if (errorData is Map<String, dynamic>) {
+        final message = errorData['message'] as String? ??
+            (errorData['data'] as Map<String, dynamic>?)?['message'] as String?;
+        if (message != null && message.isNotEmpty) {
+          return EnterpriseSearchResult.error(message);
+        }
+      }
+      return EnterpriseSearchResult.error('搜索(本地)失败: ${e.message ?? '网络错误'}');
+    } catch (e) {
+      _logger.e('搜索企业(本地)异常: $e');
+      return EnterpriseSearchResult.error('搜索(本地)失败: $e');
+    }
+  }
+
+  @override
+  Future<EnterpriseSearchResult> searchAiqicha({
+    required String keyword,
+    int page = 1,
+    int pageSize = 10,
+  }) async {
+    _logger.d('搜索企业(爱企查): $keyword, page=$page, pageSize=$pageSize');
+
+    try {
+      final cookies = await _readCookiesFromStorageOnly();
+      if (cookies.isEmpty) {
+        return EnterpriseSearchResult.error('未检测到爱企查 Cookie，请先通过 WebView 登录后重试');
+      }
+
+      final cookieHeader = _buildAiqichaCookieHeader(cookies);
+      if (cookieHeader.isEmpty) {
+        return EnterpriseSearchResult.error('爱企查 Cookie 为空或无效，请重新登录后重试');
+      }
+
+      // 创建独立的 Dio 实例访问爱企查，避免使用 CRM 后端的拦截器
+      final aiqichaDio = Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 15),
+      ));
+
+      final response = await aiqichaDio.get(
+        'https://aiqicha.baidu.com/s',
+        queryParameters: {'q': keyword},
+        options: Options(
+          responseType: ResponseType.plain,
+          followRedirects: true,
+          headers: {
+            'Cookie': cookieHeader,
+            'Accept':
+                'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'User-Agent':
+                'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+          },
+        ),
+      );
+
+      if (response.statusCode != 200 || response.data == null) {
+        return EnterpriseSearchResult.error('爱企查请求失败: ${response.statusCode}');
+      }
+
+      final html = response.data.toString();
+
+      // 检测是否被重定向到验证码页面
+      if (html.contains('wappass') || html.contains('验证码')) {
+        return EnterpriseSearchResult.error('爱企查需要验证码验证，请在 WebView 中完成验证后重试');
+      }
+
+      final allItems = _parseAiqichaSearchHtml(html);
+
+      // 简单分页切片
+      final start = (page - 1) * pageSize;
+      final items = start >= allItems.length
+          ? <Enterprise>[]
+          : allItems.skip(start).take(pageSize).toList();
+
+      _logger.i('搜索(爱企查)结果: ${items.length} 条, 总计 ${allItems.length} 条');
+
+      return EnterpriseSearchResult(
+        success: true,
+        items: items,
+        total: allItems.length,
+      );
+    } on DioException catch (e) {
+      _logger.e('搜索企业(爱企查)失败: ${e.message}');
+      return EnterpriseSearchResult.error('爱企查搜索失败: ${e.message ?? '网络错误'}');
+    } catch (e) {
+      _logger.e('搜索企业(爱企查)异常: $e');
+      return EnterpriseSearchResult.error('爱企查搜索失败: $e');
+    }
+  }
+
+  @override
   Future<EnterpriseSearchResult> searchEnterprise({
     required String keyword,
     int page = 1,
@@ -230,6 +379,73 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
       _logger.e('清除 Cookie 失败: $e');
     }
   }
+
+  /// 仅从存储读取 Cookie（不设置到 WebView）
+  Future<Map<String, String>> _readCookiesFromStorageOnly() async {
+    try {
+      final jsonStr = await _secureStorage.read(key: _cookieKey);
+      if (jsonStr == null || jsonStr.isEmpty) return {};
+      final decoded = jsonDecode(jsonStr) as Map<String, dynamic>;
+      return decoded.map((k, v) => MapEntry(k, v.toString()));
+    } catch (_) {
+      return {};
+    }
+  }
+
+  /// 构建爱企查 Cookie 请求头
+  String _buildAiqichaCookieHeader(Map<String, String> cookies) {
+    final parts = <String>[];
+    for (final entry in cookies.entries) {
+      var name = entry.key;
+      final value = entry.value;
+      if (value.isEmpty) continue;
+      if (name.startsWith('aiqicha_')) {
+        name = name.substring('aiqicha_'.length);
+      } else if (name.startsWith('passport_')) {
+        name = name.substring('passport_'.length);
+      }
+      parts.add('$name=$value');
+    }
+    return parts.join('; ');
+  }
+
+  /// 解析爱企查搜索结果 HTML
+  List<Enterprise> _parseAiqichaSearchHtml(String html) {
+    final normalized = html.replaceAll('\n', ' ');
+
+    // 匹配企业详情链接和名称
+    final linkRe = RegExp(
+      r'href="[^"]*?(?:company_detail|company_detail_.*?)\?[^"]*?pid=([^"&]+)[^"]*"[^>]*>(.*?)<',
+      caseSensitive: false,
+    );
+
+    final seen = <String>{};
+    final results = <Enterprise>[];
+
+    for (final m in linkRe.allMatches(normalized)) {
+      final pid = (m.group(1) ?? '').trim();
+      var name = (m.group(2) ?? '').trim();
+      name = _stripHtmlTags(name).trim();
+      if (pid.isEmpty || name.isEmpty) continue;
+      if (seen.contains(pid)) continue;
+      seen.add(pid);
+
+      results.add(
+        Enterprise(
+          id: pid,
+          name: name,
+          source: 'iqicha',
+        ),
+      );
+    }
+
+    return results;
+  }
+
+  /// 移除 HTML 标签
+  String _stripHtmlTags(String input) {
+    return input.replaceAll(RegExp(r'<[^>]+>'), '');
+  }
 }
 
 /// Mock 企业仓库实现
@@ -238,6 +454,42 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
 class MockEnterpriseRepository implements EnterpriseRepository {
   final _logger = Logger(printer: PrettyPrinter(methodCount: 0));
   final Map<String, String> _cookies = {};
+
+  @override
+  Future<EnterpriseSearchResult> searchLocal({
+    required String keyword,
+    int page = 1,
+    int pageSize = 10,
+  }) async {
+    final result =
+        await searchEnterprise(keyword: keyword, page: page, pageSize: pageSize);
+    return EnterpriseSearchResult(
+      success: result.success,
+      items: result.items
+          .map((e) => e.copyWith(source: e.source.isEmpty ? 'local' : e.source))
+          .toList(),
+      total: result.total,
+      message: result.message,
+    );
+  }
+
+  @override
+  Future<EnterpriseSearchResult> searchAiqicha({
+    required String keyword,
+    int page = 1,
+    int pageSize = 10,
+  }) async {
+    final result =
+        await searchEnterprise(keyword: keyword, page: page, pageSize: pageSize);
+    return EnterpriseSearchResult(
+      success: result.success,
+      items: result.items
+          .map((e) => e.copyWith(source: e.source.isEmpty ? 'iqicha' : e.source))
+          .toList(),
+      total: result.total,
+      message: result.message,
+    );
+  }
 
   @override
   Future<EnterpriseSearchResult> searchEnterprise({

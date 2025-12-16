@@ -171,6 +171,12 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
         final key = entry.key;
         final value = entry.value;
 
+        // 跳过空值的 Cookie，flutter_inappwebview 要求 value 不能为空
+        if (value.isEmpty) {
+          _logger.d('跳过空值 Cookie: $key');
+          continue;
+        }
+
         if (key.startsWith('aiqicha_')) {
           final name = key.substring('aiqicha_'.length);
           await CookieManager.instance().setCookie(

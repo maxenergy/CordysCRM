@@ -355,6 +355,12 @@
 
 ## Phase 7: Flutter App 爱企查集成 ✅
 
+> **重构说明（2024-12）**：企业搜索流程已重构为"本地优先 + 客户端直连"架构。
+> - Flutter 先调用 CRM 后端 `/api/enterprise/search-local` 查询本地数据库
+> - 本地无数据时，Flutter 使用本地保存的 Cookie 直接 HTTP 请求爱企查网站
+> - 解析爱企查 HTML 响应，显示搜索结果（带数据来源标识）
+> - 此架构避免了后端代理请求触发反爬虫验证码的问题
+
 - [x] 24. 实现 WebView 爱企查集成
   - [x] 24.1 创建 EnterpriseWebView 页面
     - 添加 flutter_inappwebview: ^6.0.0 依赖

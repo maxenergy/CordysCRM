@@ -78,6 +78,15 @@
 4. WHEN 后端搜索企业信息 THEN CRM_System SHALL 使用管理员配置的 Aiqicha_Service 凭证进行查询
 5. WHEN 管理员配置的凭证失效 THEN CRM_System SHALL 发送告警通知并提示用户联系管理员
 
+#### Implementation Notes (2024-12)
+
+> **实际实现采用"本地优先 + 客户端直连"架构**：
+> - Flutter 先调用 CRM 后端 `/api/enterprise/search-local` 查询本地数据库
+> - 本地无数据时，Flutter 使用用户在 WebView 登录后保存的 Cookie 直接 HTTP 请求爱企查网站
+> - 此架构避免了后端代理请求触发反爬虫验证码的问题
+> - 搜索结果显示数据来源标识（CRM本地库/爱企查/混合）
+> - 演示模式下返回预定义的模拟数据，不调用真实 API
+
 ### Requirement 5: AI 企业画像生成
 
 **User Story:** As a 销售人员, I want to 查看 AI 生成的企业画像, so that 我可以快速了解客户的全貌和潜在商机。

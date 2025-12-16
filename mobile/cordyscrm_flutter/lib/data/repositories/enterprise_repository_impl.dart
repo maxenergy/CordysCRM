@@ -37,7 +37,7 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
 
     try {
       final response = await _dio.get(
-        '$_basePath/search-local',
+        '$_basePath/searchLocal',
         queryParameters: {
           'keyword': keyword,
           'page': page,

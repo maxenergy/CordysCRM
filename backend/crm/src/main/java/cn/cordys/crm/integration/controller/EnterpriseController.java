@@ -117,7 +117,7 @@ public class EnterpriseController {
      * @param pageSize 每页数量（默认10）
      * @return 搜索结果
      */
-    @GetMapping("/search-local")
+    @GetMapping("/searchLocal")
     @Operation(summary = "搜索本地企业", description = "仅搜索CRM本地企业档案，不调用爱企查")
     public SearchResult searchLocalEnterprise(
             @RequestParam String keyword,

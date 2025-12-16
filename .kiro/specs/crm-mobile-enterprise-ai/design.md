@@ -160,9 +160,64 @@ graph LR
     SW --> STORAGE
 ```
 
-### 3. 后端服务接口
+### 3. Flutter 企业搜索流程架构
 
-#### 3.1 爱企查服务接口
+企业搜索功能采用"本地优先 + 客户端直连"架构，避免后端代理爱企查请求触发反爬虫验证码。
+
+```mermaid
+sequenceDiagram
+    participant User as 用户
+    participant Flutter as Flutter App
+    participant CRM as CRM 后端
+    participant Aiqicha as 爱企查网站
+    participant Storage as 本地存储
+
+    User->>Flutter: 输入搜索关键词
+    Flutter->>CRM: GET /api/enterprise/search-local
+    CRM-->>Flutter: 本地数据库结果
+    
+    alt 本地有数据
+        Flutter-->>User: 显示结果（来源：CRM本地库）
+    else 本地无数据
+        Flutter->>Storage: 读取爱企查 Cookie
+        Storage-->>Flutter: Cookie
+        Flutter->>Aiqicha: HTTP GET /s?q=keyword（携带Cookie）
+        Aiqicha-->>Flutter: HTML 响应
+        Flutter->>Flutter: 解析 HTML 提取企业列表
+        Flutter-->>User: 显示结果（来源：爱企查）
+    end
+    
+    User->>Flutter: 选择企业导入
+    Flutter->>CRM: POST /api/enterprise/import
+    CRM-->>Flutter: 导入结果
+```
+
+#### 关键设计决策
+
+| 决策 | 原因 |
+|------|------|
+| Flutter 直连爱企查 | 后端代理请求会触发反爬虫验证码，客户端请求更像真实用户 |
+| 独立 Dio 实例 | 避免 CRM 后端的认证拦截器干扰爱企查请求 |
+| 本地优先查询 | 减少对爱企查的依赖，提高响应速度 |
+| Cookie 本地存储 | 用户在 WebView 登录后保存 Cookie，供 HTTP 请求复用 |
+| 请求序号机制 | 处理快速输入时的竞态条件，确保显示最新搜索结果 |
+
+#### 演示模式支持
+
+在演示模式（Mock Mode）下，企业搜索返回预定义的模拟数据，不调用真实后端 API：
+
+```dart
+// 检查演示模式
+final isMockMode = _ref.read(isMockModeProvider);
+if (isMockMode) {
+  await _searchMockData(trimmedKeyword, currentRequestId);
+  return;
+}
+```
+
+### 4. 后端服务接口
+
+#### 4.1 爱企查服务接口
 
 ```yaml
 # POST /api/enterprise/import

@@ -45,7 +45,6 @@ public class CsrfFilter extends AnonymousFilter {
         // 允许 /api/user/current 路径通过，由 Controller 自行处理认证
         // 这是为了支持 Chrome 扩展等外部客户端使用 Bearer token 认证
         if (uri.startsWith("/api/user/current")) {
-            log.info("[CsrfFilter] Allowing /api/user/current to pass through");
             return true;
         }
 
@@ -91,7 +90,7 @@ public class CsrfFilter extends AnonymousFilter {
 
     /**
      * 检查请求是否使用 Session ID 认证（Bearer token 或 Session token）。
-     * 用于 Chrome 扩展等外部客户端的认证。
+     * 用于 Chrome 扩展、Flutter App 等外部客户端的认证。
      *
      * @param request HttpServletRequest 请求
      * @return true 如果是 Session ID 认证请求

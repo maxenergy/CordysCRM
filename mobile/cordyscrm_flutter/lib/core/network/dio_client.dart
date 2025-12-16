@@ -65,13 +65,13 @@ class DioClient {
   }
 
   /// 更新 CSRF Token
+  /// 注意：Flutter 使用 Bearer token 认证，不需要 CSRF Token
+  /// 后端 CsrfFilter 会检测 Authorization: Bearer xxx 并跳过 CSRF 验证
+  /// 因此不再设置 CSRF-TOKEN 头，避免后端尝试解密无效的 token
   void updateToken(String? token) {
     _csrfToken = token;
-    if (token != null) {
-      _dio.options.headers['CSRF-TOKEN'] = token;
-    } else {
-      _dio.options.headers.remove('CSRF-TOKEN');
-    }
+    // 不设置 CSRF-TOKEN 头，因为 Flutter 使用 Bearer token 认证
+    // 后端会根据 Authorization 头跳过 CSRF 验证
   }
 
   /// 获取 CSRF Token

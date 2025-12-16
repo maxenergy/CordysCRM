@@ -128,7 +128,10 @@ public class EnterpriseController {
     }
 
     /**
-     * 搜索企业
+     * 搜索企业（Legacy）
+     * 
+     * @deprecated 自 2024-12 起，新架构建议客户端使用 /searchLocal 后直连爱企查。
+     *             此接口服务端可能调用爱企查补充，会触发反爬虫验证码。
      * 
      * 搜索逻辑：
      * 1. 优先搜索本地数据库（enterprise_profile 表）
@@ -140,8 +143,9 @@ public class EnterpriseController {
      * @param pageSize 每页数量（默认10）
      * @return 搜索结果
      */
+    @Deprecated(since = "2024-12", forRemoval = false)
     @GetMapping("/search")
-    @Operation(summary = "搜索企业", description = "优先搜索本地企业档案，本地结果不足时调用爱企查补充")
+    @Operation(summary = "搜索企业（Legacy）", description = "Legacy：服务端可能调用爱企查补充。新架构建议客户端使用 /searchLocal 后直连爱企查。")
     public SearchResult searchEnterprise(
             @RequestParam String keyword,
             @RequestParam(defaultValue = "1") int page,
@@ -151,13 +155,17 @@ public class EnterpriseController {
     }
 
     /**
-     * 获取爱企查企业详情
+     * 获取爱企查企业详情（Legacy）
+     * 
+     * @deprecated 自 2024-12 起，若采用"客户端直连"架构，建议由客户端直接请求爱企查。
+     *             此接口服务端直连爱企查，会触发反爬虫验证码。
      * 
      * @param pid 爱企查企业ID
      * @return 企业详情
      */
+    @Deprecated(since = "2024-12", forRemoval = false)
     @GetMapping("/detail/{pid}")
-    @Operation(summary = "获取爱企查企业详情", description = "根据爱企查企业ID获取详细信息")
+    @Operation(summary = "获取爱企查企业详情（Legacy）", description = "Legacy：服务端直连爱企查。若采用"客户端直连"架构，建议由客户端直接请求。")
     public EnterpriseDetail getEnterpriseDetail(@PathVariable String pid) {
         return iqichaSearchService.getEnterpriseDetail(pid);
     }

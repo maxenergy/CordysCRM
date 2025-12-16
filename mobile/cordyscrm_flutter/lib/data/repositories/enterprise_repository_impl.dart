@@ -25,6 +25,12 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
   final String _basePath;
   final _logger = Logger(printer: PrettyPrinter(methodCount: 0));
 
+  /// 复用独立 Dio 实例：用于"客户端直连爱企查"，避免每次搜索重复创建
+  late final Dio _aiqichaDio = Dio(BaseOptions(
+    connectTimeout: const Duration(seconds: 15),
+    receiveTimeout: const Duration(seconds: 15),
+  ));
+
   static const _cookieKey = 'aiqicha_cookies';
 
   @override
@@ -119,13 +125,8 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
         return EnterpriseSearchResult.error('爱企查 Cookie 为空或无效，请重新登录后重试');
       }
 
-      // 创建独立的 Dio 实例访问爱企查，避免使用 CRM 后端的拦截器
-      final aiqichaDio = Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 15),
-      ));
-
-      final response = await aiqichaDio.get(
+      // 使用复用的独立 Dio 实例访问爱企查，避免使用 CRM 后端的拦截器
+      final response = await _aiqichaDio.get(
         'https://aiqicha.baidu.com/s',
         queryParameters: {'q': keyword},
         options: Options(
@@ -176,13 +177,16 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
     }
   }
 
+  /// Legacy：会调用后端 /api/enterprise/search（可能触发"服务端查爱企查"）
+  /// 新架构请坚持 searchLocal -> searchAiqicha（客户端直连）
+  @Deprecated('Use searchLocal() then searchAiqicha() instead')
   @override
   Future<EnterpriseSearchResult> searchEnterprise({
     required String keyword,
     int page = 1,
     int pageSize = 10,
   }) async {
-    _logger.d('搜索企业: $keyword, page=$page, pageSize=$pageSize');
+    _logger.d('[Legacy] 搜索企业: $keyword, page=$page, pageSize=$pageSize');
 
     try {
       final response = await _dio.get(

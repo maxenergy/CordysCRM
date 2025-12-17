@@ -39,7 +39,7 @@ void main() async {
   
   // 获取路由实例并初始化分享处理
   final router = container.read(appRouterProvider);
-  _initializeShareHandler(router);
+  _initializeShareHandler(router, container);
   
   // 初始化推送服务（如果 Firebase 已初始化）
   if (_firebaseInitialized) {
@@ -78,8 +78,8 @@ void _initializePushNotifications(ProviderContainer container) {
 }
 
 /// 初始化分享处理器
-void _initializeShareHandler(GoRouter router) {
-  _shareHandler = ShareHandler(router: router);
+void _initializeShareHandler(GoRouter router, ProviderContainer container) {
+  _shareHandler = ShareHandler(router: router, container: container);
   _shareHandler!.initialize();
 }
 

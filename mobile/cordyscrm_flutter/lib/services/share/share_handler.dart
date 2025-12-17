@@ -1,41 +1,42 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
-/// 爱企查链接解析结果
-class AiqichaLinkResult {
-  const AiqichaLinkResult({
-    required this.companyId,
-    required this.originalUrl,
-  });
+import '../../core/utils/enterprise_url_utils.dart';
+import '../../presentation/features/enterprise/enterprise_provider.dart';
+import '../../presentation/routing/app_router.dart';
 
-  /// 企业 ID
-  final String companyId;
+/// 企业链接解析结果
+class EnterpriseLinkResult {
+  const EnterpriseLinkResult({
+    required this.originalUrl,
+    required this.dataSourceType,
+  });
 
   /// 原始 URL
   final String originalUrl;
+
+  /// 数据源类型
+  final EnterpriseDataSourceType dataSourceType;
 }
 
 /// 分享处理服务
 ///
 /// 负责监听和处理从其他应用分享到本应用的内容，
-/// 主要用于接收爱企查企业详情页链接并跳转到 WebView。
+/// 支持接收企查查和爱企查企业详情页链接并跳转到 WebView。
 class ShareHandler {
-  ShareHandler({required this.router});
+  ShareHandler({required this.router, required this.container});
 
   /// 路由实例
   final GoRouter router;
 
+  /// ProviderContainer，用于更新数据源状态
+  final ProviderContainer container;
+
   /// 媒体流订阅
   StreamSubscription<List<SharedMediaFile>>? _mediaStreamSubscription;
-
-  /// 爱企查链接正则表达式
-  /// 匹配格式: aiqicha.baidu.com/company_detail_XXXXXXXX
-  static final RegExp _aiqichaLinkRegex = RegExp(
-    r'aiqicha\.baidu\.com/company_detail_(\d+)',
-    caseSensitive: false,
-  );
 
   /// 初始化分享监听
   ///
@@ -75,8 +76,8 @@ class ShareHandler {
         final text = media.path;
         debugPrint('[ShareHandler] Received: $text');
 
-        // 尝试解析爱企查链接
-        final result = parseAiqichaLink(text);
+        // 尝试解析企业信息链接（支持企查查和爱企查）
+        final result = parseEnterpriseLink(text);
         if (result != null) {
           _navigateToEnterprise(result);
           // 重置分享意图，避免重复处理
@@ -87,46 +88,59 @@ class ShareHandler {
     }
   }
 
-  /// 解析爱企查链接
+  /// 解析企业信息链接
   ///
-  /// 从文本中提取爱企查企业详情页链接的企业 ID。
+  /// 从文本中提取企查查或爱企查企业详情页链接。
   /// 支持的链接格式：
-  /// - https://aiqicha.baidu.com/company_detail_12345678
-  /// - aiqicha.baidu.com/company_detail_12345678.html
+  /// - 企查查: https://www.qcc.com/firm/xxx.html
+  /// - 爱企查: https://aiqicha.baidu.com/company_detail_xxx
   ///
-  /// 返回 [AiqichaLinkResult] 如果解析成功，否则返回 null。
-  static AiqichaLinkResult? parseAiqichaLink(String text) {
-    final match = _aiqichaLinkRegex.firstMatch(text);
-    if (match == null || match.groupCount < 1) {
-      return null;
-    }
+  /// 返回 [EnterpriseLinkResult] 如果解析成功，否则返回 null。
+  static EnterpriseLinkResult? parseEnterpriseLink(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return null;
 
-    final companyId = match.group(1);
-    if (companyId == null || companyId.isEmpty) {
+    // 使用统一的 URL 检测工具检测数据源类型
+    final dataSourceType = detectDataSourceFromUrl(trimmed);
+    if (dataSourceType == EnterpriseDataSourceType.unknown) {
       return null;
     }
 
     // 提取完整的 URL
     final urlMatch = RegExp(
-      r'https?://[^\s]+aiqicha\.baidu\.com/company_detail_\d+[^\s]*',
+      r'https?://[^\s]+',
       caseSensitive: false,
-    ).firstMatch(text);
+    ).firstMatch(trimmed);
 
-    final originalUrl = urlMatch?.group(0) ??
-        'https://aiqicha.baidu.com/company_detail_$companyId';
+    final originalUrl = urlMatch?.group(0) ?? trimmed;
 
-    return AiqichaLinkResult(
-      companyId: companyId,
+    return EnterpriseLinkResult(
       originalUrl: originalUrl,
+      dataSourceType: dataSourceType,
     );
   }
 
   /// 导航到企业详情页
-  void _navigateToEnterprise(AiqichaLinkResult result) {
-    debugPrint('[ShareHandler] Navigating to company: ${result.companyId}');
+  void _navigateToEnterprise(EnterpriseLinkResult result) {
+    final sourceName = switch (result.dataSourceType) {
+      EnterpriseDataSourceType.qcc => '企查查',
+      EnterpriseDataSourceType.iqicha => '爱企查',
+      _ => '未知',
+    };
+    debugPrint('[ShareHandler] Navigating to $sourceName');
     debugPrint('[ShareHandler] URL: ${result.originalUrl}');
 
-    // 跳转到企业 WebView 页面，传递初始 URL
-    router.go('/enterprise', extra: result.originalUrl);
+    // 更新数据源类型
+    container.read(enterpriseDataSourceTypeProvider.notifier).state =
+        result.dataSourceType;
+
+    // 跳转到企业 WebView 页面，传递初始 URL 和数据源类型
+    router.go(
+      AppRoutes.enterprise,
+      extra: EnterpriseRouteParams(
+        initialUrl: result.originalUrl,
+        dataSourceType: result.dataSourceType,
+      ),
+    );
   }
 }

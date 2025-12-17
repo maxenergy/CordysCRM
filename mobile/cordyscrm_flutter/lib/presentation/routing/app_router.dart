@@ -1,18 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../features/auth/login_page.dart';
+
+import '../../core/utils/enterprise_url_utils.dart';
 import '../features/auth/auth_provider.dart';
-import '../features/home/home_shell.dart';
-import '../features/customer/customer_list_page.dart';
+import '../features/auth/login_page.dart';
+import '../features/clue/clue_detail_page.dart';
+import '../features/clue/clue_list_page.dart';
 import '../features/customer/customer_detail_page.dart';
 import '../features/customer/customer_edit_page.dart';
-import '../features/clue/clue_list_page.dart';
-import '../features/clue/clue_detail_page.dart';
-import '../features/opportunity/opportunity_list_page.dart';
-import '../features/opportunity/opportunity_detail_page.dart';
-import '../features/enterprise/enterprise_webview_page.dart';
+import '../features/customer/customer_list_page.dart';
+import '../features/enterprise/enterprise_provider.dart';
 import '../features/enterprise/enterprise_search_page.dart';
+import '../features/enterprise/enterprise_webview_page.dart';
+import '../features/home/home_shell.dart';
+import '../features/opportunity/opportunity_detail_page.dart';
+import '../features/opportunity/opportunity_list_page.dart';
+
+/// 企业 WebView 路由参数
+///
+/// 用于传递初始 URL 和数据源类型到 EnterpriseWebViewPage。
+class EnterpriseRouteParams {
+  const EnterpriseRouteParams({
+    this.initialUrl,
+    this.dataSourceType,
+  });
+
+  /// 初始加载的 URL（用于分享链接）
+  final String? initialUrl;
+
+  /// 数据源类型（qcc/iqicha）
+  final EnterpriseDataSourceType? dataSourceType;
+}
 
 /// 路由路径常量
 class AppRoutes {
@@ -179,13 +198,34 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       
-      // 企业信息查询（爱企查 WebView）
+      // 企业信息查询 WebView（支持多数据源）
       GoRoute(
         path: AppRoutes.enterprise,
         name: 'enterprise',
         builder: (context, state) {
-          // 支持通过 extra 传递初始 URL（用于分享接收）
-          final initialUrl = state.extra as String?;
+          // 支持通过 extra 传递路由参数
+          final extra = state.extra;
+          String? initialUrl;
+          EnterpriseDataSourceType? dataSourceType;
+
+          if (extra is String) {
+            // 兼容旧格式：直接传递 URL 字符串
+            initialUrl = extra;
+          } else if (extra is EnterpriseRouteParams) {
+            // 新格式：传递路由参数对象
+            initialUrl = extra.initialUrl;
+            dataSourceType = extra.dataSourceType;
+          }
+
+          // 如果指定了数据源类型，更新 Provider
+          if (dataSourceType != null) {
+            // 使用 WidgetsBinding 延迟更新，避免在 build 期间修改状态
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ref.read(enterpriseDataSourceTypeProvider.notifier).state =
+                  dataSourceType!;
+            });
+          }
+
           return EnterpriseWebViewPage(initialUrl: initialUrl);
         },
       ),

@@ -251,6 +251,23 @@ class _EnterpriseWebViewPageState extends ConsumerState<EnterpriseWebViewPage> {
         },
         shouldOverrideUrlLoading: (controller, navigationAction) async {
           final url = navigationAction.request.url?.toString() ?? '';
+          final uri = navigationAction.request.url;
+
+          // 拦截自定义 URL scheme（如 qichacha://, aiqicha://, weixin:// 等）
+          // 这些是 App 唤起链接，WebView 无法处理
+          if (uri != null) {
+            final scheme = uri.scheme.toLowerCase();
+            // 只允许 http, https, about, data 等标准 scheme
+            if (scheme != 'http' && 
+                scheme != 'https' && 
+                scheme != 'about' && 
+                scheme != 'data' &&
+                scheme != 'javascript') {
+              // 阻止加载自定义 scheme，避免 ERR_UNKNOWN_URL_SCHEME 错误
+              debugPrint('[WebView] Blocked custom scheme: $url');
+              return NavigationActionPolicy.CANCEL;
+            }
+          }
 
           // 检测登录页面
           if (_isLoginPage(url)) {

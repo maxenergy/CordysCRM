@@ -228,20 +228,8 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
         return;
       }
 
-      // 本地查询失败：直接返回错误
-      if (!localResult.success) {
-        state = state.copyWith(
-          isSearching: false,
-          error: localResult.message ?? '本地搜索失败',
-          results: [],
-          total: 0,
-          dataSource: EnterpriseSearchDataSource.local,
-        );
-        return;
-      }
-
       // 本地有数据：直接展示
-      if (localResult.items.isNotEmpty) {
+      if (localResult.success && localResult.items.isNotEmpty) {
         state = state.copyWith(
           isSearching: false,
           results: localResult.items,
@@ -251,7 +239,8 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
         return;
       }
 
-      // 本地无数据：客户端直连爱企查（使用 WebView 保存的 Cookie）
+      // 本地无数据或查询失败：客户端直连爱企查（使用 WebView 保存的 Cookie）
+      // 注意：即使本地查询失败（如 404），也应该尝试爱企查
       final iqichaResult =
           await _repository.searchAiqicha(keyword: trimmedKeyword);
 

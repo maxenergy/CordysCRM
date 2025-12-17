@@ -1,13 +1,16 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../domain/datasources/enterprise_data_source.dart';
 import 'enterprise_provider.dart';
 import 'widgets/enterprise_preview_sheet.dart';
 
-/// 爱企查 WebView 页面
+/// 企业信息 WebView 页面
 ///
-/// 加载爱企查网站，支持企业信息提取和导入。
+/// 支持多数据源（企查查、爱企查等），通过 [enterpriseDataSourceProvider] 获取当前数据源。
 /// 可通过 [initialUrl] 参数指定初始加载的 URL（用于分享接收）。
 class EnterpriseWebViewPage extends ConsumerStatefulWidget {
   const EnterpriseWebViewPage({
@@ -17,7 +20,7 @@ class EnterpriseWebViewPage extends ConsumerStatefulWidget {
 
   /// 初始加载的 URL
   ///
-  /// 如果为 null，则加载爱企查首页。
+  /// 如果为 null，则加载当前数据源的首页。
   /// 用于从其他应用分享链接时直接打开指定企业详情页。
   final String? initialUrl;
 
@@ -40,122 +43,30 @@ class _EnterpriseWebViewPageState extends ConsumerState<EnterpriseWebViewPage> {
     useHybridComposition: true,
   );
 
-  // 注入的 JavaScript - 创建导入按钮
-  static const _injectButtonJs = '''
-(function() {
-  // 防止重复注入
-  if (document.getElementById('__crm_import_btn')) return;
-  
-  // 创建浮动按钮
-  const btn = document.createElement('button');
-  btn.id = '__crm_import_btn';
-  btn.innerHTML = '📥 导入CRM';
-  
-  // 样式设置
-  Object.assign(btn.style, {
-    position: 'fixed',
-    right: '16px',
-    bottom: '80px',
-    zIndex: '99999',
-    padding: '12px 20px',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '24px',
-    fontSize: '14px',
-    fontWeight: '600',
-    boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-    cursor: 'pointer',
-    transition: 'transform 0.2s, box-shadow 0.2s',
-  });
-  
-  // 悬停效果
-  btn.onmouseenter = () => {
-    btn.style.transform = 'scale(1.05)';
-    btn.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.5)';
-  };
-  btn.onmouseleave = () => {
-    btn.style.transform = 'scale(1)';
-    btn.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
-  };
-  
-  // 点击事件
-  btn.onclick = () => {
-    try {
-      // 提取企业信息
-      const data = window.__extractEnterpriseData();
-      window.flutter_inappwebview.callHandler('onEnterpriseData', JSON.stringify(data));
-    } catch (e) {
-      window.flutter_inappwebview.callHandler('onError', e.toString());
-    }
-  };
-  
-  document.body.appendChild(btn);
-})();
-''';
-
-  // 注入的 JavaScript - 提取企业数据
-  static const _extractDataJs = '''
-window.__extractEnterpriseData = function() {
-  const getText = (sel) => {
-    const el = document.querySelector(sel);
-    return el ? el.textContent.trim() : '';
-  };
-  
-  const getTextByLabel = (label) => {
-    const items = document.querySelectorAll('.info-item, .detail-item, tr');
-    for (const item of items) {
-      if (item.textContent.includes(label)) {
-        const value = item.querySelector('.value, td:last-child, span:last-child');
-        if (value) return value.textContent.trim();
-      }
-    }
-    return '';
-  };
-  
-  // 从 URL 提取企业 ID
-  const urlMatch = location.href.match(/company_detail_(\\w+)/);
-  const pidMatch = location.href.match(/pid=(\\w+)/);
-  const id = urlMatch ? urlMatch[1] : (pidMatch ? pidMatch[1] : '');
-  
-  return {
-    id: id,
-    name: getText('.company-name, .title h1, h1.name') || getText('h1'),
-    creditCode: getTextByLabel('统一社会信用代码') || getTextByLabel('信用代码'),
-    legalPerson: getTextByLabel('法定代表人') || getTextByLabel('法人'),
-    registeredCapital: getTextByLabel('注册资本'),
-    establishDate: getTextByLabel('成立日期') || getTextByLabel('成立时间'),
-    status: getTextByLabel('经营状态') || getTextByLabel('状态'),
-    address: getTextByLabel('注册地址') || getTextByLabel('地址'),
-    industry: getTextByLabel('所属行业') || getTextByLabel('行业'),
-    businessScope: getTextByLabel('经营范围'),
-    phone: getTextByLabel('电话') || getTextByLabel('联系电话'),
-    email: getTextByLabel('邮箱') || getTextByLabel('电子邮箱'),
-    website: getTextByLabel('官网') || getTextByLabel('网址'),
-  };
-};
-''';
+  /// 获取当前数据源
+  EnterpriseDataSourceInterface get _dataSource =>
+      ref.read(enterpriseDataSourceProvider);
 
   /// 检测是否为登录页面
+  ///
+  /// 支持百度系（爱企查）和企查查的登录页面检测。
   bool _isLoginPage(String url) {
     return url.contains('passport.baidu.com') ||
+        url.contains('passport.qcc.com') ||
         url.contains('login') ||
-        url.contains('signin');
-  }
-
-  /// 检测是否为企业详情页
-  bool _isDetailPage(String url) {
-    return url.contains('company_detail') ||
-        url.contains('/detail') ||
-        (url.contains('aiqicha') && url.contains('pid='));
+        url.contains('signin') ||
+        url.contains('user_login');
   }
 
   /// 注入 JavaScript
+  ///
+  /// 使用当前数据源的 extractDataJs 和 injectButtonJs。
   Future<void> _injectScripts() async {
     if (_controller == null) return;
 
-    await _controller!.evaluateJavascript(source: _extractDataJs);
-    await _controller!.evaluateJavascript(source: _injectButtonJs);
+    final dataSource = _dataSource;
+    await _controller!.evaluateJavascript(source: dataSource.extractDataJs);
+    await _controller!.evaluateJavascript(source: dataSource.injectButtonJs);
   }
 
   /// 显示导入预览弹窗
@@ -177,6 +88,7 @@ window.__extractEnterpriseData = function() {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(enterpriseWebProvider);
+    final dataSource = ref.watch(enterpriseDataSourceProvider);
 
     // 监听状态变化，显示预览弹窗
     ref.listen(enterpriseWebProvider, (prev, next) {
@@ -210,7 +122,7 @@ window.__extractEnterpriseData = function() {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('会话已过期'),
-            content: const Text('请重新登录爱企查账号'),
+            content: Text('请重新登录${dataSource.displayName}账号'),
             actions: [
               TextButton(
                 onPressed: () {
@@ -229,7 +141,7 @@ window.__extractEnterpriseData = function() {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('爱企查'),
+        title: Text(dataSource.displayName),
         actions: [
           // 刷新按钮
           IconButton(
@@ -257,11 +169,14 @@ window.__extractEnterpriseData = function() {
       ),
       body: InAppWebView(
         initialUrlRequest: URLRequest(
-          url: WebUri(widget.initialUrl ?? 'https://aiqicha.baidu.com'),
+          url: WebUri(widget.initialUrl ?? dataSource.startUrl),
         ),
         initialSettings: _settings,
         onWebViewCreated: (controller) async {
           _controller = controller;
+          
+          // 将控制器注册到 Provider，供 Repository 使用
+          ref.read(webViewControllerProvider.notifier).state = controller;
 
           // 注册 JavaScript 回调
           controller.addJavaScriptHandler(
@@ -283,6 +198,43 @@ window.__extractEnterpriseData = function() {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('提取失败: $error')),
               );
+            },
+          );
+          
+          // 注册爱企查搜索结果回调
+          controller.addJavaScriptHandler(
+            handlerName: 'onAiqichaSearchResult',
+            callback: (args) {
+              final completer = ref.read(aiqichaSearchCompleterProvider);
+              if (completer == null || completer.isCompleted) return;
+              
+              try {
+                if (args.isEmpty) {
+                  completer.complete([]);
+                  return;
+                }
+                
+                final jsonStr = args.first as String? ?? '[]';
+                final list = (jsonDecode(jsonStr) as List<dynamic>)
+                    .map((e) => Map<String, String>.from(
+                        (e as Map<String, dynamic>).map((k, v) => MapEntry(k, v?.toString() ?? ''))))
+                    .toList();
+                completer.complete(list);
+              } catch (e) {
+                completer.completeError('解析搜索结果失败: $e');
+              }
+            },
+          );
+          
+          // 注册爱企查搜索错误回调
+          controller.addJavaScriptHandler(
+            handlerName: 'onAiqichaSearchError',
+            callback: (args) {
+              final completer = ref.read(aiqichaSearchCompleterProvider);
+              if (completer == null || completer.isCompleted) return;
+              
+              final error = args.isNotEmpty ? args.first.toString() : '搜索失败';
+              completer.completeError(error);
             },
           );
 
@@ -311,9 +263,10 @@ window.__extractEnterpriseData = function() {
         },
         onLoadStop: (controller, url) async {
           final currentUrl = url?.toString() ?? '';
+          final currentDataSource = ref.read(enterpriseDataSourceProvider);
 
-          // 在企业详情页注入脚本
-          if (_isDetailPage(currentUrl)) {
+          // 在企业详情页注入脚本（使用数据源的 isDetailPage 方法）
+          if (currentDataSource.isDetailPage(currentUrl)) {
             await _injectScripts();
           }
 

@@ -165,136 +165,180 @@ window.__extractEnterpriseData = function() {
   /// 搜索执行和结果抓取脚本
   ///
   /// 在企查查页面执行搜索并抓取结果列表。
-  /// 使用 MutationObserver 监听搜索结果的出现。
+  /// 采用多选择器 + 启发式策略，提高健壮性。
   /// 支持 requestId 参数用于并发请求关联，避免竞态条件。
+  /// 总超时 12s（留 3s 余量给 Dart 侧 15s 超时）。
   static const _searchJs = '''
 window.__searchQcc = function(keyword, requestId) {
-  return new Promise((resolve, reject) => {
-    const input = document.getElementById('searchkey');
-    const button = document.querySelector('button.search-btn');
-
-    if (!input || !button) {
-      reject('未找到搜索框或搜索按钮，请检查页面结构是否变化。');
-      return;
-    }
-
-    // 确保输入框可见且可交互
-    if (input.offsetParent === null) {
-      reject('搜索框不可见，可能是页面未完全加载或结构变化。');
-      return;
-    }
-
-    // 资源管理：用于清理 observer 和 timeout
-    let resultFound = false;
-    let timeoutId = null;
-    let observer = null;
-    let bodyObserver = null;
-
-    const cleanup = () => {
-      try {
-        if (timeoutId !== null) {
-          clearTimeout(timeoutId);
-          timeoutId = null;
-        }
-        if (observer) {
-          observer.disconnect();
-          observer = null;
-        }
-        if (bodyObserver) {
-          bodyObserver.disconnect();
-          bodyObserver = null;
-        }
-      } catch (e) {
-        // 忽略清理错误
-      }
-    };
-    
-    // 填充搜索框并触发搜索
-    input.focus();
-    input.value = keyword;
-    // 触发多种事件，确保 Vue/React 等框架能感知到值变化
+  // ========== 工具函数 ==========
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+  
+  const isVisible = (el) => {
+    if (!el) return false;
+    const style = window.getComputedStyle(el);
+    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
+    const rect = el.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  };
+  
+  // React/Vue 受控输入：使用原生 setter + 触发事件
+  const setNativeValue = (input, value) => {
+    if (!input) return;
+    const proto = Object.getPrototypeOf(input);
+    const desc = Object.getOwnPropertyDescriptor(proto, 'value') ||
+                 Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+    if (desc && desc.set) desc.set.call(input, value);
+    else input.value = value;
     input.dispatchEvent(new Event('input', { bubbles: true }));
     input.dispatchEvent(new Event('change', { bubbles: true }));
-    button.click();
+  };
+  
+  const textOf = (el) => (el && (el.innerText || el.value || el.textContent) 
+    ? String(el.innerText || el.value || el.textContent).trim() : '');
+  
+  // ========== 搜索框查找（多选择器 + 启发式） ==========
+  const findSearchInput = () => {
+    const selectors = [
+      '#searchkey',
+      'input[name="key"]',
+      'input[name="searchkey"]',
+      'input[name*="key" i]',
+      'input[id*="search" i]',
+      'input[type="search"]',
+      'input[placeholder*="查"]',
+      'input[placeholder*="企业"]',
+      'input[placeholder*="公司"]',
+      'input[placeholder*="老板"]',
+      '.search-input input',
+      '.header-search input',
+      'header input[type="text"]',
+    ];
+    for (const sel of selectors) {
+      try {
+        const el = document.querySelector(sel);
+        if (el && el.tagName === 'INPUT' && !el.disabled && isVisible(el)) return el;
+      } catch (_) {}
+    }
+    // 启发式：扫描所有可见 input
+    const inputs = Array.from(document.querySelectorAll('input'))
+      .filter(i => i && !i.disabled && i.type !== 'hidden' && isVisible(i));
+    return inputs.find(i => /查|企业|公司|统一社会信用代码|老板/.test(i.placeholder || '')) ||
+           inputs.find(i => /key|search/i.test(i.name || '') || /key|search/i.test(i.id || '')) ||
+           null;
+  };
+  
+  // ========== 搜索按钮查找（多选择器 + 启发式） ==========
+  const findSearchSubmit = () => {
+    const selectors = [
+      'button.search-btn',
+      '.search-btn',
+      'button[type="submit"]',
+      'form button[type="submit"]',
+      'input[type="submit"]',
+      '.header-search button',
+      'header button',
+    ];
+    for (const sel of selectors) {
+      try {
+        const el = document.querySelector(sel);
+        if (el && isVisible(el) && !el.disabled) return el;
+      } catch (_) {}
+    }
+    // 启发式：查找包含搜索相关文字的按钮
+    const candidates = Array.from(document.querySelectorAll('button,a,input[type="button"],input[type="submit"]'))
+      .filter(el => isVisible(el) && !el.disabled);
+    return candidates.find(el => /查一下|搜索|查询|查企业|查公司|查老板|查风险/.test(textOf(el))) || null;
+  };
+  
+  // ========== 风控/验证页检测 ==========
+  const isRiskOrBlockPage = () => {
+    const href = String(location.href || '');
+    const bodyText = document.body ? (document.body.innerText || '') : '';
+    return /overseaApply|verify|captcha/i.test(href) || 
+           bodyText.includes('海外产品使用') || 
+           bodyText.includes('访问受限') || 
+           bodyText.includes('安全验证') ||
+           bodyText.includes('请完成验证');
+  };
+  
+  // ========== 检测是否已在搜索结果页 ==========
+  const isSearchResultPage = () => {
+    const href = String(location.href || '');
+    return /\\/web\\/search|search\\?|search\\//.test(href);
+  };
+  
+  // ========== 结果抓取（多选择器策略） ==========
+  const scrapeResults = () => {
+    // 多种可能的结果容器选择器（从精确到宽泛）
+    const containerSelectors = [
+      '#search-result .firm-list-item',
+      '.search-result .firm-list-item',
+      '.result-list .firm-list-item',
+      '.search-list .list-item',
+      '.company-list .company-item',
+      '.m-search-list .list-item',
+      '.search-result-list .item',
+    ];
+    
+    let items = [];
+    for (const sel of containerSelectors) {
+      try {
+        items = document.querySelectorAll(sel);
+        if (items.length > 0) break;
+      } catch (_) {}
+    }
+    
+    const results = [];
+    items.forEach(item => {
+      // 多种可能的标题链接选择器
+      const a = item.querySelector('a.title, a.name, .title a, .name a, h3 a, h2 a');
+      const name = a ? a.innerText.trim() : '';
+      const url = a ? a.href : '';
+      
+      // 从 URL 提取企业 ID
+      const firmMatch = url.match(/\\/firm\\/([^/?#.]+)\\.html/i);
+      const companyMatch = url.match(/\\/company\\/([^/?#.]+)\\.html/i);
+      const id = firmMatch ? firmMatch[1] : (companyMatch ? companyMatch[1] : '');
 
-    const scrapeResults = () => {
-      const items = document.querySelectorAll('#search-result .firm-list-item, .search-result .firm-list-item, .result-list .firm-list-item');
-      const results = [];
-      items.forEach(item => {
-        const a = item.querySelector('a.title, a.name, .title a, .name a');
-        const name = a ? a.innerText.trim() : '';
-        const url = a ? a.href : '';
-        
-        // 尝试从 URL 提取 ID
-        const firmMatch = url.match(/\\/firm\\/([^/?#.]+)\\.html/i);
-        const companyMatch = url.match(/\\/company\\/([^/?#.]+)\\.html/i);
-        const id = firmMatch ? firmMatch[1] : (companyMatch ? companyMatch[1] : '');
+      // 字段选择器（收窄范围，避免抓到脏数据）
+      const legalPerson = item.querySelector('.legal-person a, .legal-person, .fr a')?.innerText.trim() || '';
+      const status = item.querySelector('.status-tip, .status, .tag')?.innerText.trim() || '';
+      const creditCode = item.querySelector('.credit-code, .code')?.innerText.trim() || '';
+      const registeredCapital = item.querySelector('.capital, .reg-capital')?.innerText.trim() || '';
+      const establishDate = item.querySelector('.date, .establish-date')?.innerText.trim() || '';
 
-        const legalPerson = item.querySelector('.legal-person a, .legal-person, .fr a')?.innerText.trim() || '';
-        const status = item.querySelector('.status-tip, .status, .tag')?.innerText.trim() || '';
-        const creditCode = item.querySelector('.credit-code, .code')?.innerText.trim() || '';
-        const registeredCapital = item.querySelector('.capital, .reg-capital')?.innerText.trim() || '';
-        const establishDate = item.querySelector('.date, .establish-date')?.innerText.trim() || '';
-
-        if (name && id) {
-          results.push({
-            id: id,
-            name: name,
-            legalPerson: legalPerson,
-            status: status,
-            creditCode: creditCode,
-            registeredCapital: registeredCapital,
-            establishDate: establishDate,
-            url: url,
-            source: 'qcc'
-          });
-        }
-      });
-      return results;
-    };
-
-    // 使用 MutationObserver 监视搜索结果的出现或变化
-    const observerOptions = {
-      childList: true,
-      subtree: true,
-      attributes: false,
-      characterData: false
-    };
-
-    observer = new MutationObserver((mutationsList, obs) => {
-      const currentResults = scrapeResults();
-      if (currentResults.length > 0) {
-        resultFound = true;
-        cleanup();
-        resolve(currentResults);
+      if (name && id) {
+        results.push({
+          id: id,
+          name: name,
+          legalPerson: legalPerson,
+          status: status,
+          creditCode: creditCode,
+          registeredCapital: registeredCapital,
+          establishDate: establishDate,
+          url: url,
+          source: 'qcc'
+        });
       }
     });
+    return results;
+  };
 
-    const searchResultContainer = document.getElementById('search-result') || 
-                                   document.querySelector('.search-result') ||
-                                   document.querySelector('.result-list');
-    if (searchResultContainer) {
-      observer.observe(searchResultContainer, observerOptions);
-    } else {
-      // 如果容器一开始不存在，则监听 body 变化直到它出现
-      bodyObserver = new MutationObserver((mutationsList, bodyObs) => {
-        const container = document.getElementById('search-result') || 
-                          document.querySelector('.search-result') ||
-                          document.querySelector('.result-list');
-        if (container) {
-          if (bodyObserver) {
-            bodyObserver.disconnect();
-            bodyObserver = null;
-          }
-          if (observer) {
-            observer.observe(container, observerOptions);
-          }
-        }
-      });
-      bodyObserver.observe(document.body, observerOptions);
-    }
-
-    // 设置超时，以防搜索结果一直不出现
+  // ========== 主逻辑 ==========
+  // 资源管理（提前声明，确保全路径可 cleanup）
+  let resultFound = false;
+  let timeoutId = null;
+  let observer = null;
+  
+  const cleanup = () => {
+    try {
+      if (timeoutId !== null) { clearTimeout(timeoutId); timeoutId = null; }
+      if (observer) { observer.disconnect(); observer = null; }
+    } catch (e) {}
+  };
+  
+  return new Promise(async (resolve, reject) => {
+    // 总超时 12s（一开始就启动，留 3s 余量给 Dart 侧 15s 超时）
     timeoutId = setTimeout(() => {
       if (!resultFound) {
         cleanup();
@@ -302,10 +346,97 @@ window.__searchQcc = function(keyword, requestId) {
         if (finalResults.length > 0) {
           resolve(finalResults);
         } else {
-          reject('企查查搜索超时或未找到结果，请重试或检查关键词。');
+          reject('企查查搜索超时，请检查页面是否正常加载或刷新后重试');
         }
       }
-    }, 15000);
+    }, 12000);
+    
+    try {
+      // 检查是否在 qcc.com 域名下
+      if (!/(^|\\.)qcc\\.com\$/i.test(location.hostname)) {
+        cleanup();
+        reject('当前不在企查查域名下，请先打开企查查页面');
+        return;
+      }
+      
+      // 检查关键词
+      if (!keyword || !String(keyword).trim()) {
+        cleanup();
+        reject('搜索关键词为空');
+        return;
+      }
+      
+      // 检查风控页
+      if (isRiskOrBlockPage()) {
+        cleanup();
+        reject('企查查需要验证，请在页面上完成验证后重试');
+        return;
+      }
+      
+      // 如果已在搜索结果页，先尝试抓取现有结果
+      if (isSearchResultPage()) {
+        const existingResults = scrapeResults();
+        if (existingResults.length > 0) {
+          cleanup();
+          resolve(existingResults);
+          return;
+        }
+      }
+      
+      // 查找搜索框（同步查找，不再 await 等待）
+      const input = findSearchInput();
+      const button = findSearchSubmit();
+      
+      if (!input) {
+        // 找不到搜索框，提示用户手动操作（不自动跳转，避免 Dart 侧报错）
+        cleanup();
+        reject('未找到搜索框，请确保在企查查首页或搜索页，然后重试');
+        return;
+      }
+      
+      // 填充搜索框并触发搜索
+      setNativeValue(input, keyword);
+      input.focus();
+      
+      // 尝试 Enter 键提交
+      input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13, which: 13 }));
+      input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13, which: 13 }));
+      
+      // 尝试点击按钮
+      if (button) button.click();
+      else if (input.form) input.form.submit();
+      
+      // 设置 MutationObserver 监听结果（带节流）
+      let lastScrapeTime = 0;
+      const observerOptions = { childList: true, subtree: true };
+      
+      observer = new MutationObserver(() => {
+        const now = Date.now();
+        if (now - lastScrapeTime < 200) return; // 200ms 节流
+        lastScrapeTime = now;
+        
+        const currentResults = scrapeResults();
+        if (currentResults.length > 0) {
+          resultFound = true;
+          cleanup();
+          resolve(currentResults);
+        }
+      });
+      
+      // 等待一小段时间让页面开始响应
+      await sleep(300);
+      
+      // 查找结果容器并监听
+      const container = document.getElementById('search-result') || 
+                        document.querySelector('.search-result') ||
+                        document.querySelector('.result-list') ||
+                        document.body;
+      observer.observe(container, observerOptions);
+      
+    } catch (e) {
+      cleanup();
+      reject('搜索出错: ' + String(e));
+    }
   })
   .then(results => {
     window.flutter_inappwebview.callHandler('onQichachaSearchResult', requestId, JSON.stringify(results));

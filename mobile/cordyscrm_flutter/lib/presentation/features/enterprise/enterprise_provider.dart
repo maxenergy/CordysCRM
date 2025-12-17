@@ -171,6 +171,7 @@ const List<Enterprise> _mockEnterprises = [
 enum EnterpriseSearchDataSource {
   local,
   iqicha,
+  qcc,
   mixed,
 }
 
@@ -199,7 +200,8 @@ class EnterpriseSearchState {
     return switch (dataSource) {
       EnterpriseSearchDataSource.local => 'CRM 本地库',
       EnterpriseSearchDataSource.iqicha => '爱企查',
-      EnterpriseSearchDataSource.mixed => '本地 + 爱企查',
+      EnterpriseSearchDataSource.qcc => '企查查',
+      EnterpriseSearchDataSource.mixed => '本地 + 外部数据源',
       _ => null,
     };
   }
@@ -298,30 +300,48 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
         return;
       }
 
-      // 本地无数据或查询失败：客户端直连爱企查（使用 WebView 保存的 Cookie）
-      // 注意：即使本地查询失败（如 404），也应该尝试爱企查
-      final iqichaResult =
-          await _repository.searchAiqicha(keyword: trimmedKeyword);
+      // 本地无数据或查询失败：根据当前数据源类型决定使用哪个外部数据源
+      // 注意：即使本地查询失败（如 404），也应该尝试外部数据源
+      final currentDataSourceType = _ref.read(enterpriseDataSourceTypeProvider);
+      final dataSource = _ref.read(enterpriseDataSourceProvider);
+      final dataSourceName = dataSource.displayName;
+      
+      // 根据数据源类型选择搜索方式
+      // 目前只有爱企查支持 API 搜索，企查查需要用户在 WebView 中手动搜索
+      if (currentDataSourceType == EnterpriseDataSourceType.iqicha) {
+        // 爱企查：使用 WebView Cookie 进行 API 搜索
+        final iqichaResult =
+            await _repository.searchAiqicha(keyword: trimmedKeyword);
 
-      if (!mounted || currentRequestId != _searchRequestId) {
-        return;
-      }
+        if (!mounted || currentRequestId != _searchRequestId) {
+          return;
+        }
 
-      if (iqichaResult.success) {
-        state = state.copyWith(
-          isSearching: false,
-          results: iqichaResult.items,
-          total: iqichaResult.total,
-          dataSource: EnterpriseSearchDataSource.iqicha,
-        );
+        if (iqichaResult.success) {
+          state = state.copyWith(
+            isSearching: false,
+            results: iqichaResult.items,
+            total: iqichaResult.total,
+            dataSource: EnterpriseSearchDataSource.iqicha,
+          );
+        } else {
+          // 爱企查搜索失败（可能是 Cookie 过期或需要验证码）
+          state = state.copyWith(
+            isSearching: false,
+            error: iqichaResult.message ?? '爱企查搜索失败',
+            results: [],
+            total: 0,
+            dataSource: EnterpriseSearchDataSource.iqicha,
+          );
+        }
       } else {
-        // 爱企查搜索失败（可能是 Cookie 过期或需要验证码）
+        // 企查查：不支持 API 搜索，提示用户打开 WebView 手动搜索
         state = state.copyWith(
           isSearching: false,
-          error: iqichaResult.message ?? '爱企查搜索失败',
+          error: '本地未找到"$trimmedKeyword"，请点击右上角图标打开$dataSourceName搜索',
           results: [],
           total: 0,
-          dataSource: EnterpriseSearchDataSource.iqicha,
+          dataSource: EnterpriseSearchDataSource.qcc,
         );
       }
     } catch (e) {

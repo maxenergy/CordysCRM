@@ -165,12 +165,11 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
           // 跳转到当前数据源的 WebView 页面
           Consumer(
             builder: (context, ref, _) {
-              final dataSourceType = ref.watch(enterpriseDataSourceTypeProvider);
-              final isQcc = dataSourceType == EnterpriseDataSourceType.qcc;
+              final dataSource = ref.watch(enterpriseDataSourceProvider);
               return IconButton(
-                icon: Icon(isQcc ? Icons.search : Icons.public),
+                icon: const Icon(Icons.open_in_browser),
                 onPressed: () => context.push(AppRoutes.enterprise),
-                tooltip: isQcc ? '打开企查查' : '打开爱企查',
+                tooltip: '打开${dataSource.displayName}',
               );
             },
           ),
@@ -338,10 +337,12 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
         );
       }
       // 初始欢迎页
+      final dataSourceType = ref.read(enterpriseDataSourceTypeProvider);
+      final dataSourceName = dataSourceType == EnterpriseDataSourceType.qcc ? '企查查' : '爱企查';
       return _buildEmptyState(
         icon: Icons.business_center_outlined,
         title: '输入企业名称或信用代码',
-        subtitle: '支持从本地库及爱企查搜索',
+        subtitle: '支持从本地库及$dataSourceName搜索',
       );
     }
 
@@ -442,6 +443,7 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
     final (icon, color) = switch (state.dataSource) {
       EnterpriseSearchDataSource.local => (Icons.storage_outlined, Colors.blue),
       EnterpriseSearchDataSource.iqicha => (Icons.public, Colors.purple),
+      EnterpriseSearchDataSource.qcc => (Icons.search, Colors.green),
       EnterpriseSearchDataSource.mixed => (Icons.layers_outlined, Colors.teal),
       _ => (Icons.info_outline, theme.colorScheme.primary),
     };

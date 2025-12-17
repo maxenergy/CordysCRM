@@ -1,12 +1,59 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/dio_client.dart';
 import '../../../core/providers/app_mode_provider.dart';
+import '../../../core/utils/enterprise_url_utils.dart';
+import '../../../data/datasources/aiqicha_data_source.dart';
+import '../../../data/datasources/qcc_data_source.dart';
 import '../../../data/repositories/enterprise_repository_impl.dart';
+import '../../../domain/datasources/enterprise_data_source.dart';
 import '../../../domain/entities/enterprise.dart';
 import '../../../domain/repositories/enterprise_repository.dart';
+
+// ==================== Data Source Providers ====================
+
+/// 当前企业信息查询数据源类型
+///
+/// 默认值为 `qcc`（企查查），用户可切换到 `iqicha`（爱企查）。
+/// 使用 [EnterpriseDataSourceType] 枚举，复用 URL 工具中的定义。
+final enterpriseDataSourceTypeProvider =
+    StateProvider<EnterpriseDataSourceType>(
+  (ref) => EnterpriseDataSourceType.qcc,
+);
+
+/// 企查查数据源实例
+///
+/// 缓存于 Provider 生命周期内，避免重复创建。
+final qccDataSourceProvider = Provider<EnterpriseDataSourceInterface>(
+  (ref) => const QccDataSource(),
+);
+
+/// 爱企查数据源实例
+///
+/// 缓存于 Provider 生命周期内，避免重复创建。
+/// 注意：枚举值为 `iqicha`，与类名 `AiqichaDataSource` 对应。
+final aiqichaDataSourceProvider = Provider<EnterpriseDataSourceInterface>(
+  (ref) => const AiqichaDataSource(),
+);
+
+/// 当前数据源实例
+///
+/// 根据 [enterpriseDataSourceTypeProvider] 返回对应的数据源实例。
+/// 当类型为 `unknown` 时，回退到默认的企查查数据源。
+final enterpriseDataSourceProvider = Provider<EnterpriseDataSourceInterface>(
+  (ref) {
+    final type = ref.watch(enterpriseDataSourceTypeProvider);
+    return switch (type) {
+      EnterpriseDataSourceType.qcc => ref.watch(qccDataSourceProvider),
+      EnterpriseDataSourceType.iqicha => ref.watch(aiqichaDataSourceProvider),
+      EnterpriseDataSourceType.unknown => ref.watch(qccDataSourceProvider),
+    };
+  },
+);
 
 // ==================== Repository Provider ====================
 
@@ -14,8 +61,20 @@ import '../../../domain/repositories/enterprise_repository.dart';
 ///
 /// 使用真实实现调用后端 API
 final enterpriseRepositoryProvider = Provider<EnterpriseRepository>((ref) {
-  return EnterpriseRepositoryImpl(dio: DioClient.instance.dio);
+  return EnterpriseRepositoryImpl(dio: DioClient.instance.dio, ref: ref);
 });
+
+// ==================== WebView Search Communication ====================
+
+/// WebView 控制器 Provider
+///
+/// 由 EnterpriseWebViewPage 设置，供 Repository 使用执行 JS 搜索
+final webViewControllerProvider = StateProvider<InAppWebViewController?>((ref) => null);
+
+/// 爱企查搜索结果 Completer Provider
+///
+/// 用于 WebView JS 回调和 Repository 之间的异步通信
+final aiqichaSearchCompleterProvider = StateProvider<Completer<List<Map<String, String>>>?>((ref) => null);
 
 // ==================== Mock Data (Demo Mode) ====================
 

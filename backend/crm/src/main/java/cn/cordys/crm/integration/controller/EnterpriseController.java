@@ -117,7 +117,7 @@ public class EnterpriseController {
      * @param pageSize 每页数量（默认10）
      * @return 搜索结果
      */
-    @GetMapping("/searchLocal")
+    @GetMapping("/search-local")
     @Operation(summary = "搜索本地企业", description = "仅搜索CRM本地企业档案，不调用爱企查")
     public SearchResult searchLocalEnterprise(
             @RequestParam String keyword,
@@ -165,7 +165,7 @@ public class EnterpriseController {
      */
     @Deprecated(since = "2024-12", forRemoval = false)
     @GetMapping("/detail/{pid}")
-    @Operation(summary = "获取爱企查企业详情（Legacy）", description = "Legacy：服务端直连爱企查。若采用"客户端直连"架构，建议由客户端直接请求。")
+    @Operation(summary = "获取爱企查企业详情（Legacy）", description = "Legacy：服务端直连爱企查。若采用客户端直连架构，建议由客户端直接请求。")
     public EnterpriseDetail getEnterpriseDetail(@PathVariable String pid) {
         return iqichaSearchService.getEnterpriseDetail(pid);
     }

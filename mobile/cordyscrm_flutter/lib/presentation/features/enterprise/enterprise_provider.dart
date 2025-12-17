@@ -220,7 +220,7 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
         return;
       }
 
-      // 真实模式：先查 CRM 本地库
+      // 真实模式：先查 CRM 本地库（后端只查本地数据库，不调用爱企查）
       final localResult = await _repository.searchLocal(keyword: trimmedKeyword);
 
       // 检查是否已被新请求取代或 Provider 已销毁
@@ -251,7 +251,7 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
         return;
       }
 
-      // 本地无数据：查爱企查
+      // 本地无数据：客户端直连爱企查（使用 WebView 保存的 Cookie）
       final iqichaResult =
           await _repository.searchAiqicha(keyword: trimmedKeyword);
 
@@ -267,6 +267,7 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
           dataSource: EnterpriseSearchDataSource.iqicha,
         );
       } else {
+        // 爱企查搜索失败（可能是 Cookie 过期或需要验证码）
         state = state.copyWith(
           isSearching: false,
           error: iqichaResult.message ?? '爱企查搜索失败',

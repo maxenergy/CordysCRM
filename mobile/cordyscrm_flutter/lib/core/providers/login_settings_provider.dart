@@ -8,7 +8,7 @@ final loginSettingsServiceProvider = Provider<LoginSettingsService>((ref) {
 
 /// 服务器地址 Provider
 final serverUrlProvider = StateProvider<String>((ref) {
-  return 'http://192.168.1.226:8081';
+  return 'http://127.0.0.1:8081';
 });
 
 /// 记住密码 Provider

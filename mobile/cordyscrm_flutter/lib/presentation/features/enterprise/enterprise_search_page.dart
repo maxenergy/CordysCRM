@@ -278,93 +278,55 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
       );
     }
 
+    // 优先处理需要用户操作的特定错误
     if (searchState.hasError) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 48,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                searchState.error!,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                ),
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () => _performSearch(_searchController.text.trim()),
-                child: const Text('重试'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (!searchState.hasResults) {
-      if (_searchController.text.trim().length >= 2) {
-        final label = searchState.dataSourceLabel;
-        final hint = switch (searchState.dataSource) {
-          EnterpriseSearchDataSource.local =>
-            'CRM 本地库无数据',
-          EnterpriseSearchDataSource.iqicha =>
-            '爱企查无匹配（或 Cookie 失效，请先登录）',
-          EnterpriseSearchDataSource.mixed => '未找到相关企业',
-          _ => '请先通过 WebView 登录爱企查',
-        };
-
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.search_off, size: 48, color: Colors.grey),
-              const SizedBox(height: 16),
-              const Text('未找到相关企业'),
-              const SizedBox(height: 8),
-              Text(
-                label == null ? hint : '$label：$hint',
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
-          ),
+      final error = searchState.error!;
+      // 检查是否为 Cookie 或验证码相关的可操作错误
+      if (error.contains('登录') || error.contains('验证')) {
+        return _buildActionableError(
+          message: error,
+          buttonText: '去登录/验证',
+          icon: Icons.login,
+          onPressed: () async {
+            // 异步等待 WebView 页面关闭
+            await context.push(AppRoutes.enterprise);
+            
+            // 用户返回后，如果页面仍然可用且搜索框有内容，自动重新搜索
+            if (mounted && _searchController.text.trim().length >= 2) {
+              _performSearch(_searchController.text.trim());
+            }
+          },
         );
       }
-
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.business_center_outlined,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '输入企业名称或信用代码搜索',
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '或点击右上角打开爱企查网站',
-              style: TextStyle(
-                color: Colors.grey.shade500,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
+      
+      // 其他一般性错误
+      return _buildActionableError(
+        message: error,
+        buttonText: '重试',
+        icon: Icons.refresh,
+        onPressed: () => _performSearch(_searchController.text.trim()),
       );
     }
 
+    // 处理无结果的情况
+    if (!searchState.hasResults) {
+      // 搜索过但无结果
+      if (_searchController.text.trim().length >= 2) {
+        return _buildEmptyState(
+          icon: Icons.search_off,
+          title: '未找到相关企业',
+          subtitle: '数据源: ${searchState.dataSourceLabel ?? '未知'}',
+        );
+      }
+      // 初始欢迎页
+      return _buildEmptyState(
+        icon: Icons.business_center_outlined,
+        title: '输入企业名称或信用代码',
+        subtitle: '支持从本地库及爱企查搜索',
+      );
+    }
+
+    // 显示搜索结果列表
     final showHeader = searchState.dataSourceLabel != null;
     final headerOffset = showHeader ? 1 : 0;
 
@@ -381,6 +343,76 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
           onTap: () => _onEnterpriseSelected(enterprise),
         );
       },
+    );
+  }
+
+  /// 构建可操作的错误提示组件
+  Widget _buildActionableError({
+    required String message,
+    required String buttonText,
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: theme.colorScheme.error,
+                fontSize: 15,
+              ),
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              icon: Icon(icon),
+              label: Text(buttonText),
+              onPressed: onPressed,
+              style: FilledButton.styleFrom(
+                backgroundColor: theme.colorScheme.error,
+                foregroundColor: theme.colorScheme.onError,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建空状态/初始状态提示组件
+  Widget _buildEmptyState({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 64, color: Colors.grey.shade400),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+          ),
+        ],
+      ),
     );
   }
 

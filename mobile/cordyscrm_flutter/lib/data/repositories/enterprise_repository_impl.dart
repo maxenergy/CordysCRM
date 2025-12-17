@@ -42,10 +42,9 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
     _logger.d('搜索企业(本地): $keyword, page=$page, pageSize=$pageSize');
 
     try {
-      // 注意：后端 /searchLocal 端点可能未部署，暂时使用 /search 端点
-      // 后端 /search 会先查本地，无结果再查爱企查
+      // 调用后端 /search-local 端点，只查本地数据库，不调用爱企查
       final response = await _dio.get(
-        '$_basePath/search',
+        '$_basePath/search-local',
         queryParameters: {
           'keyword': keyword,
           'page': page,
@@ -125,16 +124,27 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
     _logger.d('搜索企业(爱企查): $keyword, page=$page, pageSize=$pageSize');
 
     try {
+      // 1. 读取 Cookie
       final cookies = await _readCookiesFromStorageOnly();
       if (cookies.isEmpty) {
-        return EnterpriseSearchResult.error('未检测到爱企查 Cookie，请先通过 WebView 登录后重试');
+        _logger.w('[Auth] 未在本地存储中检测到爱企查 Cookie');
+        return EnterpriseSearchResult.error('请先通过 WebView 登录爱企查');
       }
+      _logger.d('[Auth] 从本地存储读取到 ${cookies.length} 个 Cookie');
+      // 打印 Cookie 键名（不打印值，保护隐私）
+      _logger.d('[Auth] Cookie 键: ${cookies.keys.toList()}');
 
+      // 2. 构建 Cookie 请求头
       final cookieHeader = _buildAiqichaCookieHeader(cookies);
       if (cookieHeader.isEmpty) {
-        return EnterpriseSearchResult.error('爱企查 Cookie 为空或无效，请重新登录后重试');
+        _logger.w('[Auth] 构建的爱企查 Cookie 为空或无效');
+        return EnterpriseSearchResult.error('爱企查 Cookie 无效，请重新登录');
       }
+      _logger.d('[Auth] Cookie Header 长度: ${cookieHeader.length}');
+      
+      _logger.d('开始请求爱企查: https://aiqicha.baidu.com/s?q=$keyword');
 
+      // 3. 发起 HTTP 请求
       // 使用复用的独立 Dio 实例访问爱企查，避免使用 CRM 后端的拦截器
       final response = await _aiqichaDio.get(
         'https://aiqicha.baidu.com/s',
@@ -142,6 +152,7 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
         options: Options(
           responseType: ResponseType.plain,
           followRedirects: true,
+          validateStatus: (status) => status != null && status < 500,
           headers: {
             'Cookie': cookieHeader,
             'Accept':
@@ -152,18 +163,46 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
         ),
       );
 
+      _logger.d('爱企查响应状态码: ${response.statusCode}');
+
       if (response.statusCode != 200 || response.data == null) {
+        _logger.e('爱企查请求失败: statusCode=${response.statusCode}');
         return EnterpriseSearchResult.error('爱企查请求失败: ${response.statusCode}');
       }
 
       final html = response.data.toString();
+      _logger.d('爱企查响应 HTML 长度: ${html.length}');
 
-      // 检测是否被重定向到验证码页面
-      if (html.contains('wappass') || html.contains('验证码')) {
-        return EnterpriseSearchResult.error('爱企查需要验证码验证，请在 WebView 中完成验证后重试');
+      // 4. 分析响应，判断会话/验证状态
+      // 检查是否为登录页 -> Cookie 过期/无效
+      if (html.contains('passport.baidu.com/v2/logi') || 
+          html.contains('百度帐号登录') ||
+          html.contains('请登录')) {
+        _logger.w('[Auth] 响应为登录页面，判定为 Cookie 过期或无效');
+        return EnterpriseSearchResult.error('Cookie 已过期，请重新登录');
       }
 
+      // 检测是否被重定向到验证码页面
+      final isWappassRedirect = html.contains('wappass.baidu.com');
+      final isCaptchaPage = html.contains('请输入验证码') || 
+                            html.contains('安全验证') ||
+                            html.contains('verify');
+      
+      if (isWappassRedirect || isCaptchaPage) {
+        _logger.w('[Auth] 响应为验证码页面 (wappass=$isWappassRedirect, captcha=$isCaptchaPage)');
+        return EnterpriseSearchResult.error('需要滑块验证，请在 WebView 中操作后重试');
+      }
+
+      // 5. 解析正常响应
       final allItems = _parseAiqichaSearchHtml(html);
+      _logger.d('[Parser] 从 HTML 中解析到 ${allItems.length} 个企业');
+
+      // 如果解析结果为空，但 HTML 长度很长，可能意味着页面结构已更改
+      if (allItems.isEmpty && html.length > 1000) {
+        _logger.w('[Parser] HTML 内容存在但未解析出任何结果，页面结构可能已变更');
+        // 打印 HTML 前 500 字符用于调试
+        _logger.d('[Parser] HTML 前 500 字符: ${html.substring(0, html.length > 500 ? 500 : html.length)}');
+      }
 
       // 简单分页切片
       final start = (page - 1) * pageSize;
@@ -171,7 +210,7 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
           ? <Enterprise>[]
           : allItems.skip(start).take(pageSize).toList();
 
-      _logger.i('搜索(爱企查)结果: ${items.length} 条, 总计 ${allItems.length} 条');
+      _logger.i('搜索(爱企查)成功: 返回 ${items.length} 条, 总计 ${allItems.length} 条');
 
       return EnterpriseSearchResult(
         success: true,
@@ -179,11 +218,11 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
         total: allItems.length,
       );
     } on DioException catch (e) {
-      _logger.e('搜索企业(爱企查)失败: ${e.message}');
-      return EnterpriseSearchResult.error('爱企查搜索失败: ${e.message ?? '网络错误'}');
+      _logger.e('搜索企业(爱企查) Dio 异常: ${e.message}');
+      return EnterpriseSearchResult.error('网络请求失败: ${e.message ?? '未知错误'}');
     } catch (e) {
-      _logger.e('搜索企业(爱企查)异常: $e');
-      return EnterpriseSearchResult.error('爱企查搜索失败: $e');
+      _logger.e('搜索企业(爱企查)未知异常: $e');
+      return EnterpriseSearchResult.error('搜索失败: $e');
     }
   }
 

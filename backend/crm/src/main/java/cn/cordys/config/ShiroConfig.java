@@ -83,9 +83,9 @@ public class ShiroConfig {
         // 企业搜索接口：支持 Flutter App 使用 Bearer token 认证，跳过 CSRF 验证
         chain.put("/api/enterprise/search", "apikey, authc");
         chain.put("/api/enterprise/search/**", "apikey, authc");
-        chain.put("/api/enterprise/searchLocal", "apikey, authc");
+        chain.put("/api/enterprise/search-local", "apikey, authc");
         // 避免尾随斜杠或潜在子路径导致未命中（与 search/** 保持一致）
-        chain.put("/api/enterprise/searchLocal/**", "apikey, authc");
+        chain.put("/api/enterprise/search-local/**", "apikey, authc");
         
         // 企业导入接口：支持 Flutter App 和 Chrome Extension
         chain.put("/api/enterprise/import", "apikey, authc");

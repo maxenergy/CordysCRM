@@ -130,7 +130,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               controller: _serverUrlController,
               decoration: const InputDecoration(
                 labelText: '服务器地址',
-                hintText: 'http://192.168.1.226:8081',
+                hintText: 'http://192.168.31.22:8081',
                 prefixIcon: Icon(Icons.dns_outlined),
                 helperText: '输入服务器IP地址或域名',
               ),

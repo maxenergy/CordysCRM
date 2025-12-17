@@ -225,6 +225,22 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
       );
     } catch (e) {
       _logger.e('[企查查] 搜索失败: $e');
+      
+      // 检查是否为 WebView 控制器已销毁的错误
+      final errorStr = e.toString();
+      if (errorStr.contains('MissingPluginException') ||
+          errorStr.contains('evaluateJavascript') ||
+          errorStr.contains('disposed')) {
+        // WebView 页面已关闭，清空控制器引用
+        _ref.read(webViewControllerProvider.notifier).state = null;
+        return EnterpriseSearchResult(
+          success: false,
+          items: [],
+          total: 0,
+          message: '企查查页面已关闭，请重新打开企查查页面后再搜索',
+        );
+      }
+      
       return EnterpriseSearchResult(
         success: false,
         items: [],

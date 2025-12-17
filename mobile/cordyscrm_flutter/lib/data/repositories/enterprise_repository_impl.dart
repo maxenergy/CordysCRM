@@ -155,8 +155,16 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
       );
     }
 
+    // 生成唯一请求 ID，用于并发请求关联
+    final requestId = DateTime.now().microsecondsSinceEpoch;
     final completer = Completer<List<Map<String, String>>>();
-    _ref.read(qichachaSearchCompleterProvider.notifier).state = completer;
+    
+    // 将 completer 注册到 Map 中
+    final completerNotifier = _ref.read(qichachaSearchCompleterProvider.notifier);
+    completerNotifier.state = {
+      ...completerNotifier.state,
+      requestId: completer,
+    };
 
     try {
       const dataSource = QccDataSource();
@@ -169,18 +177,15 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
       // 注入搜索脚本
       await controller.evaluateJavascript(source: searchJs);
       
-      // 执行搜索（转义关键词中的特殊字符）
-      final escapedKeyword = keyword
-          .replaceAll('\\', '\\\\')
-          .replaceAll('"', '\\"')
-          .replaceAll("'", "\\'");
+      // 执行搜索（使用 JSON 编码避免注入/转义问题）
+      final keywordJson = jsonEncode(keyword);
       await controller.evaluateJavascript(
-        source: 'window.__searchQcc("$escapedKeyword");',
+        source: 'window.__searchQcc($keywordJson, $requestId);',
       );
 
-      // 等待结果，设置 20 秒超时
+      // 等待结果，设置 15 秒超时（与 JS 侧一致）
       final results = await completer.future.timeout(
-        const Duration(seconds: 20),
+        const Duration(seconds: 15),
         onTimeout: () {
           throw TimeoutException('企查查搜索超时');
         },
@@ -227,8 +232,13 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
         message: '企查查搜索失败: ${e.toString()}',
       );
     } finally {
-      // 清理 completer
-      _ref.read(qichachaSearchCompleterProvider.notifier).state = null;
+      // 清理 completer（按 requestId 移除，避免并发串包）
+      final current = _ref.read(qichachaSearchCompleterProvider);
+      if (current.isNotEmpty) {
+        final next = Map<int, Completer<List<Map<String, String>>>>.from(current)
+          ..remove(requestId);
+        _ref.read(qichachaSearchCompleterProvider.notifier).state = next;
+      }
     }
   }
 

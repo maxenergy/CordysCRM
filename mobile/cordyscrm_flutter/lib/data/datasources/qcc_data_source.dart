@@ -166,8 +166,9 @@ window.__extractEnterpriseData = function() {
   ///
   /// 在企查查页面执行搜索并抓取结果列表。
   /// 使用 MutationObserver 监听搜索结果的出现。
+  /// 支持 requestId 参数用于并发请求关联，避免竞态条件。
   static const _searchJs = '''
-window.__searchQcc = function(keyword) {
+window.__searchQcc = function(keyword, requestId) {
   return new Promise((resolve, reject) => {
     const input = document.getElementById('searchkey');
     const button = document.querySelector('button.search-btn');
@@ -182,10 +183,38 @@ window.__searchQcc = function(keyword) {
       reject('搜索框不可见，可能是页面未完全加载或结构变化。');
       return;
     }
+
+    // 资源管理：用于清理 observer 和 timeout
+    let resultFound = false;
+    let timeoutId = null;
+    let observer = null;
+    let bodyObserver = null;
+
+    const cleanup = () => {
+      try {
+        if (timeoutId !== null) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+        if (observer) {
+          observer.disconnect();
+          observer = null;
+        }
+        if (bodyObserver) {
+          bodyObserver.disconnect();
+          bodyObserver = null;
+        }
+      } catch (e) {
+        // 忽略清理错误
+      }
+    };
     
+    // 填充搜索框并触发搜索
+    input.focus();
     input.value = keyword;
-    // 触发 input 事件，确保 Vue/React 等框架能感知到值变化
+    // 触发多种事件，确保 Vue/React 等框架能感知到值变化
     input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
     button.click();
 
     const scrapeResults = () => {
@@ -232,12 +261,11 @@ window.__searchQcc = function(keyword) {
       characterData: false
     };
 
-    let resultFound = false;
-    const observer = new MutationObserver((mutationsList, obs) => {
+    observer = new MutationObserver((mutationsList, obs) => {
       const currentResults = scrapeResults();
       if (currentResults.length > 0) {
-        obs.disconnect();
         resultFound = true;
+        cleanup();
         resolve(currentResults);
       }
     });
@@ -249,22 +277,27 @@ window.__searchQcc = function(keyword) {
       observer.observe(searchResultContainer, observerOptions);
     } else {
       // 如果容器一开始不存在，则监听 body 变化直到它出现
-      const bodyObserver = new MutationObserver((mutationsList, bodyObs) => {
+      bodyObserver = new MutationObserver((mutationsList, bodyObs) => {
         const container = document.getElementById('search-result') || 
                           document.querySelector('.search-result') ||
                           document.querySelector('.result-list');
         if (container) {
-          bodyObs.disconnect();
-          observer.observe(container, observerOptions);
+          if (bodyObserver) {
+            bodyObserver.disconnect();
+            bodyObserver = null;
+          }
+          if (observer) {
+            observer.observe(container, observerOptions);
+          }
         }
       });
       bodyObserver.observe(document.body, observerOptions);
     }
 
     // 设置超时，以防搜索结果一直不出现
-    setTimeout(() => {
+    timeoutId = setTimeout(() => {
       if (!resultFound) {
-        observer.disconnect();
+        cleanup();
         const finalResults = scrapeResults();
         if (finalResults.length > 0) {
           resolve(finalResults);
@@ -275,10 +308,11 @@ window.__searchQcc = function(keyword) {
     }, 15000);
   })
   .then(results => {
-    window.flutter_inappwebview.callHandler('onQichachaSearchResult', JSON.stringify(results));
+    window.flutter_inappwebview.callHandler('onQichachaSearchResult', requestId, JSON.stringify(results));
   })
   .catch(error => {
-    window.flutter_inappwebview.callHandler('onQichachaSearchError', error);
+    const errorMsg = (error && error.toString) ? error.toString() : String(error);
+    window.flutter_inappwebview.callHandler('onQichachaSearchError', requestId, errorMsg);
   });
 };
 ''';

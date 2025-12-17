@@ -78,8 +78,12 @@ final aiqichaSearchCompleterProvider = StateProvider<Completer<List<Map<String, 
 
 /// 企查查搜索结果 Completer Provider
 ///
-/// 用于 WebView JS 回调和 Repository 之间的异步通信
-final qichachaSearchCompleterProvider = StateProvider<Completer<List<Map<String, String>>>?>((ref) => null);
+/// 使用 `Map<requestId, Completer>` 结构支持并发请求关联，避免竞态条件。
+/// 每个搜索请求都有唯一的 requestId，JS 回调时携带 requestId 以匹配对应的 Completer。
+final qichachaSearchCompleterProvider =
+    StateProvider<Map<int, Completer<List<Map<String, String>>>>>(
+  (ref) => <int, Completer<List<Map<String, String>>>>{},
+);
 
 // ==================== Mock Data (Demo Mode) ====================
 

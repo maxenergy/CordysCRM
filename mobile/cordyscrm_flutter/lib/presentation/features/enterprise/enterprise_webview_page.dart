@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -56,6 +57,33 @@ class _EnterpriseWebViewPageState extends ConsumerState<EnterpriseWebViewPage> {
         url.contains('login') ||
         url.contains('signin') ||
         url.contains('user_login');
+  }
+
+  @override
+  void dispose() {
+    // 清空 WebViewController 引用，避免 Repository 继续使用已销毁的 controller
+    ref.read(webViewControllerProvider.notifier).state = null;
+
+    // 清理未完成的爱企查搜索 completer
+    final aiqichaCompleter = ref.read(aiqichaSearchCompleterProvider);
+    if (aiqichaCompleter != null && !aiqichaCompleter.isCompleted) {
+      aiqichaCompleter.completeError('WebView disposed');
+    }
+    ref.read(aiqichaSearchCompleterProvider.notifier).state = null;
+
+    // 清理未完成的企查查搜索 completers
+    final qccCompleters = ref.read(qichachaSearchCompleterProvider);
+    if (qccCompleters.isNotEmpty) {
+      for (final completer in qccCompleters.values) {
+        if (!completer.isCompleted) {
+          completer.completeError('WebView disposed');
+        }
+      }
+    }
+    ref.read(qichachaSearchCompleterProvider.notifier).state =
+        <int, Completer<List<Map<String, String>>>>{};
+
+    super.dispose();
   }
 
   /// 注入 JavaScript
@@ -174,11 +202,9 @@ class _EnterpriseWebViewPageState extends ConsumerState<EnterpriseWebViewPage> {
         initialSettings: _settings,
         onWebViewCreated: (controller) async {
           _controller = controller;
-          
-          // 将控制器注册到 Provider，供 Repository 使用
-          ref.read(webViewControllerProvider.notifier).state = controller;
 
-          // 注册 JavaScript 回调
+          // 注册 JavaScript 回调（必须在将 controller 写入 provider 之前完成，
+          // 避免 Repository 立即使用 controller 时 handler 尚未注册的窗口期）
           controller.addJavaScriptHandler(
             handlerName: 'onEnterpriseData',
             callback: (args) {
@@ -238,20 +264,30 @@ class _EnterpriseWebViewPageState extends ConsumerState<EnterpriseWebViewPage> {
             },
           );
 
-          // 注册企查查搜索结果回调
+          // 注册企查查搜索结果回调（支持 requestId 关联）
           controller.addJavaScriptHandler(
             handlerName: 'onQichachaSearchResult',
             callback: (args) {
-              final completer = ref.read(qichachaSearchCompleterProvider);
+              // 参数格式：[requestId, jsonStr]
+              if (args.length < 2) return;
+
+              final requestIdRaw = args[0];
+              final requestId = requestIdRaw is num
+                  ? requestIdRaw.toInt()
+                  : int.tryParse(requestIdRaw.toString());
+              if (requestId == null) return;
+
+              final completerMap = ref.read(qichachaSearchCompleterProvider);
+              final completer = completerMap[requestId];
               if (completer == null || completer.isCompleted) return;
               
               try {
-                if (args.isEmpty) {
+                final jsonStr = args[1] as String? ?? '[]';
+                if (jsonStr.isEmpty) {
                   completer.complete([]);
                   return;
                 }
                 
-                final jsonStr = args.first as String? ?? '[]';
                 final list = (jsonDecode(jsonStr) as List<dynamic>)
                     .map((e) => Map<String, String>.from(
                         (e as Map<String, dynamic>).map((k, v) => MapEntry(k, v?.toString() ?? ''))))
@@ -263,17 +299,33 @@ class _EnterpriseWebViewPageState extends ConsumerState<EnterpriseWebViewPage> {
             },
           );
           
-          // 注册企查查搜索错误回调
+          // 注册企查查搜索错误回调（支持 requestId 关联）
           controller.addJavaScriptHandler(
             handlerName: 'onQichachaSearchError',
             callback: (args) {
-              final completer = ref.read(qichachaSearchCompleterProvider);
+              // 参数格式：[requestId, errorMsg]
+              if (args.length < 2) return;
+
+              final requestIdRaw = args[0];
+              final requestId = requestIdRaw is num
+                  ? requestIdRaw.toInt()
+                  : int.tryParse(requestIdRaw.toString());
+              if (requestId == null) return;
+
+              final completerMap = ref.read(qichachaSearchCompleterProvider);
+              final completer = completerMap[requestId];
               if (completer == null || completer.isCompleted) return;
               
-              final error = args.isNotEmpty ? args.first.toString() : '企查查搜索失败';
+              final error = (args[1] != null && args[1].toString().isNotEmpty)
+                  ? args[1].toString()
+                  : '企查查搜索失败';
               completer.completeError(error);
             },
           );
+
+          // 所有 handlers 注册完毕后，将 controller 写入 provider
+          // 这样 Repository 使用 controller 时，handlers 已经就绪
+          ref.read(webViewControllerProvider.notifier).state = controller;
 
           // 加载保存的 Cookie（在 WebView 创建后立即加载）
           if (!_isInitialized) {

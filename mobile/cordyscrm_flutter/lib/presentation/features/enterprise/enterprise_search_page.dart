@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/utils/enterprise_url_utils.dart';
 import '../../../domain/entities/enterprise.dart';
 import '../../routing/app_router.dart';
 import 'enterprise_provider.dart';
@@ -30,6 +31,7 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
   // 剪贴板检测
   String? _clipboardContent;
   bool _showClipboardHint = false;
+  EnterpriseDataSourceType? _clipboardDataSourceType;
 
   @override
   void initState() {
@@ -63,10 +65,12 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
 
       if (text.isEmpty) return;
 
-      // 检测爱企查链接
-      if (_isAiqichaLink(text)) {
+      // 使用统一的 URL 检测工具检测企查查和爱企查链接
+      final detectedType = detectDataSourceFromUrl(text);
+      if (detectedType != EnterpriseDataSourceType.unknown) {
         setState(() {
           _clipboardContent = text;
+          _clipboardDataSourceType = detectedType;
           _showClipboardHint = true;
         });
         return;
@@ -76,18 +80,13 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
       if (_isCompanyName(text)) {
         setState(() {
           _clipboardContent = text;
+          _clipboardDataSourceType = null;
           _showClipboardHint = true;
         });
       }
     } catch (e) {
       // 忽略剪贴板访问错误
     }
-  }
-
-  /// 检测是否为爱企查链接
-  bool _isAiqichaLink(String text) {
-    return text.contains('aiqicha.baidu.com') &&
-        (text.contains('company_detail') || text.contains('pid='));
   }
 
   /// 检测是否为企业名称
@@ -104,14 +103,23 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
     final content = _clipboardContent;
     if (content == null) return;
 
+    final dataSourceType = _clipboardDataSourceType;
+
     setState(() {
       _showClipboardHint = false;
-      _clipboardContent = null; // 清除已处理的剪贴板内容
+      _clipboardContent = null;
+      _clipboardDataSourceType = null;
     });
 
-    if (_isAiqichaLink(content)) {
-      // 跳转到 WebView 页面
-      context.push(AppRoutes.enterprise);
+    if (dataSourceType != null) {
+      // 检测到企业信息链接，跳转到对应数据源的 WebView 页面
+      context.push(
+        AppRoutes.enterprise,
+        extra: EnterpriseRouteParams(
+          initialUrl: content,
+          dataSourceType: dataSourceType,
+        ),
+      );
     } else {
       // 填充搜索框并搜索
       _searchController.text = content;
@@ -154,11 +162,17 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
       appBar: AppBar(
         title: const Text('企业搜索'),
         actions: [
-          // 跳转到 WebView 页面
-          IconButton(
-            icon: const Icon(Icons.public),
-            onPressed: () => context.push(AppRoutes.enterprise),
-            tooltip: '打开爱企查',
+          // 跳转到当前数据源的 WebView 页面
+          Consumer(
+            builder: (context, ref, _) {
+              final dataSourceType = ref.watch(enterpriseDataSourceTypeProvider);
+              final isQcc = dataSourceType == EnterpriseDataSourceType.qcc;
+              return IconButton(
+                icon: Icon(isQcc ? Icons.search : Icons.public),
+                onPressed: () => context.push(AppRoutes.enterprise),
+                tooltip: isQcc ? '打开企查查' : '打开爱企查',
+              );
+            },
           ),
         ],
       ),
@@ -209,7 +223,12 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
 
   /// 构建剪贴板提示
   Widget _buildClipboardHint() {
-    final isLink = _isAiqichaLink(_clipboardContent ?? '');
+    final isLink = _clipboardDataSourceType != null;
+    final hintText = switch (_clipboardDataSourceType) {
+      EnterpriseDataSourceType.qcc => '检测到企查查链接',
+      EnterpriseDataSourceType.iqicha => '检测到爱企查链接',
+      _ => '检测到企业名称',
+    };
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -230,7 +249,7 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isLink ? '检测到爱企查链接' : '检测到企业名称',
+                  hintText,
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: Theme.of(context).colorScheme.onPrimaryContainer,

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:html/parser.dart' show parse;
 import 'package:logger/logger.dart';
 
 import '../../domain/entities/enterprise.dart';
@@ -462,11 +463,35 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
     return parts.join('; ');
   }
 
-  /// 解析爱企查搜索结果 HTML
+  /// 解析爱企查搜索结果 HTML - [混合策略]
+  ///
+  /// 优先使用正则表达式进行快速解析。如果失败（可能因页面结构调整），
+  /// 则回退到更稳健但稍慢的 HTML 解析库 (html package)。
   List<Enterprise> _parseAiqichaSearchHtml(String html) {
+    // 方法1：优先使用正则表达式，速度快
+    var enterprises = _parseAiqichaWithRegex(html);
+
+    // 方法2：如果正则未解析出结果（并且 HTML 内容不为空），使用 HTML 解析库作为后备
+    if (enterprises.isEmpty && html.length > 1000) {
+      _logger.w('[Parser] 正则表达式未能解析出企业，尝试使用 HTML 解析器作为备选方案。');
+      try {
+        enterprises = _parseAiqichaWithHtmlParser(html);
+        if (enterprises.isNotEmpty) {
+          _logger.i('[Parser] HTML 解析器成功解析出 ${enterprises.length} 个企业。');
+        }
+      } catch (e) {
+        _logger.e('[Parser] HTML 解析器备选方案执行失败: $e');
+        // 失败时，返回正则表达式的空结果，不抛出异常
+      }
+    }
+
+    return enterprises;
+  }
+
+  /// [解析助手] 使用正则表达式解析爱企查搜索结果。
+  List<Enterprise> _parseAiqichaWithRegex(String html) {
     final normalized = html.replaceAll('\n', ' ');
 
-    // 匹配企业详情链接和名称
     final linkRe = RegExp(
       r'href="[^"]*?(?:company_detail|company_detail_.*?)\?[^"]*?pid=([^"&]+)[^"]*"[^>]*>(.*?)<',
       caseSensitive: false,
@@ -478,7 +503,8 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
     for (final m in linkRe.allMatches(normalized)) {
       final pid = (m.group(1) ?? '').trim();
       var name = (m.group(2) ?? '').trim();
-      name = _stripHtmlTags(name).trim();
+      name = _stripHtmlTags(name).trim(); // 移除内部可能存在的<em>等标签
+
       if (pid.isEmpty || name.isEmpty) continue;
       if (seen.contains(pid)) continue;
       seen.add(pid);
@@ -491,7 +517,48 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
         ),
       );
     }
+    return results;
+  }
 
+  /// [解析助手] 使用 `html` package 解析爱企查搜索结果。
+  List<Enterprise> _parseAiqichaWithHtmlParser(String html) {
+    final document = parse(html);
+    final seen = <String>{};
+    final results = <Enterprise>[];
+    
+    // 策略：查找所有 href 属性包含 "pid=" 或 "company_detail" 的 <a> 标签
+    final links = document.querySelectorAll('a[href*="pid="], a[href*="company_detail"]');
+    
+    final pidRegex = RegExp(r'pid=([^&]+)');
+
+    for (final link in links) {
+      final href = link.attributes['href'];
+      if (href == null) continue;
+
+      final pidMatch = pidRegex.firstMatch(href);
+      if (pidMatch == null) continue;
+      
+      final pid = pidMatch.group(1)?.trim();
+      if (pid == null || pid.isEmpty) continue;
+
+      // link.text 会自动处理并合并所有子节点的文本，有效应对名称中包含 <em> 等高亮标签
+      final name = link.text.trim();
+      // 进行一些基本过滤，避免提取到不相关的链接
+      if (name.isEmpty || name.length > 100 || name.contains('...')) continue; 
+
+      // 防止重复
+      if (seen.contains(pid)) continue;
+      seen.add(pid);
+
+      results.add(
+        Enterprise(
+          id: pid,
+          name: name,
+          source: 'iqicha',
+        ),
+      );
+    }
+    
     return results;
   }
 

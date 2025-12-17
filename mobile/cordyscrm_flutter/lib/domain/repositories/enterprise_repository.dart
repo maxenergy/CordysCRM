@@ -58,4 +58,14 @@ abstract class EnterpriseRepository {
 
   /// 清除爱企查 Cookie
   Future<void> clearCookies();
+
+  /// 保存 WebView 的 User-Agent
+  ///
+  /// [userAgent] WebView 的真实 User-Agent
+  Future<void> saveUserAgent(String userAgent);
+
+  /// 加载保存的 User-Agent
+  ///
+  /// 返回保存的 User-Agent，如果没有则返回 null
+  Future<String?> loadUserAgent();
 }

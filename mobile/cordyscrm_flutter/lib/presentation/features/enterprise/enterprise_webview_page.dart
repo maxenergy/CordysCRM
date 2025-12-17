@@ -317,21 +317,51 @@ window.__extractEnterpriseData = function() {
             await _injectScripts();
           }
 
+          // 只有在初始化完成后才保存 Cookie 和 User-Agent
+          // 避免在 loadCookies() -> reload() 期间把空 Cookie 写回
+          if (!_isInitialized) return;
+
+          // 获取并保存 WebView 的真实 User-Agent（用于 Dio 请求）
+          final userAgent = await controller.evaluateJavascript(
+            source: 'navigator.userAgent',
+          );
+          if (userAgent != null && userAgent is String && userAgent.isNotEmpty) {
+            // JS 返回的字符串可能带引号，需要清理
+            String cleanUA = userAgent;
+            if (cleanUA.startsWith('"') && cleanUA.endsWith('"')) {
+              cleanUA = cleanUA.substring(1, cleanUA.length - 1);
+            }
+            if (cleanUA.isNotEmpty) {
+              await ref.read(enterpriseRepositoryProvider).saveUserAgent(cleanUA);
+            }
+          }
+
           // 保存 Cookie（包括爱企查和百度 Passport 域名）
+          // 只有当 Cookie 非空时才保存，避免覆盖已有的有效 Cookie
           final aiqichaCookies = await CookieManager.instance().getCookies(
             url: WebUri('https://aiqicha.baidu.com'),
           );
           final passportCookies = await CookieManager.instance().getCookies(
             url: WebUri('https://passport.baidu.com'),
           );
-          final cookieMap = <String, String>{};
-          for (final c in aiqichaCookies) {
-            cookieMap['aiqicha_${c.name}'] = c.value;
+          
+          // 检查是否有有效的登录 Cookie（BDUSS 是百度登录的关键 Cookie）
+          final hasValidSession = aiqichaCookies.any((c) => c.name == 'BDUSS') ||
+              passportCookies.any((c) => c.name == 'BDUSS');
+          
+          if (aiqichaCookies.isNotEmpty || passportCookies.isNotEmpty) {
+            final cookieMap = <String, String>{};
+            for (final c in aiqichaCookies) {
+              cookieMap['aiqicha_${c.name}'] = c.value;
+            }
+            for (final c in passportCookies) {
+              cookieMap['passport_${c.name}'] = c.value;
+            }
+            // 只有当有有效会话或 Cookie 数量足够时才保存
+            if (hasValidSession || cookieMap.length > 5) {
+              await ref.read(enterpriseWebProvider.notifier).saveCookies(cookieMap);
+            }
           }
-          for (final c in passportCookies) {
-            cookieMap['passport_${c.name}'] = c.value;
-          }
-          await ref.read(enterpriseWebProvider.notifier).saveCookies(cookieMap);
         },
         onReceivedHttpError: (controller, request, response) {
           final statusCode = response.statusCode ?? 0;

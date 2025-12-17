@@ -33,6 +33,7 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
   ));
 
   static const _cookieKey = 'aiqicha_cookies';
+  static const _userAgentKey = 'aiqicha_user_agent';
 
   @override
   Future<EnterpriseSearchResult> searchLocal({
@@ -145,8 +146,17 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
       
       _logger.d('开始请求爱企查: https://aiqicha.baidu.com/s?q=$keyword');
 
-      // 3. 发起 HTTP 请求
+      // 3. 读取保存的 User-Agent（与 WebView 一致，避免反爬虫检测）
+      final userAgent = await loadUserAgent();
+      if (userAgent == null || userAgent.isEmpty) {
+        _logger.w('[Auth] 未找到保存的 User-Agent，请先打开 WebView 登录爱企查');
+        return EnterpriseSearchResult.error('请先打开爱企查页面登录，以同步浏览器信息');
+      }
+      _logger.d('[Auth] 使用 User-Agent: ${userAgent.substring(0, userAgent.length > 50 ? 50 : userAgent.length)}...');
+
+      // 4. 发起 HTTP 请求
       // 使用复用的独立 Dio 实例访问爱企查，避免使用 CRM 后端的拦截器
+      // 只保留必要的 Headers，避免"伪装痕迹"触发风控
       final response = await _aiqichaDio.get(
         'https://aiqicha.baidu.com/s',
         queryParameters: {'q': keyword},
@@ -155,11 +165,14 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
           followRedirects: true,
           validateStatus: (status) => status != null && status < 500,
           headers: {
+            // 核心头部（最小可用集合）
             'Cookie': cookieHeader,
+            'User-Agent': userAgent,
+            'Referer': 'https://aiqicha.baidu.com/',
             'Accept':
                 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'User-Agent':
-                'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+            // 注意：不手动设置 Accept-Encoding，让 Dio 自动处理
           },
         ),
       );
@@ -417,10 +430,11 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
 
   @override
   Future<void> clearCookies() async {
-    _logger.d('清除 Cookie');
+    _logger.d('清除 Cookie 和 User-Agent');
 
     try {
       await _secureStorage.delete(key: _cookieKey);
+      await _secureStorage.delete(key: _userAgentKey); // 同时清理 User-Agent
       // 清除两个域名的 Cookie
       await CookieManager.instance().deleteCookies(
         url: WebUri('https://aiqicha.baidu.com'),
@@ -428,9 +442,31 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
       await CookieManager.instance().deleteCookies(
         url: WebUri('https://passport.baidu.com'),
       );
-      _logger.i('Cookie 清除成功');
+      _logger.i('Cookie 和 User-Agent 清除成功');
     } catch (e) {
       _logger.e('清除 Cookie 失败: $e');
+    }
+  }
+
+  @override
+  Future<void> saveUserAgent(String userAgent) async {
+    _logger.d('保存 User-Agent: ${userAgent.substring(0, userAgent.length > 50 ? 50 : userAgent.length)}...');
+
+    try {
+      await _secureStorage.write(key: _userAgentKey, value: userAgent);
+      _logger.i('User-Agent 保存成功');
+    } catch (e) {
+      _logger.e('保存 User-Agent 失败: $e');
+    }
+  }
+
+  @override
+  Future<String?> loadUserAgent() async {
+    try {
+      return await _secureStorage.read(key: _userAgentKey);
+    } catch (e) {
+      _logger.e('加载 User-Agent 失败: $e');
+      return null;
     }
   }
 
@@ -711,5 +747,19 @@ class MockEnterpriseRepository implements EnterpriseRepository {
   Future<void> clearCookies() async {
     _logger.d('[Mock] 清除 Cookie');
     _cookies.clear();
+  }
+
+  String? _userAgent;
+
+  @override
+  Future<void> saveUserAgent(String userAgent) async {
+    _logger.d('[Mock] 保存 User-Agent');
+    _userAgent = userAgent;
+  }
+
+  @override
+  Future<String?> loadUserAgent() async {
+    _logger.d('[Mock] 加载 User-Agent');
+    return _userAgent;
   }
 }

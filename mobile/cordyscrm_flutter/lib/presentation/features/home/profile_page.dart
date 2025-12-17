@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/services/enterprise_settings_service.dart';
+import '../../../core/utils/enterprise_url_utils.dart';
 import '../auth/auth_provider.dart';
+import '../enterprise/enterprise_provider.dart';
 import '../../routing/app_router.dart';
 import '../../widgets/sync_status_indicator.dart';
 import '../../../services/sync/sync_provider.dart';
@@ -108,6 +111,13 @@ class ProfilePage extends ConsumerWidget {
     WidgetRef ref,
     ThemeData theme,
   ) {
+    final dataSourceType = ref.watch(enterpriseDataSourceTypeProvider);
+    final dataSourceName = switch (dataSourceType) {
+      EnterpriseDataSourceType.qcc => '企查查',
+      EnterpriseDataSourceType.iqicha => '爱企查',
+      _ => '企查查',
+    };
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -115,9 +125,17 @@ class ProfilePage extends ConsumerWidget {
           _buildMenuItem(
             context,
             icon: Icons.business_outlined,
-            title: '爱企查',
-            subtitle: '企业信息查询',
+            title: '企业信息查询',
+            subtitle: '当前数据源: $dataSourceName',
             onTap: () => context.push(AppRoutes.enterprise),
+          ),
+          const Divider(height: 1),
+          _buildMenuItem(
+            context,
+            icon: Icons.swap_horiz_outlined,
+            title: '数据源设置',
+            subtitle: '切换企查查/爱企查',
+            onTap: () => _showDataSourceDialog(context, ref),
           ),
           const Divider(height: 1),
           _buildMenuItem(
@@ -299,5 +317,111 @@ class ProfilePage extends ConsumerWidget {
         Text('© 2024 Cordys'),
       ],
     );
+  }
+
+  void _showDataSourceDialog(BuildContext context, WidgetRef ref) {
+    final currentType = ref.read(enterpriseDataSourceTypeProvider);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => _DataSourceDialog(
+        currentType: currentType,
+        onSelected: (value) => _onDataSourceChanged(context, ref, value),
+      ),
+    );
+  }
+
+  void _onDataSourceChanged(
+    BuildContext context,
+    WidgetRef ref,
+    EnterpriseDataSourceType value,
+  ) {
+    // 更新 Provider 状态
+    ref.read(enterpriseDataSourceTypeProvider.notifier).state = value;
+
+    // 持久化到本地存储
+    ref.read(enterpriseSettingsServiceProvider).setDataSourceType(value);
+
+    // 显示提示
+    final name = switch (value) {
+      EnterpriseDataSourceType.qcc => '企查查',
+      EnterpriseDataSourceType.iqicha => '爱企查',
+      _ => '未知',
+    };
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('已切换到 $name'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+}
+
+/// 数据源选择对话框
+class _DataSourceDialog extends StatefulWidget {
+  const _DataSourceDialog({
+    required this.currentType,
+    required this.onSelected,
+  });
+
+  final EnterpriseDataSourceType currentType;
+  final ValueChanged<EnterpriseDataSourceType> onSelected;
+
+  @override
+  State<_DataSourceDialog> createState() => _DataSourceDialogState();
+}
+
+class _DataSourceDialogState extends State<_DataSourceDialog> {
+  late EnterpriseDataSourceType _selectedType;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedType = widget.currentType;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('选择数据源'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: Radio<EnterpriseDataSourceType>(
+              value: EnterpriseDataSourceType.qcc,
+              groupValue: _selectedType,
+              onChanged: _onChanged,
+            ),
+            title: const Text('企查查'),
+            subtitle: const Text('www.qcc.com'),
+            onTap: () => _onChanged(EnterpriseDataSourceType.qcc),
+          ),
+          ListTile(
+            leading: Radio<EnterpriseDataSourceType>(
+              value: EnterpriseDataSourceType.iqicha,
+              groupValue: _selectedType,
+              onChanged: _onChanged,
+            ),
+            title: const Text('爱企查'),
+            subtitle: const Text('aiqicha.baidu.com'),
+            onTap: () => _onChanged(EnterpriseDataSourceType.iqicha),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('取消'),
+        ),
+      ],
+    );
+  }
+
+  void _onChanged(EnterpriseDataSourceType? value) {
+    if (value == null) return;
+    setState(() => _selectedType = value);
+    widget.onSelected(value);
+    Navigator.of(context).pop();
   }
 }

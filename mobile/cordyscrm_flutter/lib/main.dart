@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'core/services/enterprise_settings_service.dart';
+import 'presentation/features/enterprise/enterprise_provider.dart';
 import 'presentation/routing/app_router.dart';
 import 'presentation/theme/app_theme.dart';
 import 'services/push/push_provider.dart';
@@ -33,9 +36,19 @@ void main() async {
   
   // 初始化 Firebase（如果配置文件存在）
   await _initializeFirebase();
+
+  // 初始化 SharedPreferences
+  final prefs = await SharedPreferences.getInstance();
   
   // 创建 ProviderContainer 以在 main 函数中访问 provider
-  final container = ProviderContainer();
+  final container = ProviderContainer(
+    overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs),
+    ],
+  );
+
+  // 恢复用户的数据源选择
+  _restoreEnterpriseDataSource(container);
   
   // 获取路由实例并初始化分享处理
   final router = container.read(appRouterProvider);
@@ -81,6 +94,14 @@ void _initializePushNotifications(ProviderContainer container) {
 void _initializeShareHandler(GoRouter router, ProviderContainer container) {
   _shareHandler = ShareHandler(router: router, container: container);
   _shareHandler!.initialize();
+}
+
+/// 恢复用户的数据源选择
+void _restoreEnterpriseDataSource(ProviderContainer container) {
+  final settingsService = container.read(enterpriseSettingsServiceProvider);
+  final savedType = settingsService.getDataSourceType();
+  container.read(enterpriseDataSourceTypeProvider.notifier).state = savedType;
+  debugPrint('[Enterprise] Restored data source: $savedType');
 }
 
 /// CordysCRM 应用

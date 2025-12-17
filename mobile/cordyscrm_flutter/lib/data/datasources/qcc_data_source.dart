@@ -1,3 +1,4 @@
+import '../../core/utils/enterprise_url_utils.dart';
 import '../../domain/datasources/enterprise_data_source.dart';
 
 /// 企查查（qcc.com）数据源实现
@@ -17,40 +18,10 @@ class QccDataSource extends EnterpriseDataSourceInterface {
   String get startUrl => 'https://www.qcc.com';
 
   @override
-  bool isSourceLink(String url) {
-    if (url.isEmpty) return false;
-    final uri = Uri.tryParse(url.trim());
-    if (uri == null) return false;
-    final host = uri.host.toLowerCase();
-    return host == 'www.qcc.com' ||
-        host == 'qcc.com' ||
-        host.endsWith('.qcc.com');
-  }
+  bool isSourceLink(String url) => isQccLink(url);
 
   @override
-  bool isDetailPage(String url) {
-    if (url.isEmpty) return false;
-    final uri = Uri.tryParse(url.trim());
-    if (uri == null) return false;
-    if (!isSourceLink(url)) return false;
-
-    final path = uri.path.toLowerCase();
-
-    // 排除登录/账号相关页面，避免误注入
-    if (path.contains('login') ||
-        path.contains('user_login') ||
-        path.contains('passport') ||
-        path.contains('register')) {
-      return false;
-    }
-
-    // 企查查详情页格式：/firm/<id>.html 或 /company/<id>.html
-    final isFirmPage = path.startsWith('/firm/') && path.endsWith('.html');
-    final isCompanyPage =
-        path.startsWith('/company/') && path.endsWith('.html');
-
-    return isFirmPage || isCompanyPage;
-  }
+  bool isDetailPage(String url) => isQccDetailPage(url);
 
   @override
   String get extractDataJs => _extractDataJs;

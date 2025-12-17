@@ -1,3 +1,4 @@
+import '../../core/utils/enterprise_url_utils.dart';
 import '../../domain/datasources/enterprise_data_source.dart';
 
 /// 爱企查（aiqicha.baidu.com）数据源实现
@@ -17,32 +18,10 @@ class AiqichaDataSource extends EnterpriseDataSourceInterface {
   String get startUrl => 'https://aiqicha.baidu.com';
 
   @override
-  bool isSourceLink(String url) {
-    if (url.isEmpty) return false;
-    final uri = Uri.tryParse(url.trim());
-    if (uri == null) return false;
-    final host = uri.host.toLowerCase();
-    return host == 'aiqicha.baidu.com' || host.endsWith('.aiqicha.baidu.com');
-  }
+  bool isSourceLink(String url) => isAiqichaLink(url);
 
   @override
-  bool isDetailPage(String url) {
-    if (url.isEmpty) return false;
-    final uri = Uri.tryParse(url.trim());
-    if (uri == null) return false;
-    if (!isSourceLink(url)) return false;
-
-    final path = uri.path;
-    final hasPid = uri.queryParameters['pid']?.isNotEmpty == true;
-
-    // 爱企查详情页格式：
-    // - /company_detail_<id>
-    // - /detail?pid=<id>
-    // - 其他包含 pid 参数的页面
-    return path.contains('company_detail') ||
-        path.contains('/detail') ||
-        hasPid;
-  }
+  bool isDetailPage(String url) => isAiqichaDetailPage(url);
 
   @override
   String get extractDataJs => _extractDataJs;

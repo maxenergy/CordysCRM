@@ -238,6 +238,43 @@ class _EnterpriseWebViewPageState extends ConsumerState<EnterpriseWebViewPage> {
             },
           );
 
+          // 注册企查查搜索结果回调
+          controller.addJavaScriptHandler(
+            handlerName: 'onQichachaSearchResult',
+            callback: (args) {
+              final completer = ref.read(qichachaSearchCompleterProvider);
+              if (completer == null || completer.isCompleted) return;
+              
+              try {
+                if (args.isEmpty) {
+                  completer.complete([]);
+                  return;
+                }
+                
+                final jsonStr = args.first as String? ?? '[]';
+                final list = (jsonDecode(jsonStr) as List<dynamic>)
+                    .map((e) => Map<String, String>.from(
+                        (e as Map<String, dynamic>).map((k, v) => MapEntry(k, v?.toString() ?? ''))))
+                    .toList();
+                completer.complete(list);
+              } catch (e) {
+                completer.completeError('解析企查查搜索结果失败: $e');
+              }
+            },
+          );
+          
+          // 注册企查查搜索错误回调
+          controller.addJavaScriptHandler(
+            handlerName: 'onQichachaSearchError',
+            callback: (args) {
+              final completer = ref.read(qichachaSearchCompleterProvider);
+              if (completer == null || completer.isCompleted) return;
+              
+              final error = args.isNotEmpty ? args.first.toString() : '企查查搜索失败';
+              completer.completeError(error);
+            },
+          );
+
           // 加载保存的 Cookie（在 WebView 创建后立即加载）
           if (!_isInitialized) {
             await ref.read(enterpriseWebProvider.notifier).loadCookies();

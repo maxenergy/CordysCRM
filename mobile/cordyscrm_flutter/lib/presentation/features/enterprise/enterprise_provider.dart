@@ -76,6 +76,11 @@ final webViewControllerProvider = StateProvider<InAppWebViewController?>((ref) =
 /// 用于 WebView JS 回调和 Repository 之间的异步通信
 final aiqichaSearchCompleterProvider = StateProvider<Completer<List<Map<String, String>>>?>((ref) => null);
 
+/// 企查查搜索结果 Completer Provider
+///
+/// 用于 WebView JS 回调和 Repository 之间的异步通信
+final qichachaSearchCompleterProvider = StateProvider<Completer<List<Map<String, String>>>?>((ref) => null);
+
 // ==================== Mock Data (Demo Mode) ====================
 
 /// 演示模式下的模拟企业数据
@@ -307,7 +312,6 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
       final dataSourceName = dataSource.displayName;
       
       // 根据数据源类型选择搜索方式
-      // 目前只有爱企查支持 API 搜索，企查查需要用户在 WebView 中手动搜索
       if (currentDataSourceType == EnterpriseDataSourceType.iqicha) {
         // 爱企查：使用 WebView Cookie 进行 API 搜索
         final iqichaResult =
@@ -335,14 +339,31 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
           );
         }
       } else {
-        // 企查查：不支持 API 搜索，提示用户打开 WebView 手动搜索
-        state = state.copyWith(
-          isSearching: false,
-          error: '本地未找到"$trimmedKeyword"，请点击右上角图标打开$dataSourceName搜索',
-          results: [],
-          total: 0,
-          dataSource: EnterpriseSearchDataSource.qcc,
-        );
+        // 企查查：通过 WebView 执行 JS 搜索
+        final qccResult =
+            await _repository.searchQichacha(keyword: trimmedKeyword);
+
+        if (!mounted || currentRequestId != _searchRequestId) {
+          return;
+        }
+
+        if (qccResult.success) {
+          state = state.copyWith(
+            isSearching: false,
+            results: qccResult.items,
+            total: qccResult.total,
+            dataSource: EnterpriseSearchDataSource.qcc,
+          );
+        } else {
+          // 企查查搜索失败（可能是 WebView 未打开或需要登录）
+          state = state.copyWith(
+            isSearching: false,
+            error: qccResult.message ?? '请先打开$dataSourceName页面并登录',
+            results: [],
+            total: 0,
+            dataSource: EnterpriseSearchDataSource.qcc,
+          );
+        }
       }
     } catch (e) {
       // 检查是否已被新请求取代或 Provider 已销毁

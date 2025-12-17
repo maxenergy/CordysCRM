@@ -26,6 +26,14 @@ abstract class EnterpriseRepository {
     int pageSize = 10,
   });
 
+  /// 搜索企查查（通过 WebView 执行 JS 搜索）
+  ///
+  /// 需要 WebView 已打开企查查页面并登录。
+  /// [keyword] 搜索关键词
+  Future<EnterpriseSearchResult> searchQichacha({
+    required String keyword,
+  });
+
   /// 搜索企业（兼容旧接口）
   ///
   /// [keyword] 搜索关键词

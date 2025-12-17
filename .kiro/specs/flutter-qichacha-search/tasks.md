@@ -93,5 +93,5 @@
     - 应用启动时恢复用户选择
     - _Requirements: 5.1_
 
-- [-] 10. Final Checkpoint - 确保所有测试通过
+- [x] 10. Final Checkpoint - 确保所有测试通过
   - Ensure all tests pass, ask the user if questions arise.

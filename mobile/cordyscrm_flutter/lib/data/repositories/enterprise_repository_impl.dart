@@ -9,6 +9,8 @@ import 'package:logger/logger.dart';
 
 import '../../domain/entities/enterprise.dart';
 import '../../domain/repositories/enterprise_repository.dart';
+import '../../presentation/features/enterprise/enterprise_provider.dart';
+import '../datasources/qcc_data_source.dart';
 
 /// 企业仓库实现
 ///
@@ -18,15 +20,16 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
     required Dio dio,
     FlutterSecureStorage? secureStorage,
     String basePath = '/api/enterprise',
-    // ignore: avoid_unused_constructor_parameters
-    Ref? ref, // 保留参数以保持 API 兼容性，未来可能用于数据源切换
+    required Ref ref,
   })  : _dio = dio,
         _secureStorage = secureStorage ?? const FlutterSecureStorage(),
-        _basePath = basePath;
+        _basePath = basePath,
+        _ref = ref;
 
   final Dio _dio;
   final FlutterSecureStorage _secureStorage;
   final String _basePath;
+  final Ref _ref;
   final _logger = Logger(printer: PrettyPrinter(methodCount: 0));
 
   static const _cookieKey = 'aiqicha_cookies';
@@ -133,6 +136,100 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
       total: 0,
       message: '本地未找到"$keyword"，请点击右上角图标打开爱企查搜索',
     );
+  }
+
+  @override
+  Future<EnterpriseSearchResult> searchQichacha({
+    required String keyword,
+  }) async {
+    _logger.d('搜索企业(企查查): $keyword');
+
+    final controller = _ref.read(webViewControllerProvider);
+    if (controller == null) {
+      _logger.w('[企查查] WebView 未就绪');
+      return EnterpriseSearchResult(
+        success: false,
+        items: [],
+        total: 0,
+        message: '请先打开企查查页面并登录，然后返回搜索',
+      );
+    }
+
+    final completer = Completer<List<Map<String, String>>>();
+    _ref.read(qichachaSearchCompleterProvider.notifier).state = completer;
+
+    try {
+      const dataSource = QccDataSource();
+      final searchJs = dataSource.searchJs;
+      
+      if (searchJs == null) {
+        return EnterpriseSearchResult.error('企查查数据源不支持搜索');
+      }
+
+      // 注入搜索脚本
+      await controller.evaluateJavascript(source: searchJs);
+      
+      // 执行搜索（转义关键词中的特殊字符）
+      final escapedKeyword = keyword
+          .replaceAll('\\', '\\\\')
+          .replaceAll('"', '\\"')
+          .replaceAll("'", "\\'");
+      await controller.evaluateJavascript(
+        source: 'window.__searchQcc("$escapedKeyword");',
+      );
+
+      // 等待结果，设置 20 秒超时
+      final results = await completer.future.timeout(
+        const Duration(seconds: 20),
+        onTimeout: () {
+          throw TimeoutException('企查查搜索超时');
+        },
+      );
+
+      // 将抓取到的结果 Map 转换为 Enterprise 对象
+      final items = results.map((map) => Enterprise(
+        id: map['id'] ?? '',
+        name: map['name'] ?? '',
+        creditCode: map['creditCode'] ?? '',
+        legalPerson: map['legalPerson'] ?? '',
+        registeredCapital: map['registeredCapital'] ?? '',
+        establishDate: map['establishDate'] ?? '',
+        status: map['status'] ?? '',
+        address: map['address'] ?? '',
+        industry: map['industry'] ?? '',
+        businessScope: map['businessScope'] ?? '',
+        phone: map['phone'] ?? '',
+        email: map['email'] ?? '',
+        website: map['website'] ?? '',
+        source: 'qcc',
+      )).toList();
+
+      _logger.i('[企查查] 搜索成功，返回 ${items.length} 条结果');
+      return EnterpriseSearchResult(
+        success: true,
+        items: items,
+        total: items.length,
+      );
+    } on TimeoutException {
+      _logger.w('[企查查] 搜索超时');
+      return EnterpriseSearchResult(
+        success: false,
+        items: [],
+        total: 0,
+        message: '企查查搜索超时，请检查网络或重试',
+      );
+    } catch (e) {
+      _logger.e('[企查查] 搜索失败: $e');
+      return EnterpriseSearchResult(
+        success: false,
+        items: [],
+        total: 0,
+        message: '企查查搜索失败: ${e.toString()}',
+      );
+    } finally {
+      // 清理 completer
+      _ref.read(qichachaSearchCompleterProvider.notifier).state = null;
+    }
   }
 
   /// Legacy：会调用后端 /api/enterprise/search（可能触发"服务端查爱企查"）
@@ -404,6 +501,21 @@ class MockEnterpriseRepository implements EnterpriseRepository {
       success: result.success,
       items: result.items
           .map((e) => e.copyWith(source: e.source.isEmpty ? 'iqicha' : e.source))
+          .toList(),
+      total: result.total,
+      message: result.message,
+    );
+  }
+
+  @override
+  Future<EnterpriseSearchResult> searchQichacha({
+    required String keyword,
+  }) async {
+    final result = await searchEnterprise(keyword: keyword);
+    return EnterpriseSearchResult(
+      success: result.success,
+      items: result.items
+          .map((e) => e.copyWith(source: e.source.isEmpty ? 'qcc' : e.source))
           .toList(),
       total: result.total,
       message: result.message,

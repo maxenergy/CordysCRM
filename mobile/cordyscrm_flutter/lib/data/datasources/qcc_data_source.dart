@@ -29,6 +29,9 @@ class QccDataSource extends EnterpriseDataSourceInterface {
   @override
   String get injectButtonJs => _injectButtonJs;
 
+  @override
+  String? get searchJs => _searchJs;
+
 
   /// 导入按钮注入脚本
   ///
@@ -156,6 +159,127 @@ window.__extractEnterpriseData = function() {
     website: getTextByLabel('官网') || getTextByLabel('网址'),
     source: 'qcc'
   };
+};
+''';
+
+  /// 搜索执行和结果抓取脚本
+  ///
+  /// 在企查查页面执行搜索并抓取结果列表。
+  /// 使用 MutationObserver 监听搜索结果的出现。
+  static const _searchJs = '''
+window.__searchQcc = function(keyword) {
+  return new Promise((resolve, reject) => {
+    const input = document.getElementById('searchkey');
+    const button = document.querySelector('button.search-btn');
+
+    if (!input || !button) {
+      reject('未找到搜索框或搜索按钮，请检查页面结构是否变化。');
+      return;
+    }
+
+    // 确保输入框可见且可交互
+    if (input.offsetParent === null) {
+      reject('搜索框不可见，可能是页面未完全加载或结构变化。');
+      return;
+    }
+    
+    input.value = keyword;
+    // 触发 input 事件，确保 Vue/React 等框架能感知到值变化
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    button.click();
+
+    const scrapeResults = () => {
+      const items = document.querySelectorAll('#search-result .firm-list-item, .search-result .firm-list-item, .result-list .firm-list-item');
+      const results = [];
+      items.forEach(item => {
+        const a = item.querySelector('a.title, a.name, .title a, .name a');
+        const name = a ? a.innerText.trim() : '';
+        const url = a ? a.href : '';
+        
+        // 尝试从 URL 提取 ID
+        const firmMatch = url.match(/\\/firm\\/([^/?#.]+)\\.html/i);
+        const companyMatch = url.match(/\\/company\\/([^/?#.]+)\\.html/i);
+        const id = firmMatch ? firmMatch[1] : (companyMatch ? companyMatch[1] : '');
+
+        const legalPerson = item.querySelector('.legal-person a, .legal-person, .fr a')?.innerText.trim() || '';
+        const status = item.querySelector('.status-tip, .status, .tag')?.innerText.trim() || '';
+        const creditCode = item.querySelector('.credit-code, .code')?.innerText.trim() || '';
+        const registeredCapital = item.querySelector('.capital, .reg-capital')?.innerText.trim() || '';
+        const establishDate = item.querySelector('.date, .establish-date')?.innerText.trim() || '';
+
+        if (name && id) {
+          results.push({
+            id: id,
+            name: name,
+            legalPerson: legalPerson,
+            status: status,
+            creditCode: creditCode,
+            registeredCapital: registeredCapital,
+            establishDate: establishDate,
+            url: url,
+            source: 'qcc'
+          });
+        }
+      });
+      return results;
+    };
+
+    // 使用 MutationObserver 监视搜索结果的出现或变化
+    const observerOptions = {
+      childList: true,
+      subtree: true,
+      attributes: false,
+      characterData: false
+    };
+
+    let resultFound = false;
+    const observer = new MutationObserver((mutationsList, obs) => {
+      const currentResults = scrapeResults();
+      if (currentResults.length > 0) {
+        obs.disconnect();
+        resultFound = true;
+        resolve(currentResults);
+      }
+    });
+
+    const searchResultContainer = document.getElementById('search-result') || 
+                                   document.querySelector('.search-result') ||
+                                   document.querySelector('.result-list');
+    if (searchResultContainer) {
+      observer.observe(searchResultContainer, observerOptions);
+    } else {
+      // 如果容器一开始不存在，则监听 body 变化直到它出现
+      const bodyObserver = new MutationObserver((mutationsList, bodyObs) => {
+        const container = document.getElementById('search-result') || 
+                          document.querySelector('.search-result') ||
+                          document.querySelector('.result-list');
+        if (container) {
+          bodyObs.disconnect();
+          observer.observe(container, observerOptions);
+        }
+      });
+      bodyObserver.observe(document.body, observerOptions);
+    }
+
+    // 设置超时，以防搜索结果一直不出现
+    setTimeout(() => {
+      if (!resultFound) {
+        observer.disconnect();
+        const finalResults = scrapeResults();
+        if (finalResults.length > 0) {
+          resolve(finalResults);
+        } else {
+          reject('企查查搜索超时或未找到结果，请重试或检查关键词。');
+        }
+      }
+    }, 15000);
+  })
+  .then(results => {
+    window.flutter_inappwebview.callHandler('onQichachaSearchResult', JSON.stringify(results));
+  })
+  .catch(error => {
+    window.flutter_inappwebview.callHandler('onQichachaSearchError', error);
+  });
 };
 ''';
 }

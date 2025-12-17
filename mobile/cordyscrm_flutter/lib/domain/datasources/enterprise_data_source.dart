@@ -66,4 +66,16 @@ abstract class EnterpriseDataSourceInterface {
   /// 创建浮动的"导入CRM"按钮，点击时调用 `window.__extractEnterpriseData()`
   /// 并通过 `window.flutter_inappwebview.callHandler()` 将数据传递给 Flutter。
   String get injectButtonJs;
+
+  /// 搜索执行 JavaScript 代码（可选）
+  ///
+  /// 定义 `window.__search{SourceId}(keyword)` 函数，
+  /// 用于在 WebView 中执行搜索并抓取结果。
+  ///
+  /// 搜索完成后通过以下回调返回结果：
+  /// - 成功：`window.flutter_inappwebview.callHandler('on{SourceId}SearchResult', JSON.stringify(results))`
+  /// - 失败：`window.flutter_inappwebview.callHandler('on{SourceId}SearchError', errorMessage)`
+  ///
+  /// 返回 null 表示该数据源不支持 WebView 内搜索。
+  String? get searchJs => null;
 }

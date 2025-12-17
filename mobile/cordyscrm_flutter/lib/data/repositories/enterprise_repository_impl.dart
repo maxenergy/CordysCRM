@@ -1,13 +1,15 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:html/parser.dart' show parse;
 import 'package:logger/logger.dart';
 
 import '../../domain/entities/enterprise.dart';
 import '../../domain/repositories/enterprise_repository.dart';
+import '../../presentation/features/enterprise/enterprise_provider.dart';
 
 /// 企业仓库实现
 ///
@@ -17,20 +19,17 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
     required Dio dio,
     FlutterSecureStorage? secureStorage,
     String basePath = '/api/enterprise',
+    Ref? ref,
   })  : _dio = dio,
         _secureStorage = secureStorage ?? const FlutterSecureStorage(),
-        _basePath = basePath;
+        _basePath = basePath,
+        _ref = ref;
 
   final Dio _dio;
   final FlutterSecureStorage _secureStorage;
   final String _basePath;
+  final Ref? _ref;
   final _logger = Logger(printer: PrettyPrinter(methodCount: 0));
-
-  /// 复用独立 Dio 实例：用于"客户端直连爱企查"，避免每次搜索重复创建
-  late final Dio _aiqichaDio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 15),
-    receiveTimeout: const Duration(seconds: 15),
-  ));
 
   static const _cookieKey = 'aiqicha_cookies';
   static const _userAgentKey = 'aiqicha_user_agent';
@@ -123,100 +122,171 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
     int page = 1,
     int pageSize = 10,
   }) async {
-    _logger.d('搜索企业(爱企查): $keyword, page=$page, pageSize=$pageSize');
+    _logger.d('搜索企业(爱企查-WebView导航): $keyword, page=$page, pageSize=$pageSize');
+
+    // 检查是否有 ProviderRef
+    if (_ref == null) {
+      _logger.e('[WebView] ProviderRef 未设置，无法使用 WebView 搜索');
+      return EnterpriseSearchResult.error('内部错误：无法访问 WebView');
+    }
+
+    // 获取 WebView 控制器
+    final controller = _ref.read(webViewControllerProvider);
+    if (controller == null) {
+      _logger.w('[WebView] WebView 控制器未初始化，请先打开爱企查页面');
+      return EnterpriseSearchResult.error('请先打开爱企查页面');
+    }
 
     try {
-      // 1. 读取 Cookie
-      final cookies = await _readCookiesFromStorageOnly();
-      if (cookies.isEmpty) {
-        _logger.w('[Auth] 未在本地存储中检测到爱企查 Cookie');
-        return EnterpriseSearchResult.error('请先通过 WebView 登录爱企查');
-      }
-      _logger.d('[Auth] 从本地存储读取到 ${cookies.length} 个 Cookie');
-      // 打印 Cookie 键名（不打印值，保护隐私）
-      _logger.d('[Auth] Cookie 键: ${cookies.keys.toList()}');
+      // 创建 Completer 用于等待 JS 回调
+      final completer = Completer<List<Map<String, String>>>();
+      _ref.read(aiqichaSearchCompleterProvider.notifier).state = completer;
 
-      // 2. 构建 Cookie 请求头
-      final cookieHeader = _buildAiqichaCookieHeader(cookies);
-      if (cookieHeader.isEmpty) {
-        _logger.w('[Auth] 构建的爱企查 Cookie 为空或无效');
-        return EnterpriseSearchResult.error('爱企查 Cookie 无效，请重新登录');
-      }
-      _logger.d('[Auth] Cookie Header 长度: ${cookieHeader.length}');
-      
-      _logger.d('开始请求爱企查: https://aiqicha.baidu.com/s?q=$keyword');
+      // 构建搜索 URL
+      final searchUrl = 'https://aiqicha.baidu.com/s?q=${Uri.encodeComponent(keyword)}';
+      _logger.d('[WebView] 导航到搜索页面: $searchUrl');
 
-      // 3. 读取保存的 User-Agent（与 WebView 一致，避免反爬虫检测）
-      final userAgent = await loadUserAgent();
-      if (userAgent == null || userAgent.isEmpty) {
-        _logger.w('[Auth] 未找到保存的 User-Agent，请先打开 WebView 登录爱企查');
-        return EnterpriseSearchResult.error('请先打开爱企查页面登录，以同步浏览器信息');
-      }
-      _logger.d('[Auth] 使用 User-Agent: ${userAgent.substring(0, userAgent.length > 50 ? 50 : userAgent.length)}...');
-
-      // 4. 发起 HTTP 请求
-      // 使用复用的独立 Dio 实例访问爱企查，避免使用 CRM 后端的拦截器
-      // 只保留必要的 Headers，避免"伪装痕迹"触发风控
-      final response = await _aiqichaDio.get(
-        'https://aiqicha.baidu.com/s',
-        queryParameters: {'q': keyword},
-        options: Options(
-          responseType: ResponseType.plain,
-          followRedirects: true,
-          validateStatus: (status) => status != null && status < 500,
-          headers: {
-            // 核心头部（最小可用集合）
-            'Cookie': cookieHeader,
-            'User-Agent': userAgent,
-            'Referer': 'https://aiqicha.baidu.com/',
-            'Accept':
-                'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-            // 注意：不手动设置 Accept-Encoding，让 Dio 自动处理
-          },
-        ),
+      // 先注入一个标记，用于检测页面是否已加载完成
+      // 然后导航到搜索页面
+      await controller.loadUrl(
+        urlRequest: URLRequest(url: WebUri(searchUrl)),
       );
 
-      _logger.d('爱企查响应状态码: ${response.statusCode}');
-
-      if (response.statusCode != 200 || response.data == null) {
-        _logger.e('爱企查请求失败: statusCode=${response.statusCode}');
-        return EnterpriseSearchResult.error('爱企查请求失败: ${response.statusCode}');
-      }
-
-      final html = response.data.toString();
-      _logger.d('爱企查响应 HTML 长度: ${html.length}');
-
-      // 4. 分析响应，判断会话/验证状态
-      // 检查是否为登录页 -> Cookie 过期/无效
-      if (html.contains('passport.baidu.com/v2/logi') || 
-          html.contains('百度帐号登录') ||
-          html.contains('请登录')) {
-        _logger.w('[Auth] 响应为登录页面，判定为 Cookie 过期或无效');
-        return EnterpriseSearchResult.error('Cookie 已过期，请重新登录');
-      }
-
-      // 检测是否被重定向到验证码页面
-      final isWappassRedirect = html.contains('wappass.baidu.com');
-      final isCaptchaPage = html.contains('请输入验证码') || 
-                            html.contains('安全验证') ||
-                            html.contains('verify');
+      // 等待页面加载完成并提取数据
+      // 使用轮询方式检查页面状态，最多等待 30 秒
+      const maxWaitTime = Duration(seconds: 30);
+      const pollInterval = Duration(milliseconds: 500);
+      final startTime = DateTime.now();
       
-      if (isWappassRedirect || isCaptchaPage) {
-        _logger.w('[Auth] 响应为验证码页面 (wappass=$isWappassRedirect, captcha=$isCaptchaPage)');
-        return EnterpriseSearchResult.error('需要滑块验证，请在 WebView 中操作后重试');
+      while (DateTime.now().difference(startTime) < maxWaitTime) {
+        await Future.delayed(pollInterval);
+        
+        // 检查页面是否加载完成
+        final readyState = await controller.evaluateJavascript(
+          source: 'document.readyState',
+        );
+        
+        if (readyState != 'complete') {
+          continue;
+        }
+        
+        // 检查当前 URL 是否是搜索结果页
+        final currentUrl = await controller.getUrl();
+        final urlStr = currentUrl?.toString() ?? '';
+        
+        if (!urlStr.contains('aiqicha.baidu.com')) {
+          _logger.w('[WebView] 页面被重定向到非爱企查域名: $urlStr');
+          // 可能被重定向到登录页
+          if (urlStr.contains('passport.baidu.com') || urlStr.contains('login')) {
+            return EnterpriseSearchResult.error('请先在爱企查页面登录');
+          }
+          continue;
+        }
+        
+        // 执行 JavaScript 提取搜索结果
+        final jsCode = '''
+(function() {
+  try {
+    // 检查是否需要验证
+    const pageText = document.body.innerText || '';
+    if (pageText.includes('安全验证') || pageText.includes('请输入验证码') || 
+        pageText.includes('滑动验证') || document.querySelector('.vcode-spin-card')) {
+      window.flutter_inappwebview.callHandler('onAiqichaSearchError', '需要滑块验证，请在当前页面完成验证后重试');
+      return;
+    }
+    
+    if (pageText.includes('请登录') || pageText.includes('百度帐号登录')) {
+      window.flutter_inappwebview.callHandler('onAiqichaSearchError', '请先登录爱企查');
+      return;
+    }
+    
+    // 查找企业链接 - 搜索结果页的企业链接
+    const links = document.querySelectorAll('a[href*="pid="], a[href*="company_detail"]');
+    const seen = new Set();
+    const results = [];
+    
+    const pidRegex = /pid=([^&]+)/;
+    
+    for (const link of links) {
+      const href = link.getAttribute('href');
+      if (!href) continue;
+      
+      const pidMatch = href.match(pidRegex);
+      if (!pidMatch) continue;
+      
+      const pid = pidMatch[1].trim();
+      if (!pid || seen.has(pid)) continue;
+      
+      // 获取企业名称 - 优先从链接文本获取，过滤掉导航链接
+      let name = link.textContent.trim();
+      
+      // 过滤无效结果
+      if (!name || name.length > 100 || name.length < 2) continue;
+      // 过滤掉明显不是企业名称的文本
+      if (name.includes('查看更多') || name.includes('首页') || name.includes('登录')) continue;
+      
+      seen.add(pid);
+      results.push({ pid: pid, name: name });
+    }
+    
+    // 如果没有找到结果，可能是页面结构不同，尝试其他选择器
+    if (results.length === 0) {
+      // 尝试查找搜索结果列表项
+      const items = document.querySelectorAll('.search-result-item, .company-item, [class*="result"]');
+      for (const item of items) {
+        const link = item.querySelector('a[href*="pid="]');
+        if (!link) continue;
+        
+        const href = link.getAttribute('href');
+        const pidMatch = href.match(pidRegex);
+        if (!pidMatch) continue;
+        
+        const pid = pidMatch[1].trim();
+        if (!pid || seen.has(pid)) continue;
+        
+        const nameEl = item.querySelector('.company-name, .title, h3, h2');
+        const name = nameEl ? nameEl.textContent.trim() : link.textContent.trim();
+        
+        if (!name || name.length > 100 || name.length < 2) continue;
+        
+        seen.add(pid);
+        results.push({ pid: pid, name: name });
+      }
+    }
+    
+    window.flutter_inappwebview.callHandler('onAiqichaSearchResult', JSON.stringify(results));
+  } catch (e) {
+    window.flutter_inappwebview.callHandler('onAiqichaSearchError', '提取数据异常: ' + e.toString());
+  }
+})();
+''';
+
+        _logger.d('[WebView] 页面加载完成，执行数据提取...');
+        await controller.evaluateJavascript(source: jsCode);
+        
+        // 跳出轮询循环，等待 JS 回调
+        break;
       }
 
-      // 5. 解析正常响应
-      final allItems = _parseAiqichaSearchHtml(html);
-      _logger.d('[Parser] 从 HTML 中解析到 ${allItems.length} 个企业');
+      // 等待结果，设置超时
+      final rawResults = await completer.future.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          _logger.e('[WebView] 等待搜索结果超时');
+          throw TimeoutException('搜索超时，请重试');
+        },
+      );
 
-      // 如果解析结果为空，但 HTML 长度很长，可能意味着页面结构已更改
-      if (allItems.isEmpty && html.length > 1000) {
-        _logger.w('[Parser] HTML 内容存在但未解析出任何结果，页面结构可能已变更');
-        // 打印 HTML 前 500 字符用于调试
-        _logger.d('[Parser] HTML 前 500 字符: ${html.substring(0, html.length > 500 ? 500 : html.length)}');
-      }
+      _logger.d('[WebView] 收到 ${rawResults.length} 个搜索结果');
+
+      // 转换为 Enterprise 对象
+      final allItems = rawResults.map((item) {
+        return Enterprise(
+          id: item['pid'] ?? '',
+          name: item['name'] ?? '',
+          source: 'iqicha',
+        );
+      }).where((e) => e.id.isNotEmpty && e.name.isNotEmpty).toList();
 
       // 简单分页切片
       final start = (page - 1) * pageSize;
@@ -224,19 +294,19 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
           ? <Enterprise>[]
           : allItems.skip(start).take(pageSize).toList();
 
-      _logger.i('搜索(爱企查)成功: 返回 ${items.length} 条, 总计 ${allItems.length} 条');
+      _logger.i('搜索(爱企查-WebView导航)成功: 返回 ${items.length} 条, 总计 ${allItems.length} 条');
 
       return EnterpriseSearchResult(
         success: true,
         items: items,
         total: allItems.length,
       );
-    } on DioException catch (e) {
-      _logger.e('搜索企业(爱企查) Dio 异常: ${e.message}');
-      return EnterpriseSearchResult.error('网络请求失败: ${e.message ?? '未知错误'}');
+    } on TimeoutException catch (e) {
+      _logger.e('[WebView] 搜索超时: $e');
+      return EnterpriseSearchResult.error('搜索超时，请重试');
     } catch (e) {
-      _logger.e('搜索企业(爱企查)未知异常: $e');
-      return EnterpriseSearchResult.error('搜索失败: $e');
+      _logger.e('[WebView] 搜索异常: $e');
+      return EnterpriseSearchResult.error('$e');
     }
   }
 
@@ -470,138 +540,6 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
     }
   }
 
-  /// 仅从存储读取 Cookie（不设置到 WebView）
-  Future<Map<String, String>> _readCookiesFromStorageOnly() async {
-    try {
-      final jsonStr = await _secureStorage.read(key: _cookieKey);
-      if (jsonStr == null || jsonStr.isEmpty) return {};
-      final decoded = jsonDecode(jsonStr) as Map<String, dynamic>;
-      return decoded.map((k, v) => MapEntry(k, v.toString()));
-    } catch (_) {
-      return {};
-    }
-  }
-
-  /// 构建爱企查 Cookie 请求头
-  String _buildAiqichaCookieHeader(Map<String, String> cookies) {
-    final parts = <String>[];
-    for (final entry in cookies.entries) {
-      var name = entry.key;
-      final value = entry.value;
-      if (value.isEmpty) continue;
-      if (name.startsWith('aiqicha_')) {
-        name = name.substring('aiqicha_'.length);
-      } else if (name.startsWith('passport_')) {
-        name = name.substring('passport_'.length);
-      }
-      parts.add('$name=$value');
-    }
-    return parts.join('; ');
-  }
-
-  /// 解析爱企查搜索结果 HTML - [混合策略]
-  ///
-  /// 优先使用正则表达式进行快速解析。如果失败（可能因页面结构调整），
-  /// 则回退到更稳健但稍慢的 HTML 解析库 (html package)。
-  List<Enterprise> _parseAiqichaSearchHtml(String html) {
-    // 方法1：优先使用正则表达式，速度快
-    var enterprises = _parseAiqichaWithRegex(html);
-
-    // 方法2：如果正则未解析出结果（并且 HTML 内容不为空），使用 HTML 解析库作为后备
-    if (enterprises.isEmpty && html.length > 1000) {
-      _logger.w('[Parser] 正则表达式未能解析出企业，尝试使用 HTML 解析器作为备选方案。');
-      try {
-        enterprises = _parseAiqichaWithHtmlParser(html);
-        if (enterprises.isNotEmpty) {
-          _logger.i('[Parser] HTML 解析器成功解析出 ${enterprises.length} 个企业。');
-        }
-      } catch (e) {
-        _logger.e('[Parser] HTML 解析器备选方案执行失败: $e');
-        // 失败时，返回正则表达式的空结果，不抛出异常
-      }
-    }
-
-    return enterprises;
-  }
-
-  /// [解析助手] 使用正则表达式解析爱企查搜索结果。
-  List<Enterprise> _parseAiqichaWithRegex(String html) {
-    final normalized = html.replaceAll('\n', ' ');
-
-    final linkRe = RegExp(
-      r'href="[^"]*?(?:company_detail|company_detail_.*?)\?[^"]*?pid=([^"&]+)[^"]*"[^>]*>(.*?)<',
-      caseSensitive: false,
-    );
-
-    final seen = <String>{};
-    final results = <Enterprise>[];
-
-    for (final m in linkRe.allMatches(normalized)) {
-      final pid = (m.group(1) ?? '').trim();
-      var name = (m.group(2) ?? '').trim();
-      name = _stripHtmlTags(name).trim(); // 移除内部可能存在的<em>等标签
-
-      if (pid.isEmpty || name.isEmpty) continue;
-      if (seen.contains(pid)) continue;
-      seen.add(pid);
-
-      results.add(
-        Enterprise(
-          id: pid,
-          name: name,
-          source: 'iqicha',
-        ),
-      );
-    }
-    return results;
-  }
-
-  /// [解析助手] 使用 `html` package 解析爱企查搜索结果。
-  List<Enterprise> _parseAiqichaWithHtmlParser(String html) {
-    final document = parse(html);
-    final seen = <String>{};
-    final results = <Enterprise>[];
-    
-    // 策略：查找所有 href 属性包含 "pid=" 或 "company_detail" 的 <a> 标签
-    final links = document.querySelectorAll('a[href*="pid="], a[href*="company_detail"]');
-    
-    final pidRegex = RegExp(r'pid=([^&]+)');
-
-    for (final link in links) {
-      final href = link.attributes['href'];
-      if (href == null) continue;
-
-      final pidMatch = pidRegex.firstMatch(href);
-      if (pidMatch == null) continue;
-      
-      final pid = pidMatch.group(1)?.trim();
-      if (pid == null || pid.isEmpty) continue;
-
-      // link.text 会自动处理并合并所有子节点的文本，有效应对名称中包含 <em> 等高亮标签
-      final name = link.text.trim();
-      // 进行一些基本过滤，避免提取到不相关的链接
-      if (name.isEmpty || name.length > 100 || name.contains('...')) continue; 
-
-      // 防止重复
-      if (seen.contains(pid)) continue;
-      seen.add(pid);
-
-      results.add(
-        Enterprise(
-          id: pid,
-          name: name,
-          source: 'iqicha',
-        ),
-      );
-    }
-    
-    return results;
-  }
-
-  /// 移除 HTML 标签
-  String _stripHtmlTags(String input) {
-    return input.replaceAll(RegExp(r'<[^>]+>'), '');
-  }
 }
 
 /// Mock 企业仓库实现

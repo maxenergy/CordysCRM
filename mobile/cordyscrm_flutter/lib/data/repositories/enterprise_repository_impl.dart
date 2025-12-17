@@ -9,7 +9,6 @@ import 'package:logger/logger.dart';
 
 import '../../domain/entities/enterprise.dart';
 import '../../domain/repositories/enterprise_repository.dart';
-import '../../presentation/features/enterprise/enterprise_provider.dart';
 
 /// 企业仓库实现
 ///
@@ -19,16 +18,15 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
     required Dio dio,
     FlutterSecureStorage? secureStorage,
     String basePath = '/api/enterprise',
-    Ref? ref,
+    // ignore: avoid_unused_constructor_parameters
+    Ref? ref, // 保留参数以保持 API 兼容性，未来可能用于数据源切换
   })  : _dio = dio,
         _secureStorage = secureStorage ?? const FlutterSecureStorage(),
-        _basePath = basePath,
-        _ref = ref;
+        _basePath = basePath;
 
   final Dio _dio;
   final FlutterSecureStorage _secureStorage;
   final String _basePath;
-  final Ref? _ref;
   final _logger = Logger(printer: PrettyPrinter(methodCount: 0));
 
   static const _cookieKey = 'aiqicha_cookies';

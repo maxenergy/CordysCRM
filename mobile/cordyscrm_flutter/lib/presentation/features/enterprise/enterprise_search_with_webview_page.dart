@@ -46,6 +46,10 @@ class _EnterpriseSearchWithWebViewPageState
   bool _showClipboardHint = false;
   EnterpriseDataSourceType? _clipboardDataSourceType;
 
+  // 自动提取标志：从搜索结果跳转到详情页后自动提取数据
+  bool _pendingAutoExtract = false;
+  Timer? _autoExtractTimeoutTimer;
+
   // 桌面版 User-Agent，避免被重定向到移动版 m.qcc.com
   static const _desktopUserAgent =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
@@ -90,6 +94,7 @@ class _EnterpriseSearchWithWebViewPageState
     _searchController.dispose();
     _focusNode.dispose();
     _debounceTimer?.cancel();
+    _autoExtractTimeoutTimer?.cancel();
 
     // 清空 WebViewController 引用
     _clearWebViewControllerRef();
@@ -266,26 +271,117 @@ class _EnterpriseSearchWithWebViewPageState
 
   /// 跳转到详情页抓取完整信息后导入
   Future<void> _fetchDetailAndImport(Enterprise enterprise) async {
+    // 检查 WebView 控制器是否就绪
+    if (_webViewController == null) {
+      debugPrint('[企查查] WebView 控制器未就绪，无法跳转详情页');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('请先打开企查查页面'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    
     // 构建详情页 URL
     final detailUrl = 'https://www.qcc.com/firm/${enterprise.id}.html';
     
+    // 设置自动提取标志
+    setState(() {
+      _pendingAutoExtract = true;
+    });
+    
+    debugPrint('[企查查] 开始跳转详情页: $detailUrl');
+    
     // 显示加载提示
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('正在获取完整企业信息...'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('正在获取完整企业信息...'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
     
     // 切换到 WebView 并加载详情页
     _showWebView();
-    await _webViewController?.loadUrl(
+    await _webViewController!.loadUrl(
       urlRequest: URLRequest(url: WebUri(detailUrl)),
     );
     
-    // 等待页面加载完成后自动注入脚本并提取数据
-    // 注入脚本会在 onLoadStop 中自动执行
-    // 提取的数据会通过 onEnterpriseData handler 回调
+    // 设置超时定时器（10秒后如果还没提取成功，提示用户手动操作）
+    _autoExtractTimeoutTimer?.cancel();
+    _autoExtractTimeoutTimer = Timer(const Duration(seconds: 10), () {
+      if (_pendingAutoExtract && mounted) {
+        debugPrint('[企查查] 自动提取超时');
+        setState(() {
+          _pendingAutoExtract = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('自动获取超时，请点击右上角"提取企业信息"按钮手动导入'),
+            duration: Duration(seconds: 4),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    });
+  }
+  
+  /// 自动提取详情页数据
+  Future<void> _autoExtractDetailData() async {
+    if (_webViewController == null || !mounted) return;
+    
+    debugPrint('[企查查] 开始自动提取详情页数据');
+    
+    try {
+      // 先注入提取脚本
+      await _webViewController!.evaluateJavascript(source: _dataSource.extractDataJs);
+      
+      // 等待 DOM 渲染完成后执行提取
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // 再次检查状态
+      if (!mounted || !_pendingAutoExtract) {
+        debugPrint('[企查查] 提取前状态已变化，跳过');
+        return;
+      }
+      
+      // 调用提取函数并通过 handler 回调
+      await _webViewController!.evaluateJavascript(source: '''
+        (function() {
+          try {
+            if (typeof window.__extractEnterpriseData === 'function') {
+              const data = window.__extractEnterpriseData();
+              if (data && data.name) {
+                window.flutter_inappwebview.callHandler('onEnterpriseData', JSON.stringify(data));
+              } else {
+                window.flutter_inappwebview.callHandler('onError', '提取数据为空，请手动点击导入按钮');
+              }
+            } else {
+              window.flutter_inappwebview.callHandler('onError', '提取脚本未加载，请手动点击导入按钮');
+            }
+          } catch (e) {
+            window.flutter_inappwebview.callHandler('onError', '提取失败: ' + e.toString());
+          }
+        })();
+      ''');
+    } catch (e) {
+      debugPrint('[企查查] 自动提取异常: $e');
+      // 异常时重置状态，让超时定时器处理
+      if (mounted && _pendingAutoExtract) {
+        setState(() {
+          _pendingAutoExtract = false;
+        });
+        _autoExtractTimeoutTimer?.cancel();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('自动提取失败: $e'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
   }
 
   void _showPreviewSheet() {
@@ -453,8 +549,19 @@ class _EnterpriseSearchWithWebViewPageState
         controller.addJavaScriptHandler(
           handlerName: 'onEnterpriseData',
           callback: (args) {
+            if (!mounted) return;
             if (args.isNotEmpty) {
               final json = args.first as String? ?? '{}';
+              debugPrint('[企查查] onEnterpriseData 收到数据: ${json.substring(0, json.length > 200 ? 200 : json.length)}...');
+              
+              // 重置自动提取状态
+              if (_pendingAutoExtract) {
+                setState(() {
+                  _pendingAutoExtract = false;
+                });
+                _autoExtractTimeoutTimer?.cancel();
+              }
+              
               ref.read(enterpriseWebProvider.notifier).onEnterpriseCaptured(json);
               _showPreviewSheet();
             }
@@ -464,9 +571,23 @@ class _EnterpriseSearchWithWebViewPageState
         controller.addJavaScriptHandler(
           handlerName: 'onError',
           callback: (args) {
+            if (!mounted) return;
             final error = args.isNotEmpty ? args.first.toString() : '未知错误';
+            debugPrint('[企查查] onError: $error');
+            
+            // 重置自动提取状态
+            if (_pendingAutoExtract) {
+              setState(() {
+                _pendingAutoExtract = false;
+              });
+              _autoExtractTimeoutTimer?.cancel();
+            }
+            
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('提取失败: $error')),
+              SnackBar(
+                content: Text('提取失败: $error'),
+                backgroundColor: Colors.orange,
+              ),
             );
           },
         );
@@ -615,8 +736,25 @@ class _EnterpriseSearchWithWebViewPageState
         final currentUrl = url?.toString() ?? '';
         final currentDataSource = ref.read(enterpriseDataSourceProvider);
 
+        debugPrint('[企查查] onLoadStop: url=$currentUrl, pendingAutoExtract=$_pendingAutoExtract');
+
         if (currentDataSource.isDetailPage(currentUrl)) {
           await _injectScripts();
+          
+          // 如果是从搜索结果跳转过来的，自动提取数据
+          if (_pendingAutoExtract) {
+            debugPrint('[企查查] 检测到详情页加载完成，开始自动提取数据');
+            // 延迟等待 DOM 渲染完成
+            await Future.delayed(const Duration(milliseconds: 800));
+            
+            // 延迟后再次检查状态（可能已被超时或其他操作重置）
+            if (!mounted || !_pendingAutoExtract) {
+              debugPrint('[企查查] 延迟后状态已变化，跳过自动提取');
+              return;
+            }
+            
+            await _autoExtractDetailData();
+          }
         }
       },
     );

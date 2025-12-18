@@ -15,32 +15,10 @@ class CustomerRepositoryImpl implements CustomerRepository {
   final Random _random = Random();
 
   /// 初始化 Mock 数据
+  /// 注意：已清空模拟数据，客户数据应通过企业导入功能创建
   void _initMockData() {
-    if (_mockCustomers.isNotEmpty) return;
-
-    const statuses = ['潜在客户', '意向客户', '成交客户', '流失客户'];
-    const owners = ['张三', '李四', '王五', '赵六'];
-    const industries = ['IT/互联网', '金融', '制造业', '零售', '教育'];
-    const sources = ['线上推广', '客户转介绍', '展会', '电话营销', '官网'];
-    const companyTypes = ['科技', '贸易', '咨询', '制造', '服务'];
-
-    for (var i = 0; i < 100; i++) {
-      _mockCustomers.add(Customer(
-        id: 'cust_${i + 1}',
-        name: '示例${companyTypes[i % companyTypes.length]}公司 ${i + 1}',
-        contactPerson: '联系人 ${i + 1}',
-        phone: '138${_random.nextInt(90000000) + 10000000}',
-        email: 'contact${i + 1}@example.com',
-        owner: owners[i % owners.length],
-        status: statuses[i % statuses.length],
-        industry: industries[i % industries.length],
-        source: sources[i % sources.length],
-        address: '示例城市示例街道 ${i + 1} 号',
-        lastFollowUpAt: DateTime.now().subtract(Duration(days: _random.nextInt(30))),
-        createdAt: DateTime.now().subtract(Duration(days: _random.nextInt(365))),
-        updatedAt: DateTime.now(),
-      ));
-    }
+    // 不再生成模拟数据，保持空列表
+    // 客户数据应通过企业搜索 -> 导入流程创建
   }
 
   @override

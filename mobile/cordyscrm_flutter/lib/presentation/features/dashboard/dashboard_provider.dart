@@ -90,12 +90,13 @@ class MockDashboardRepository implements DashboardRepository {
     final today14 = DateTime(now.year, now.month, now.day, 14, 0);
     final today17 = DateTime(now.year, now.month, now.day, 17, 30);
 
+    // 返回空数据，待后端 API 实现后替换
     return DashboardData(
       generatedAt: now,
       kpi: const DashboardKpi(
-        todayNewClues: 6,
-        monthFollowUps: 42,
-        pendingFollowUpCustomers: 9,
+        todayNewClues: 0,
+        monthFollowUps: 0,
+        pendingFollowUpCustomers: 0,
       ),
       quickActions: const [
         DashboardQuickAction.newCustomer,
@@ -103,29 +104,7 @@ class MockDashboardRepository implements DashboardRepository {
         DashboardQuickAction.newOpportunity,
         DashboardQuickAction.writeFollowUp,
       ],
-      todos: [
-        DashboardTodo(
-          id: 'todo_1',
-          type: DashboardTodoType.followUp,
-          title: '回访：张三（意向客户）',
-          subtitle: '上次沟通：报价与合同条款',
-          dueAt: today9,
-        ),
-        DashboardTodo(
-          id: 'todo_2',
-          type: DashboardTodoType.customer,
-          title: '跟进：深圳某科技有限公司',
-          subtitle: '确认关键联系人与采购流程',
-          dueAt: today14,
-        ),
-        DashboardTodo(
-          id: 'todo_3',
-          type: DashboardTodoType.clue,
-          title: '处理线索：官网表单新增',
-          subtitle: '来源：官网 / 产品咨询',
-          dueAt: today17,
-        ),
-      ],
+      todos: [], // 空待办列表，待后端 API 实现
     );
   }
 }

@@ -118,24 +118,8 @@ class ClueRepositoryImpl implements ClueRepository {
 }
 
 /// 生成模拟线索数据
+/// 注意：已清空模拟数据，线索数据应通过实际业务流程创建
 List<Clue> _generateMockClues() {
-  final sources = ['网站注册', '电话咨询', '展会', '转介绍', '广告投放'];
-  final owners = ['张三', '李四', '王五', '赵六'];
-  final statuses = [Clue.statusNew, Clue.statusFollowing, Clue.statusConverted, Clue.statusInvalid];
-  
-  return List.generate(50, (i) {
-    final now = DateTime.now();
-    return Clue(
-      id: 'clue_$i',
-      name: '线索客户${i + 1}',
-      phone: '1380000${i.toString().padLeft(4, '0')}',
-      email: 'clue$i@example.com',
-      source: sources[i % sources.length],
-      status: statuses[i % statuses.length],
-      owner: owners[i % owners.length],
-      remark: i % 3 == 0 ? '这是一条备注信息' : null,
-      createdAt: now.subtract(Duration(days: i)),
-      updatedAt: now.subtract(Duration(days: i ~/ 2)),
-    );
-  });
+  // 返回空列表，不再生成模拟数据
+  return [];
 }

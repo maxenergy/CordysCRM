@@ -155,11 +155,8 @@ const customerStatusOptions = [
   '流失客户',
 ];
 
-/// 负责人选项（实际应从 API 获取）
+/// 负责人选项
+/// 注意：仅保留"全部"选项，实际负责人列表应从后端 API 获取
 const customerOwnerOptions = [
   '全部',
-  '张三',
-  '李四',
-  '王五',
-  '赵六',
 ];

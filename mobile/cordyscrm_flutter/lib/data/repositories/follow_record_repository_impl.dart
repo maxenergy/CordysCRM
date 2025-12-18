@@ -12,44 +12,10 @@ class FollowRecordRepositoryImpl implements FollowRecordRepository {
     _initMockData();
   }
 
+  /// 初始化数据
+  /// 注意：已清空模拟数据，跟进记录应通过实际业务流程创建
   void _initMockData() {
-    // 为客户生成模拟跟进记录
-    for (var i = 0; i < 10; i++) {
-      final customerId = 'cust_$i';
-      _customerRecords[customerId] = _generateMockRecords(customerId, null, 3 + i % 5);
-    }
-    // 为线索生成模拟跟进记录
-    for (var i = 0; i < 10; i++) {
-      final clueId = 'clue_$i';
-      _clueRecords[clueId] = _generateMockRecords(null, clueId, 2 + i % 3);
-    }
-  }
-
-  List<FollowRecord> _generateMockRecords(String? customerId, String? clueId, int count) {
-    final types = [FollowRecord.typePhone, FollowRecord.typeVisit, FollowRecord.typeWechat, FollowRecord.typeEmail];
-    final contents = [
-      '与客户进行了电话沟通，了解了基本需求，客户对我们的产品表示感兴趣。',
-      '拜访客户，详细介绍了产品功能和优势，客户反馈良好。',
-      '通过微信发送了产品资料，客户表示会仔细研究。',
-      '发送了正式报价邮件，等待客户回复。',
-      '跟进上次沟通的问题，客户已经内部讨论，预计下周给出答复。',
-    ];
-    final owners = ['张三', '李四', '王五'];
-
-    return List.generate(count, (i) {
-      final now = DateTime.now();
-      return FollowRecord(
-        id: const Uuid().v4(),
-        customerId: customerId,
-        clueId: clueId,
-        content: contents[i % contents.length],
-        followType: types[i % types.length],
-        followAt: now.subtract(Duration(days: i * 2, hours: i * 3)),
-        createdBy: owners[i % owners.length],
-        createdAt: now.subtract(Duration(days: i * 2)),
-        updatedAt: now.subtract(Duration(days: i * 2)),
-      );
-    });
+    // 不再生成模拟数据，保持空 Map
   }
 
   @override

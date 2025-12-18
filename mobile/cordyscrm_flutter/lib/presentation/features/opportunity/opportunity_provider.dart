@@ -140,4 +140,5 @@ final opportunityFormProvider =
 // ==================== Status Options ====================
 
 const opportunityStageOptions = ['全部', '初步接触', '需求确认', '方案报价', '商务谈判', '赢单', '输单'];
-const opportunityOwnerOptions = ['全部', '张三', '李四', '王五', '赵六'];
+/// 负责人选项（仅保留"全部"，实际应从 API 获取）
+const opportunityOwnerOptions = ['全部'];

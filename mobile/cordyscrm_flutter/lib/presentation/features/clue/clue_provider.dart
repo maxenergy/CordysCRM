@@ -157,5 +157,5 @@ const clueStatusOptions = ['全部', '新线索', '跟进中', '已转化', '无
 /// 线索来源选项
 const clueSourceOptions = ['全部', '网站注册', '电话咨询', '展会', '转介绍', '广告投放'];
 
-/// 负责人选项
-const clueOwnerOptions = ['全部', '张三', '李四', '王五', '赵六'];
+/// 负责人选项（仅保留"全部"，实际应从 API 获取）
+const clueOwnerOptions = ['全部'];

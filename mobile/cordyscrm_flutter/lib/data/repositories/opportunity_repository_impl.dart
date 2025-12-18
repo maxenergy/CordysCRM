@@ -124,36 +124,11 @@ class OpportunityRepositoryImpl implements OpportunityRepository {
   }
 }
 
+/// 生成模拟商机数据
+/// 注意：已清空模拟数据，商机数据应通过实际业务流程创建
 List<Opportunity> _generateMockOpportunities() {
-  final stages = [
-    Opportunity.stageInitial,
-    Opportunity.stageQualified,
-    Opportunity.stageProposal,
-    Opportunity.stageNegotiation,
-    Opportunity.stageWon,
-    Opportunity.stageLost,
-  ];
-  final owners = ['张三', '李四', '王五', '赵六'];
-  final customers = ['阿里巴巴', '腾讯科技', '字节跳动', '华为技术', '小米科技'];
-  
-  return List.generate(40, (i) {
-    final now = DateTime.now();
-    final stage = stages[i % stages.length];
-    return Opportunity(
-      id: 'opp_$i',
-      name: '${customers[i % customers.length]}项目${i + 1}',
-      customerId: 'cust_$i',
-      customerName: customers[i % customers.length],
-      amount: (i + 1) * 10000.0,
-      stage: stage,
-      probability: _getProbability(stage),
-      expectedCloseDate: now.add(Duration(days: 30 + i * 7)),
-      owner: owners[i % owners.length],
-      remark: i % 3 == 0 ? '重点跟进项目' : null,
-      createdAt: now.subtract(Duration(days: i * 2)),
-      updatedAt: now.subtract(Duration(days: i)),
-    );
-  });
+  // 返回空列表，不再生成模拟数据
+  return [];
 }
 
 int _getProbability(String stage) {

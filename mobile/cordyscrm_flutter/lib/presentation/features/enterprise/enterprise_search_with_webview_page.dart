@@ -519,6 +519,16 @@ class _EnterpriseSearchWithWebViewPageState
           },
         );
 
+        // 注册调试日志 handler
+        controller.addJavaScriptHandler(
+          handlerName: 'onQccDebug',
+          callback: (args) {
+            if (args.isNotEmpty) {
+              debugPrint('[QCC-DEBUG] ${args.join(" ")}');
+            }
+          },
+        );
+
         // 将 controller 写入 provider
         ref.read(webViewControllerProvider.notifier).state = controller;
         _webViewInitialized = true;
@@ -528,6 +538,14 @@ class _EnterpriseSearchWithWebViewPageState
           _webViewProgress = progress;
           _webViewLoading = progress < 100;
         });
+      },
+      // 捕获 JS console.log 输出用于调试
+      onConsoleMessage: (controller, consoleMessage) {
+        final msg = consoleMessage.message;
+        // 只打印 QCC-DEBUG 相关的日志
+        if (msg.contains('QCC-DEBUG')) {
+          debugPrint('[WebView Console] $msg');
+        }
       },
       shouldOverrideUrlLoading: (controller, navigationAction) async {
         final url = navigationAction.request.url?.toString() ?? '';

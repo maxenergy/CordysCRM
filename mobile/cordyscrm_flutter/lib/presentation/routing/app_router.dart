@@ -12,6 +12,7 @@ import '../features/customer/customer_edit_page.dart';
 import '../features/customer/customer_list_page.dart';
 import '../features/enterprise/enterprise_provider.dart';
 import '../features/enterprise/enterprise_search_page.dart';
+import '../features/enterprise/enterprise_search_with_webview_page.dart';
 import '../features/enterprise/enterprise_webview_page.dart';
 import '../features/home/home_shell.dart';
 import '../features/opportunity/opportunity_detail_page.dart';
@@ -230,11 +231,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // 企业搜索页面
+      // 企业搜索页面（集成 WebView，避免控制器失效）
       GoRoute(
         path: AppRoutes.enterpriseSearch,
         name: 'enterpriseSearch',
-        builder: (context, state) => const EnterpriseSearchPage(),
+        builder: (context, state) => const EnterpriseSearchWithWebViewPage(),
       ),
     ],
     

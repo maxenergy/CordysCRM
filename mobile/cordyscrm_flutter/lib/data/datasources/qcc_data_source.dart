@@ -172,6 +172,15 @@ window.__extractEnterpriseData = function() {
 window.__searchQcc = function(keyword, requestId) {
   // ========== 工具函数 ==========
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+  
+  // 调试日志函数 - 通过 Flutter handler 传递
+  const debug = (...args) => {
+    try {
+      window.flutter_inappwebview.callHandler('onQccDebug', args.map(a => 
+        typeof a === 'object' ? JSON.stringify(a) : String(a)
+      ).join(' '));
+    } catch (_) {}
+  };
 
   // ========== 风控/验证页检测 ==========
   const isRiskOrBlockPage = () => {
@@ -192,6 +201,8 @@ window.__searchQcc = function(keyword, requestId) {
 
   // ========== 结果抓取（多选择器策略） ==========
   const scrapeResults = () => {
+    debug(' 开始抓取搜索结果');
+    
     // 多种可能的结果容器选择器（从精确到宽泛）
     const containerSelectors = [
       '#search-result .result-list > div',
@@ -204,11 +215,14 @@ window.__searchQcc = function(keyword, requestId) {
     ];
     
     let items = [];
+    let matchedSelector = '';
     for (const sel of containerSelectors) {
       try {
         const found = document.querySelectorAll(sel);
         if (found.length > 0) {
           items = found;
+          matchedSelector = sel;
+          debug(' 匹配选择器:', sel, '元素数:', found.length);
           break;
         }
       } catch (_) {}
@@ -216,26 +230,48 @@ window.__searchQcc = function(keyword, requestId) {
     
     // 如果没找到，尝试更宽泛的选择器
     if (items.length === 0) {
+      debug(' 标准选择器未匹配，尝试宽泛选择器');
       const links = document.querySelectorAll('a[href*="/firm/"], a[href*="/company/"]');
+      debug(' 找到企业链接数:', links.length);
       const containers = new Set();
-      links.forEach(link => {
+      links.forEach((link, linkIdx) => {
         let parent = link.parentElement;
-        for (let i = 0; i < 5 && parent; i++) {
-          if (parent.children.length > 1) {
+        // 向上查找更多层，找到包含详细信息的容器
+        for (let i = 0; i < 10 && parent; i++) {
+          const text = parent.innerText || '';
+          // 如果容器包含"法定代表人"或"注册资本"等关键词，说明找到了正确的容器
+          if (text.includes('法定代表人') || text.includes('注册资本') || text.includes('成立日期')) {
             containers.add(parent);
+            if (linkIdx < 2) {
+              debug(' 链接', linkIdx, '找到包含详情的容器，层级:', i, 'HTML(前300):', parent.outerHTML.substring(0, 300));
+            }
+            break;
+          }
+          // 如果容器有多个子元素且文本长度足够，也可能是正确的容器
+          if (parent.children.length > 3 && text.length > 100) {
+            containers.add(parent);
+            if (linkIdx < 2) {
+              debug(' 链接', linkIdx, '找到多子元素容器，层级:', i, '子元素数:', parent.children.length);
+            }
             break;
           }
           parent = parent.parentElement;
         }
       });
       items = Array.from(containers);
+      matchedSelector = 'fallback-parent-search';
     }
     
+    debug(' 最终元素数:', items.length, '选择器:', matchedSelector);
+    
     const results = [];
-    items.forEach(item => {
+    items.forEach((item, idx) => {
       const a = item.querySelector('a[href*="/firm/"], a[href*="/company/"]') ||
                 item.querySelector('a.title, a.name, .title a, .name a, h3 a, h2 a');
-      if (!a) return;
+      if (!a) {
+        debug(' 元素', idx, '未找到链接');
+        return;
+      }
       
       const name = (a.innerText || a.textContent || '').trim();
       const url = a.href || '';
@@ -244,38 +280,79 @@ window.__searchQcc = function(keyword, requestId) {
       const companyMatch = url.match(/\\/company\\/([^/?#.]+)/i);
       const id = firmMatch ? firmMatch[1] : (companyMatch ? companyMatch[1] : '');
       
-      if (!name || !id) return;
+      if (!name || !id) {
+        debug(' 元素', idx, '缺少name或id, name=', name, 'id=', id);
+        return;
+      }
 
       const text = (item.innerText || item.textContent || '');
       
-      let legalPerson = '';
-      const lpMatch = text.match(/法(?:定代表)?人[：:](\\S+)/);
-      if (lpMatch) legalPerson = lpMatch[1].replace(/[\\s\\n]/g, '');
+      // 打印前3个元素的原始文本用于调试
+      if (idx < 3) {
+        debug(' 元素', idx, '原始文本(前500字符):', text.substring(0, 500));
+      }
       
+      // ========== 改进的字段提取逻辑 ==========
+      // 使用非贪婪匹配 + lookahead 策略，适应企查查页面的多行文本格式
+      
+      // 提取法定代表人 - 改进版
+      // 使用 lookahead 确保在遇到下一个字段标签时停止匹配
+      let legalPerson = '';
+      const lpMatch = text.match(/(?:法定代表人|法人|法人代表)[\\s]*[:：]?[\\s]*([\\s\\S]*?)(?=[\\s]*(?:注册资本|成立日期|经营状态|统一社会信用代码|所属行业|注册地址|电话|邮箱)|\$)/);
+      if (lpMatch && lpMatch[1]) {
+        // 从匹配到的块中清理并提取第一个词组作为名称
+        legalPerson = lpMatch[1].trim().split(/[\\s\\n\\r]/)[0].replace(/[,，]/g, '').substring(0, 20);
+      }
+      
+      // 提取经营状态
       let status = '';
-      const statusMatch = text.match(/(存续|在业|注销|吊销|迁出|清算)/);
+      const statusMatch = text.match(/(存续|在业|注销|吊销|迁出|清算|开业|停业)/);
       if (statusMatch) status = statusMatch[1];
       
+      // 提取注册资本 - 改进版
       let registeredCapital = '';
-      const capMatch = text.match(/注册资本[：:]?([\\d.]+万?[人民币元美元欧元港币]*)/);
-      if (capMatch) registeredCapital = capMatch[1];
+      const capMatch = text.match(/(?:注册资本|注册资金)[\\s]*[:：]?[\\s]*([\\s\\S]*?)(?=[\\s]*(?:法定代表人|成立日期|经营状态|统一社会信用代码|所属行业|注册地址|电话|邮箱)|\$)/);
+      if (capMatch && capMatch[1]) {
+        // 提取数字和单位
+        const capValue = capMatch[1].match(/([\\d,.]+[\\s]*万?[人民币元美元欧元港币]*)/);
+        if (capValue) {
+          registeredCapital = capValue[1].replace(/[\\s]/g, '');
+        }
+      }
       
+      // 提取成立日期 - 改进版
       let establishDate = '';
-      const dateMatch = text.match(/成立[日时]?期?[：:]?(\\d{4}[-/年]\\d{1,2}[-/月]\\d{1,2}日?)/);
-      if (dateMatch) establishDate = dateMatch[1];
+      const dateMatch = text.match(/(?:成立日期|成立时间|成立)[\\s]*[:：]?[\\s]*([\\s\\S]*?)(?=[\\s]*(?:法定代表人|注册资本|经营状态|统一社会信用代码|所属行业|注册地址|电话|邮箱)|\$)/);
+      if (dateMatch && dateMatch[1]) {
+        const d = dateMatch[1].match(/(\\d{4}[-/年]\\d{1,2}[-/月]\\d{1,2}日?)/);
+        if (d) establishDate = d[1];
+      }
+      
+      // 提取统一社会信用代码 - 使用 word boundary 确保匹配独立的18位代码
+      let creditCode = '';
+      const ccMatch = text.match(/([0-9A-Z]{18})/);
+      if (ccMatch) creditCode = ccMatch[1];
+
+      if (idx < 3) {
+        debug(' 元素', idx, '提取结果:', JSON.stringify({
+          name, id, legalPerson, status, registeredCapital, establishDate, creditCode
+        }));
+      }
 
       results.push({
         id: id,
         name: name,
         legalPerson: legalPerson,
         status: status,
-        creditCode: '',
+        creditCode: creditCode,
         registeredCapital: registeredCapital,
         establishDate: establishDate,
         url: url,
         source: 'qcc'
       });
     });
+    
+    debug(' 抓取完成，结果数:', results.length);
     return results;
   };
 

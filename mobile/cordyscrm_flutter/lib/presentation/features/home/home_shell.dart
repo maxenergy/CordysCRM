@@ -5,7 +5,7 @@ import '../dashboard/dashboard_page.dart';
 import '../customer/customer_list_page.dart';
 import '../clue/clue_list_page.dart';
 import '../opportunity/opportunity_list_page.dart';
-import '../enterprise/enterprise_search_page.dart';
+import '../enterprise/enterprise_search_with_webview_page.dart';
 import 'profile_page.dart';
 
 /// 底部导航项配置
@@ -72,7 +72,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     CustomerListPage(),
     ClueListPage(),
     OpportunityListPage(),
-    EnterpriseSearchPage(),
+    EnterpriseSearchWithWebViewPage(),
     ProfilePage(),
   ];
 

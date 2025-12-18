@@ -299,6 +299,27 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
     // 优先处理需要用户操作的特定错误
     if (searchState.hasError) {
       final error = searchState.error!;
+      final dataSource = ref.read(enterpriseDataSourceProvider);
+      final dataSourceName = dataSource.displayName;
+      
+      // 检查是否为 WebView 页面已关闭的错误
+      if (error.contains('已关闭') || error.contains('请先打开') || error.contains('未就绪')) {
+        return _buildActionableError(
+          message: error,
+          buttonText: '打开$dataSourceName',
+          icon: Icons.open_in_browser,
+          onPressed: () async {
+            // 打开 WebView 页面
+            await context.push(AppRoutes.enterprise);
+            
+            // 用户返回后，如果页面仍然可用且搜索框有内容，自动重新搜索
+            if (mounted && _searchController.text.trim().length >= 2) {
+              _performSearch(_searchController.text.trim());
+            }
+          },
+        );
+      }
+      
       // 检查是否为 Cookie 或验证码相关的可操作错误
       if (error.contains('登录') || error.contains('验证')) {
         return _buildActionableError(

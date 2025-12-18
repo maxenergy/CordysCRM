@@ -61,27 +61,43 @@ class _EnterpriseWebViewPageState extends ConsumerState<EnterpriseWebViewPage> {
 
   @override
   void dispose() {
+    debugPrint('[WebView] dispose() called, clearing controller reference');
+    
     // 清空 WebViewController 引用，避免 Repository 继续使用已销毁的 controller
-    ref.read(webViewControllerProvider.notifier).state = null;
+    // 注意：必须在 super.dispose() 之前调用，因为之后 ref 可能不可用
+    try {
+      ref.read(webViewControllerProvider.notifier).state = null;
+      debugPrint('[WebView] Controller reference cleared');
+    } catch (e) {
+      debugPrint('[WebView] Failed to clear controller: $e');
+    }
 
     // 清理未完成的爱企查搜索 completer
-    final aiqichaCompleter = ref.read(aiqichaSearchCompleterProvider);
-    if (aiqichaCompleter != null && !aiqichaCompleter.isCompleted) {
-      aiqichaCompleter.completeError('WebView disposed');
+    try {
+      final aiqichaCompleter = ref.read(aiqichaSearchCompleterProvider);
+      if (aiqichaCompleter != null && !aiqichaCompleter.isCompleted) {
+        aiqichaCompleter.completeError('WebView disposed');
+      }
+      ref.read(aiqichaSearchCompleterProvider.notifier).state = null;
+    } catch (e) {
+      debugPrint('[WebView] Failed to clear aiqicha completer: $e');
     }
-    ref.read(aiqichaSearchCompleterProvider.notifier).state = null;
 
     // 清理未完成的企查查搜索 completers
-    final qccCompleters = ref.read(qichachaSearchCompleterProvider);
-    if (qccCompleters.isNotEmpty) {
-      for (final completer in qccCompleters.values) {
-        if (!completer.isCompleted) {
-          completer.completeError('WebView disposed');
+    try {
+      final qccCompleters = ref.read(qichachaSearchCompleterProvider);
+      if (qccCompleters.isNotEmpty) {
+        for (final completer in qccCompleters.values) {
+          if (!completer.isCompleted) {
+            completer.completeError('WebView disposed');
+          }
         }
       }
+      ref.read(qichachaSearchCompleterProvider.notifier).state =
+          <int, Completer<List<Map<String, String>>>>{};
+    } catch (e) {
+      debugPrint('[WebView] Failed to clear qcc completers: $e');
     }
-    ref.read(qichachaSearchCompleterProvider.notifier).state =
-        <int, Completer<List<Map<String, String>>>>{};
 
     super.dispose();
   }

@@ -98,9 +98,12 @@ class EnterpriseSearchResultItem extends StatelessWidget {
 
   /// 构建来源标签
   Widget _buildSourceChip(BuildContext context) {
-    final isLocal = enterprise.isLocal;
-    final color = isLocal ? Colors.blue : Colors.purple;
-    final label = isLocal ? '本地' : '爱企查';
+    final (color, label) = switch (enterprise.source) {
+      'local' => (Colors.blue, '本地'),
+      'qcc' => (Colors.green, '企查查'),
+      'iqicha' => (Colors.purple, '爱企查'),
+      _ => (Colors.grey, '未知'),
+    };
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

@@ -70,6 +70,25 @@ class Enterprise {
   /// 是否来自爱企查
   bool get isFromIqicha => source == 'iqicha';
 
+  /// 是否来自企查查
+  bool get isFromQcc => source == 'qcc';
+
+  /// 是否需要从详情页获取完整信息
+  /// 
+  /// 搜索结果列表页只有基本信息，详细信息（地址、行业、经营范围、电话等）
+  /// 需要进入详情页才能获取。
+  bool get needsDetailFetch {
+    // 只有企查查来源的数据才需要检查
+    if (!isFromQcc) return false;
+    
+    // 如果关键详细字段都为空，说明需要从详情页获取
+    return address.isEmpty && 
+           industry.isEmpty && 
+           businessScope.isEmpty &&
+           phone.isEmpty &&
+           email.isEmpty;
+  }
+
   /// 复制并修改
   Enterprise copyWith({
     String? id,

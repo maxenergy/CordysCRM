@@ -254,8 +254,38 @@ class _EnterpriseSearchWithWebViewPageState
   }
 
   void _onEnterpriseSelected(Enterprise enterprise) {
+    // 如果是企查查来源且数据不完整，跳转到详情页抓取完整信息
+    if (enterprise.source == 'qcc' && enterprise.needsDetailFetch) {
+      _fetchDetailAndImport(enterprise);
+      return;
+    }
+    
     ref.read(enterpriseWebProvider.notifier).setPendingEnterprise(enterprise);
     _showPreviewSheet();
+  }
+
+  /// 跳转到详情页抓取完整信息后导入
+  Future<void> _fetchDetailAndImport(Enterprise enterprise) async {
+    // 构建详情页 URL
+    final detailUrl = 'https://www.qcc.com/firm/${enterprise.id}.html';
+    
+    // 显示加载提示
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('正在获取完整企业信息...'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+    
+    // 切换到 WebView 并加载详情页
+    _showWebView();
+    await _webViewController?.loadUrl(
+      urlRequest: URLRequest(url: WebUri(detailUrl)),
+    );
+    
+    // 等待页面加载完成后自动注入脚本并提取数据
+    // 注入脚本会在 onLoadStop 中自动执行
+    // 提取的数据会通过 onEnterpriseData handler 回调
   }
 
   void _showPreviewSheet() {

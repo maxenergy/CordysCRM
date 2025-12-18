@@ -6,11 +6,17 @@
 
 ## 测试环境
 
-- 后端：Spring Boot 应用
+- 后端：Spring Boot 应用 (端口 8081)
 - 前端：Vue3 Web 应用
 - 移动端：Flutter 应用
-- 数据库：MySQL
+- 数据库：MySQL (cordys_crm)
 - 第三方集成：企查查
+
+## 登录 API
+
+- 端点：`POST /login`
+- 参数：`{"username":"手机号","password":"密码","platform":"mobile|web"}`
+- 注意：用户名使用手机号，不是 `/api/login`
 
 ## 测试用户
 

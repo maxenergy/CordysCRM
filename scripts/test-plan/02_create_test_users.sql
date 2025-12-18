@@ -97,17 +97,33 @@ VALUES ('sur_13716013451', 'org_admin', 'user_13716013451', @current_time + 5, @
 ON DUPLICATE KEY UPDATE update_time = VALUES(update_time);
 
 -- ============================================
--- 3. 分配部门（可选）
+-- 3. 分配组织
 -- ============================================
 
--- 获取默认部门 ID
-SET @default_dept_id = (SELECT id FROM sys_department WHERE organization_id = '100001' LIMIT 1);
+-- 将所有测试用户分配到组织 100001
+INSERT INTO sys_organization_user (id, organization_id, user_id, create_time, update_time, create_user, update_user)
+VALUES ('ou_user_13902213704', '100001', 'user_13902213704', @current_time, @current_time, 'admin', 'admin')
+ON DUPLICATE KEY UPDATE update_time = VALUES(update_time);
 
--- 如果有默认部门，分配用户到部门
-INSERT IGNORE INTO sys_organization_user (id, organization_id, user_id, create_time, update_time, create_user, update_user)
-SELECT CONCAT('ou_', u.id), '100001', u.id, @current_time, @current_time, 'admin', 'admin'
-FROM sys_user u
-WHERE u.id LIKE 'user_%';
+INSERT INTO sys_organization_user (id, organization_id, user_id, create_time, update_time, create_user, update_user)
+VALUES ('ou_user_18911537991', '100001', 'user_18911537991', @current_time + 1, @current_time + 1, 'admin', 'admin')
+ON DUPLICATE KEY UPDATE update_time = VALUES(update_time);
+
+INSERT INTO sys_organization_user (id, organization_id, user_id, create_time, update_time, create_user, update_user)
+VALUES ('ou_user_15510322935', '100001', 'user_15510322935', @current_time + 2, @current_time + 2, 'admin', 'admin')
+ON DUPLICATE KEY UPDATE update_time = VALUES(update_time);
+
+INSERT INTO sys_organization_user (id, organization_id, user_id, create_time, update_time, create_user, update_user)
+VALUES ('ou_user_13762420030', '100001', 'user_13762420030', @current_time + 3, @current_time + 3, 'admin', 'admin')
+ON DUPLICATE KEY UPDATE update_time = VALUES(update_time);
+
+INSERT INTO sys_organization_user (id, organization_id, user_id, create_time, update_time, create_user, update_user)
+VALUES ('ou_user_18942021073', '100001', 'user_18942021073', @current_time + 4, @current_time + 4, 'admin', 'admin')
+ON DUPLICATE KEY UPDATE update_time = VALUES(update_time);
+
+INSERT INTO sys_organization_user (id, organization_id, user_id, create_time, update_time, create_user, update_user)
+VALUES ('ou_user_13716013451', '100001', 'user_13716013451', @current_time + 5, @current_time + 5, 'admin', 'admin')
+ON DUPLICATE KEY UPDATE update_time = VALUES(update_time);
 
 -- 提交事务
 COMMIT;

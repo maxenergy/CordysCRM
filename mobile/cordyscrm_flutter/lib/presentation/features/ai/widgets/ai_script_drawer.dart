@@ -12,17 +12,21 @@ class AIScriptDrawer extends ConsumerStatefulWidget {
   const AIScriptDrawer({
     super.key,
     required this.customerId,
+    this.customerName,
+    this.scrollController,
   });
 
   final String customerId;
+  final String? customerName;
+  final ScrollController? scrollController;
 
   /// 显示话术生成抽屉
-  static Future<void> show(BuildContext context, String customerId) {
+  static Future<void> show(BuildContext context, String customerId, {String? customerName}) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => AIScriptDrawer(customerId: customerId),
+      builder: (context) => AIScriptDrawer(customerId: customerId, customerName: customerName),
     );
   }
 
@@ -88,6 +92,11 @@ class _AIScriptDrawerState extends ConsumerState<AIScriptDrawer> {
       _contentController.text = state.generatedScript!.content;
     }
 
+    // 如果外部提供了 scrollController，直接使用简化布局
+    if (widget.scrollController != null) {
+      return _buildContent(state, theme, widget.scrollController!);
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: theme.scaffoldBackgroundColor,
@@ -99,7 +108,14 @@ class _AIScriptDrawerState extends ConsumerState<AIScriptDrawer> {
         maxChildSize: 0.95,
         expand: false,
         builder: (context, scrollController) {
-          return Column(
+          return _buildContent(state, theme, scrollController);
+        },
+      ),
+    );
+  }
+
+  Widget _buildContent(ScriptState state, ThemeData theme, ScrollController scrollController) {
+    return Column(
             children: [
               // 拖动指示器
               Container(
@@ -123,11 +139,23 @@ class _AIScriptDrawerState extends ConsumerState<AIScriptDrawer> {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
-                        'AI 话术生成',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'AI 话术生成',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (widget.customerName != null)
+                            Text(
+                              widget.customerName!,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: Colors.grey,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                     IconButton(
@@ -201,9 +229,6 @@ class _AIScriptDrawerState extends ConsumerState<AIScriptDrawer> {
               ),
             ],
           );
-        },
-      ),
-    );
   }
 
   /// 构建分组标题

@@ -5,6 +5,10 @@ import 'package:intl/intl.dart';
 
 import '../../../domain/entities/customer.dart';
 import '../../theme/app_theme.dart';
+import '../ai/widgets/ai_script_drawer.dart';
+import '../follow/follow_provider.dart';
+import '../follow/widgets/follow_record_form.dart';
+import '../follow/widgets/follow_record_timeline.dart';
 import 'customer_provider.dart';
 
 /// 客户详情页面
@@ -152,7 +156,7 @@ class _CustomerDetailContent extends StatelessWidget {
         body: TabBarView(
           children: [
             _BasicInfoTab(customer: customer),
-            const _PlaceholderTab(title: '跟进记录', icon: Icons.history),
+            _FollowRecordTab(customerId: customer.id),
             const _PlaceholderTab(title: '商机', icon: Icons.trending_up),
             const _PlaceholderTab(title: '联系人', icon: Icons.contacts),
           ],
@@ -308,6 +312,57 @@ class _BasicInfoTab extends StatelessWidget {
   }
 }
 
+/// 跟进记录 Tab
+class _FollowRecordTab extends ConsumerWidget {
+  const _FollowRecordTab({required this.customerId});
+
+  final String customerId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final recordsAsync = ref.watch(customerFollowRecordsProvider(customerId));
+
+    return recordsAsync.when(
+      data: (records) => Stack(
+        children: [
+          FollowRecordTimeline(
+            records: records,
+            onAddPressed: () => _showAddFollowSheet(context, ref),
+          ),
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: FloatingActionButton(
+              mini: true,
+              onPressed: () => _showAddFollowSheet(context, ref),
+              child: const Icon(Icons.add),
+            ),
+          ),
+        ],
+      ),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, _) => Center(child: Text('加载失败: $err')),
+    );
+  }
+
+  void _showAddFollowSheet(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => FollowRecordForm(
+        customerId: customerId,
+        onSuccess: () {
+          Navigator.pop(context);
+          ref.invalidate(customerFollowRecordsProvider(customerId));
+        },
+      ),
+    );
+  }
+}
+
 /// 占位 Tab
 class _PlaceholderTab extends StatelessWidget {
   const _PlaceholderTab({required this.title, required this.icon});
@@ -339,6 +394,44 @@ class _BottomActionBar extends StatelessWidget {
 
   final Customer customer;
 
+  void _showAddFollowSheet(BuildContext context, String customerId) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => FollowRecordForm(
+        customerId: customerId,
+        onSuccess: () => Navigator.pop(context),
+      ),
+    );
+  }
+
+  void _showAIScriptDrawer(BuildContext context, Customer customer) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          child: AIScriptDrawer(
+            customerId: customer.id,
+            customerName: customer.name,
+            scrollController: scrollController,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -359,20 +452,12 @@ class _BottomActionBar extends StatelessWidget {
             _ActionButton(
               icon: Icons.add_comment_outlined,
               label: '跟进',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('跟进功能开发中')),
-                );
-              },
+              onTap: () => _showAddFollowSheet(context, customer.id),
             ),
             _ActionButton(
               icon: Icons.speaker_notes_outlined,
               label: '话术',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('AI 话术功能开发中')),
-                );
-              },
+              onTap: () => _showAIScriptDrawer(context, customer),
             ),
           ],
         ),

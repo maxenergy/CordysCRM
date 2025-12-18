@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../domain/entities/opportunity.dart';
 import '../../theme/app_theme.dart';
+import '../follow/widgets/follow_record_form.dart';
 import 'opportunity_provider.dart';
 
 /// 商机详情页面
@@ -355,7 +356,7 @@ class _BottomActionBar extends StatelessWidget {
             _ActionButton(
               icon: Icons.add_comment_outlined,
               label: '跟进',
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('跟进功能开发中'))),
+              onTap: () => _showAddFollowSheet(context),
             ),
             if (opportunity.canAdvance)
               _ActionButton(
@@ -371,6 +372,20 @@ class _BottomActionBar extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showAddFollowSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => FollowRecordForm(
+        customerId: opportunity.customerId,
+        onSuccess: () => Navigator.pop(context),
       ),
     );
   }

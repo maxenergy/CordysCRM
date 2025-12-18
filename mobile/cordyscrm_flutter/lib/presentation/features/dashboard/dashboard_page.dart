@@ -114,16 +114,28 @@ class DashboardPage extends ConsumerWidget {
       case DashboardQuickAction.newOpportunity:
         context.push('/opportunities/new');
       case DashboardQuickAction.writeFollowUp:
+        // 跳转到客户列表，选择客户后进入详情页的跟进Tab
+        context.push('/customers');
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('写跟进功能开发中')),
+          const SnackBar(content: Text('请选择要跟进的客户')),
         );
     }
   }
 
   void _handleTodoTap(BuildContext context, DashboardTodo todo) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('待办：${todo.title}')),
-    );
+    // 根据待办类型跳转到对应页面
+    switch (todo.type) {
+      case DashboardTodoType.customer:
+        context.push('/customers');
+      case DashboardTodoType.clue:
+        context.push('/clues');
+      case DashboardTodoType.followUp:
+        context.push('/customers');
+      case DashboardTodoType.other:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('待办：${todo.title}')),
+        );
+    }
   }
 }
 

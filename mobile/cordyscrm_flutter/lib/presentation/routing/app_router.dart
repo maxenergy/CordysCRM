@@ -6,6 +6,7 @@ import '../../core/utils/enterprise_url_utils.dart';
 import '../features/auth/auth_provider.dart';
 import '../features/auth/login_page.dart';
 import '../features/clue/clue_detail_page.dart';
+import '../features/clue/clue_edit_page.dart';
 import '../features/clue/clue_list_page.dart';
 import '../features/customer/customer_detail_page.dart';
 import '../features/customer/customer_edit_page.dart';
@@ -16,6 +17,7 @@ import '../features/enterprise/enterprise_search_with_webview_page.dart';
 import '../features/enterprise/enterprise_webview_page.dart';
 import '../features/home/home_shell.dart';
 import '../features/opportunity/opportunity_detail_page.dart';
+import '../features/opportunity/opportunity_edit_page.dart';
 import '../features/opportunity/opportunity_list_page.dart';
 
 /// 企业 WebView 路由参数
@@ -140,18 +142,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.clueNew,
         name: 'clueNew',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('新建线索 - 待实现')),
-        ),
+        builder: (context, state) => const ClueEditPage(),
       ),
       
       // 编辑线索
       GoRoute(
         path: AppRoutes.clueEdit,
         name: 'clueEdit',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('编辑线索 - 待实现')),
-        ),
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return ClueEditPage(clueId: id);
+        },
       ),
       
       // 线索详情
@@ -175,18 +176,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.opportunityNew,
         name: 'opportunityNew',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('新建商机 - 待实现')),
-        ),
+        builder: (context, state) => const OpportunityEditPage(),
       ),
       
       // 编辑商机
       GoRoute(
         path: AppRoutes.opportunityEdit,
         name: 'opportunityEdit',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('编辑商机 - 待实现')),
-        ),
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return OpportunityEditPage(opportunityId: id);
+        },
       ),
       
       // 商机详情

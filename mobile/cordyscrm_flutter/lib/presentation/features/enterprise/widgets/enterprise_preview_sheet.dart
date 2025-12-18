@@ -95,17 +95,26 @@ class _EnterprisePreviewSheetState
 
   /// 执行导入
   Future<void> _handleImport() async {
-    if (!_formKey.currentState!.validate()) return;
+    debugPrint('[导入] 开始导入流程');
+    
+    if (!_formKey.currentState!.validate()) {
+      debugPrint('[导入] 表单验证失败');
+      return;
+    }
 
     // 更新企业信息
     final enterprise = _buildEnterprise();
+    debugPrint('[导入] 构建企业对象: name=${enterprise.name}, creditCode=${enterprise.creditCode}, source=${enterprise.source}');
     ref.read(enterpriseWebProvider.notifier).updatePendingEnterprise(enterprise);
 
     // 执行导入
+    debugPrint('[导入] 调用 importPending()...');
     final success = await ref.read(enterpriseWebProvider.notifier).importPending();
+    debugPrint('[导入] importPending() 返回: success=$success');
 
     if (mounted) {
       if (success) {
+        debugPrint('[导入] 导入成功，关闭弹窗');
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -115,8 +124,19 @@ class _EnterprisePreviewSheetState
         );
       } else {
         final result = ref.read(enterpriseWebProvider).importResult;
+        final error = ref.read(enterpriseWebProvider).error;
+        debugPrint('[导入] 导入失败: result=${result?.status}, error=$error');
+        
         if (result?.isConflict == true) {
           _showConflictDialog(result!);
+        } else if (error != null) {
+          // 显示错误信息
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('导入失败: $error'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       }
     }

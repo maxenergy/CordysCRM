@@ -303,8 +303,8 @@ class _EnterpriseSearchWithWebViewPageState
       );
     }
     
-    // 切换到 WebView 并加载详情页
-    _showWebView();
+    // 在后台 WebView 中加载详情页，不切换视图（保持搜索界面）
+    // _showWebView();  // 注释掉：不再切换到 WebView 视图
     await _webViewController!.loadUrl(
       urlRequest: URLRequest(url: WebUri(detailUrl)),
     );
@@ -319,7 +319,7 @@ class _EnterpriseSearchWithWebViewPageState
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('自动获取超时，请点击右上角"提取企业信息"按钮手动导入'),
+            content: Text('自动获取超时，请点击右上角"打开网页"按钮后手动操作'),
             duration: Duration(seconds: 4),
             backgroundColor: Colors.orange,
           ),
@@ -441,9 +441,9 @@ class _EnterpriseSearchWithWebViewPageState
           actions: [
             if (_currentViewIndex == 0)
               IconButton(
-                icon: const Icon(Icons.open_in_browser),
+                icon: const Icon(Icons.web),
                 onPressed: _showWebView,
-                tooltip: '打开${dataSource.displayName}',
+                tooltip: '打开${dataSource.displayName}（登录/手动操作）',
               ),
             if (_currentViewIndex == 1) ...[
               IconButton(
@@ -474,9 +474,11 @@ class _EnterpriseSearchWithWebViewPageState
         body: Stack(
           children: [
             // WebView 始终存在且有尺寸，通过 Opacity 控制可见性
+            // 使用 opacity: 0.0 完全隐藏 WebView，但保持其活跃状态以执行 JS 搜索
+            // 注意：不能使用 Offstage，因为它会导致 WebView 暂停 JS 执行
             Positioned.fill(
               child: Opacity(
-                opacity: _currentViewIndex == 1 ? 1.0 : 0.01,
+                opacity: _currentViewIndex == 1 ? 1.0 : 0.0,
                 child: IgnorePointer(
                   ignoring: _currentViewIndex != 1,
                   child: _buildWebView(),

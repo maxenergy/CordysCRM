@@ -424,42 +424,165 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
     required Enterprise enterprise,
     bool forceOverwrite = false,
   }) async {
-    _logger.d('导入企业: ${enterprise.name}');
+    _logger.d('[导入API] 开始导入企业: ${enterprise.name}');
+    _logger.d('[导入API] 企业详情: id=${enterprise.id}, creditCode=${enterprise.creditCode}, source=${enterprise.source}');
 
     try {
+      // 转换为后端期望的格式
+      final requestData = _convertToImportRequest(enterprise, forceOverwrite);
+      _logger.d('[导入API] 请求数据: $requestData');
+      
+      final url = '$_basePath/import';
+      _logger.d('[导入API] 请求URL: ${_dio.options.baseUrl}$url');
+      
       final response = await _dio.post(
-        '$_basePath/import',
-        data: {
-          ...enterprise.toJson(),
-          'forceOverwrite': forceOverwrite,
-        },
+        url,
+        data: requestData,
       );
 
+      _logger.d('[导入API] 响应状态码: ${response.statusCode}');
+      _logger.d('[导入API] 响应数据: ${response.data}');
+
       if (response.statusCode == 200) {
-        final result = EnterpriseImportResult.fromJson(
-          response.data as Map<String, dynamic>,
-        );
-        _logger.i('导入结果: ${result.status}');
+        final responseData = response.data as Map<String, dynamic>;
+        
+        // 检查后端 ResultHolder 格式
+        if (responseData.containsKey('code') && responseData.containsKey('data')) {
+          final code = responseData['code'] as int?;
+          _logger.d('[导入API] ResultHolder code: $code');
+          
+          if (code != null && code != 100200) {
+            final message = responseData['message'] as String? ?? '服务器错误 (code: $code)';
+            _logger.w('[导入API] 后端返回错误: code=$code, message=$message');
+            return EnterpriseImportResult(
+              status: 'error',
+              message: message,
+            );
+          }
+          
+          // 从 data 字段提取实际结果
+          final data = responseData['data'] as Map<String, dynamic>?;
+          if (data != null) {
+            final result = EnterpriseImportResult.fromJson(data);
+            _logger.i('[导入API] 导入结果: ${result.status}, customerId=${result.customerId}');
+            return result;
+          }
+        }
+        
+        // 直接格式
+        final result = EnterpriseImportResult.fromJson(responseData);
+        _logger.i('[导入API] 导入结果: ${result.status}');
         return result;
       }
 
+      _logger.e('[导入API] 非200响应: ${response.statusCode}');
       throw DioException(
         requestOptions: response.requestOptions,
         response: response,
         message: '导入失败: ${response.statusCode}',
       );
     } on DioException catch (e) {
-      _logger.e('导入企业失败: ${e.message}');
+      _logger.e('[导入API] DioException: ${e.type}, message=${e.message}');
+      _logger.e('[导入API] 响应状态码: ${e.response?.statusCode}');
+      _logger.e('[导入API] 响应数据: ${e.response?.data}');
 
       // 处理冲突响应
       if (e.response?.statusCode == 409) {
+        _logger.w('[导入API] 检测到冲突(409)');
         return EnterpriseImportResult.fromJson(
           e.response?.data as Map<String, dynamic>? ?? {'status': 'conflict'},
         );
       }
 
       rethrow;
+    } catch (e) {
+      _logger.e('[导入API] 未知异常: $e');
+      rethrow;
     }
+  }
+
+  /// 将 Enterprise 转换为后端 EnterpriseImportRequest 格式
+  Map<String, dynamic> _convertToImportRequest(Enterprise enterprise, bool forceOverwrite) {
+    return {
+      'companyName': enterprise.name,
+      'creditCode': enterprise.creditCode,
+      'legalPerson': enterprise.legalPerson,
+      'registeredCapital': _parseRegisteredCapital(enterprise.registeredCapital),
+      'establishmentDate': _parseEstablishDate(enterprise.establishDate),
+      'address': enterprise.address,
+      'industry': enterprise.industry,
+      'status': enterprise.status,
+      'phone': enterprise.phone,
+      'email': enterprise.email,
+      'website': enterprise.website,
+      'iqichaId': enterprise.id,
+      'source': enterprise.source.isNotEmpty ? enterprise.source : 'webview',
+      'forceOverwrite': forceOverwrite,
+    };
+  }
+
+  /// 解析注册资本字符串，提取数字部分（单位：万元）
+  /// 
+  /// 支持格式：
+  /// - "615.595万元" → 615.595
+  /// - "1000万人民币" → 1000
+  /// - "500万" → 500
+  /// - "1亿元" → 10000
+  /// - "5000" → 5000 (假设已经是万元)
+  double? _parseRegisteredCapital(String capital) {
+    if (capital.isEmpty) return null;
+    
+    // 移除所有空格
+    var cleaned = capital.replaceAll(RegExp(r'\s+'), '');
+    
+    // 检查是否包含"亿"
+    final hasYi = cleaned.contains('亿');
+    
+    // 提取数字部分（包括小数点）
+    final match = RegExp(r'[\d,.]+').firstMatch(cleaned);
+    if (match == null) return null;
+    
+    var numStr = match.group(0)!.replaceAll(',', '');
+    final value = double.tryParse(numStr);
+    if (value == null) return null;
+    
+    // 如果是亿，转换为万
+    return hasYi ? value * 10000 : value;
+  }
+
+  /// 解析成立日期字符串，转换为时间戳（毫秒）
+  /// 
+  /// 支持格式：
+  /// - "2006-11-02" → timestamp
+  /// - "2006/11/02" → timestamp
+  /// - "2006年11月02日" → timestamp
+  int? _parseEstablishDate(String dateStr) {
+    if (dateStr.isEmpty) return null;
+    
+    // 标准化日期格式
+    var normalized = dateStr
+        .replaceAll('年', '-')
+        .replaceAll('月', '-')
+        .replaceAll('日', '')
+        .replaceAll('/', '-')
+        .trim();
+    
+    // 尝试解析日期
+    final date = DateTime.tryParse(normalized);
+    if (date != null) {
+      return date.millisecondsSinceEpoch;
+    }
+    
+    // 尝试只解析年月日
+    final match = RegExp(r'(\d{4})-(\d{1,2})-(\d{1,2})').firstMatch(normalized);
+    if (match != null) {
+      final year = int.parse(match.group(1)!);
+      final month = int.parse(match.group(2)!);
+      final day = int.parse(match.group(3)!);
+      return DateTime(year, month, day).millisecondsSinceEpoch;
+    }
+    
+    return null;
   }
 
   @override

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -558,16 +559,23 @@ class EnterpriseWebNotifier extends StateNotifier<EnterpriseWebState> {
   /// 导入待处理的企业
   Future<bool> importPending({bool forceOverwrite = false}) async {
     final enterprise = state.pendingEnterprise;
-    if (enterprise == null) return false;
+    if (enterprise == null) {
+      debugPrint('[EnterpriseWebNotifier] importPending: pendingEnterprise 为空');
+      return false;
+    }
 
+    debugPrint('[EnterpriseWebNotifier] importPending: 开始导入 ${enterprise.name}');
     state = state.copyWith(isImporting: true, clearError: true);
 
     try {
+      debugPrint('[EnterpriseWebNotifier] importPending: 调用 repository.importEnterprise()');
       final result = await _repository.importEnterprise(
         enterprise: enterprise,
         forceOverwrite: forceOverwrite,
       );
 
+      debugPrint('[EnterpriseWebNotifier] importPending: 结果 status=${result.status}, isSuccess=${result.isSuccess}, message=${result.message}');
+      
       state = state.copyWith(
         isImporting: false,
         importResult: result,
@@ -575,7 +583,9 @@ class EnterpriseWebNotifier extends StateNotifier<EnterpriseWebState> {
       );
 
       return result.isSuccess;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('[EnterpriseWebNotifier] importPending: 异常 $e');
+      debugPrint('[EnterpriseWebNotifier] importPending: 堆栈 $stackTrace');
       state = state.copyWith(
         isImporting: false,
         error: '导入失败: $e',

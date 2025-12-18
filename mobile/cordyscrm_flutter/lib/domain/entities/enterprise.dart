@@ -204,6 +204,7 @@ class EnterpriseImportResult {
     this.customerId,
     this.message,
     this.conflictingCustomer,
+    this.conflicts,
   });
 
   /// 导入状态: success, conflict, error
@@ -215,19 +216,55 @@ class EnterpriseImportResult {
   /// 提示信息
   final String? message;
 
-  /// 冲突时的现有客户信息
+  /// 冲突时的现有客户信息（旧格式）
   final Map<String, dynamic>? conflictingCustomer;
+  
+  /// 冲突字段列表（新格式，来自后端 EnterpriseImportResponse）
+  final List<Map<String, dynamic>>? conflicts;
 
   bool get isSuccess => status == 'success';
   bool get isConflict => status == 'conflict';
   bool get isError => status == 'error';
 
   factory EnterpriseImportResult.fromJson(Map<String, dynamic> json) {
+    // 兼容后端两种响应格式：
+    // 1. 旧格式: { status: 'success'/'conflict'/'error', ... }
+    // 2. 新格式: { success: true/false, conflicts: [...], ... }
+    
+    String status;
+    if (json.containsKey('status')) {
+      // 旧格式
+      status = json['status'] as String? ?? 'error';
+    } else if (json.containsKey('success')) {
+      // 新格式：根据 success 和 conflicts 判断状态
+      final success = json['success'] as bool? ?? false;
+      final conflicts = json['conflicts'] as List<dynamic>?;
+      
+      if (success) {
+        status = 'success';
+      } else if (conflicts != null && conflicts.isNotEmpty) {
+        status = 'conflict';
+      } else {
+        status = 'error';
+      }
+    } else {
+      status = 'error';
+    }
+    
+    // 解析冲突列表
+    List<Map<String, dynamic>>? conflictsList;
+    if (json['conflicts'] is List) {
+      conflictsList = (json['conflicts'] as List<dynamic>)
+          .map((e) => e as Map<String, dynamic>)
+          .toList();
+    }
+    
     return EnterpriseImportResult(
-      status: json['status'] as String? ?? 'error',
+      status: status,
       customerId: json['customerId'] as String?,
       message: json['message'] as String?,
       conflictingCustomer: json['conflictingCustomer'] as Map<String, dynamic>?,
+      conflicts: conflictsList,
     );
   }
 }

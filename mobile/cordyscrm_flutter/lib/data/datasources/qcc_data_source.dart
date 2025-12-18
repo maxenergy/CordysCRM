@@ -93,15 +93,31 @@ class QccDataSource extends EnterpriseDataSourceInterface {
   ///
   /// 使用"按字段 label 扫描"策略，提高对 DOM 结构变化的适应性。
   /// 优先通过文本标签定位元素，然后基于相对 DOM 位置获取数据。
+  /// 包含清理逻辑，去除"复制"按钮文本、"关联企业"链接等多余内容。
   static const _extractDataJs = '''
 window.__extractEnterpriseData = function() {
   // 文本规范化：去除多余空白
   const norm = (s) => (s || '').replace(/\\s+/g, ' ').trim();
+  
+  // 清理多余文本：去除"复制"按钮、"关联企业"链接、"附近企业"等
+  const clean = (s) => {
+    if (!s) return '';
+    return s
+      .replace(/复制/g, '')
+      .replace(/关联企业\\s*\\d*/g, '')
+      .replace(/附近企业/g, '')
+      .replace(/更多\\s*\\d*/g, '')
+      .replace(/邮编\\d+/g, '')
+      .replace(/（仅限办公）/g, '')
+      .replace(/\\(仅限办公\\)/g, '')
+      .replace(/\\s+/g, ' ')
+      .trim();
+  };
 
   // 通过选择器获取文本
   const getText = (sel) => {
     const el = document.querySelector(sel);
-    return el ? norm(el.textContent) : '';
+    return el ? clean(norm(el.textContent)) : '';
   };
   
   // 通过标签文本定位并获取对应值
@@ -120,7 +136,7 @@ window.__extractEnterpriseData = function() {
       if (tds.length >= 2) {
         for (let i = 0; i < tds.length - 1; i++) {
           if (norm(tds[i].textContent).includes(label)) {
-            return norm(tds[i + 1].textContent);
+            return clean(norm(tds[i + 1].textContent));
           }
         }
       }
@@ -128,10 +144,58 @@ window.__extractEnterpriseData = function() {
       // 策略2：键值结构 - 查找 .value 或最后一个子元素
       const value = item.querySelector('.value, .val, dd, span:last-child, div:last-child');
       if (value && !norm(value.textContent).includes(label)) {
-        return norm(value.textContent);
+        return clean(norm(value.textContent));
       }
     }
     return '';
+  };
+  
+  // 提取特定格式的字段
+  const extractCreditCode = () => {
+    // 统一社会信用代码是18位字母数字组合
+    const text = document.body.innerText || '';
+    const match = text.match(/([0-9A-Z]{18})/);
+    return match ? match[1] : '';
+  };
+  
+  const extractLegalPerson = () => {
+    const raw = getTextByLabel('法定代表人') || getTextByLabel('法人') || getTextByLabel('法人代表');
+    // 只取第一个词（名字），去除"关联企业 14"等后缀
+    return raw.split(/\\s/)[0].replace(/[,，]/g, '');
+  };
+  
+  const extractDate = () => {
+    const raw = getTextByLabel('成立日期') || getTextByLabel('成立时间');
+    // 提取日期格式 YYYY-MM-DD 或 YYYY年MM月DD日
+    const match = raw.match(/(\\d{4}[-/年]\\d{1,2}[-/月]\\d{1,2}日?)/);
+    return match ? match[1].replace(/年/g, '-').replace(/月/g, '-').replace(/日/g, '') : raw;
+  };
+  
+  const extractStatus = () => {
+    const raw = getTextByLabel('经营状态') || getTextByLabel('登记状态') || getTextByLabel('状态');
+    // 提取核心状态词
+    const match = raw.match(/(存续|在业|在营|开业|在册|注销|吊销|迁出|清算|停业)/);
+    return match ? match[1] : raw;
+  };
+  
+  const extractAddress = () => {
+    const raw = getTextByLabel('注册地址') || getTextByLabel('地址');
+    // 清理地址中的多余内容
+    return raw.replace(/（邮编.*?）/g, '').replace(/\\(邮编.*?\\)/g, '').trim();
+  };
+  
+  const extractPhone = () => {
+    const raw = getTextByLabel('电话') || getTextByLabel('联系电话');
+    // 提取第一个电话号码
+    const match = raw.match(/([\\d-]+)/);
+    return match ? match[1] : raw;
+  };
+  
+  const extractEmail = () => {
+    const raw = getTextByLabel('邮箱') || getTextByLabel('电子邮箱');
+    // 提取邮箱地址
+    const match = raw.match(/([\\w.-]+@[\\w.-]+\\.[a-zA-Z]+)/);
+    return match ? match[1] : raw;
   };
 
   // 从 URL 提取企业 ID
@@ -146,16 +210,16 @@ window.__extractEnterpriseData = function() {
   return {
     id: id,
     name: name,
-    creditCode: getTextByLabel('统一社会信用代码') || getTextByLabel('信用代码'),
-    legalPerson: getTextByLabel('法定代表人') || getTextByLabel('法人') || getTextByLabel('法人代表'),
+    creditCode: extractCreditCode(),
+    legalPerson: extractLegalPerson(),
     registeredCapital: getTextByLabel('注册资本'),
-    establishDate: getTextByLabel('成立日期') || getTextByLabel('成立时间'),
-    status: getTextByLabel('经营状态') || getTextByLabel('登记状态') || getTextByLabel('状态'),
-    address: getTextByLabel('注册地址') || getTextByLabel('地址'),
+    establishDate: extractDate(),
+    status: extractStatus(),
+    address: extractAddress(),
     industry: getTextByLabel('所属行业') || getTextByLabel('行业'),
     businessScope: getTextByLabel('经营范围'),
-    phone: getTextByLabel('电话') || getTextByLabel('联系电话'),
-    email: getTextByLabel('邮箱') || getTextByLabel('电子邮箱'),
+    phone: extractPhone(),
+    email: extractEmail(),
     website: getTextByLabel('官网') || getTextByLabel('网址'),
     source: 'qcc'
   };

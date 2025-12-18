@@ -80,9 +80,10 @@ final aiqichaSearchCompleterProvider = StateProvider<Completer<List<Map<String, 
 ///
 /// 使用 `Map<requestId, Completer>` 结构支持并发请求关联，避免竞态条件。
 /// 每个搜索请求都有唯一的 requestId，JS 回调时携带 requestId 以匹配对应的 Completer。
+/// 允许返回两类 payload：List(搜索结果) 或 Map(needNavigate 状态)。
 final qichachaSearchCompleterProvider =
-    StateProvider<Map<int, Completer<List<Map<String, String>>>>>(
-  (ref) => <int, Completer<List<Map<String, String>>>>{},
+    StateProvider<Map<int, Completer<Object>>>(
+  (ref) => <int, Completer<Object>>{},
 );
 
 // ==================== Mock Data (Demo Mode) ====================

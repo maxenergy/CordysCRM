@@ -155,107 +155,195 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
       );
     }
 
-    // 生成唯一请求 ID，用于并发请求关联
-    final requestId = DateTime.now().microsecondsSinceEpoch;
-    final completer = Completer<List<Map<String, String>>>();
-    
-    // 将 completer 注册到 Map 中
-    final completerNotifier = _ref.read(qichachaSearchCompleterProvider.notifier);
-    completerNotifier.state = {
-      ...completerNotifier.state,
-      requestId: completer,
-    };
+    // 最多重试 1 次（处理 needNavigate 情况）
+    const maxRetries = 1;
+    var retryCount = 0;
 
-    try {
-      const dataSource = QccDataSource();
-      final searchJs = dataSource.searchJs;
-      
-      if (searchJs == null) {
-        return EnterpriseSearchResult.error('企查查数据源不支持搜索');
-      }
+    while (retryCount <= maxRetries) {
+      // 生成唯一请求 ID，用于并发请求关联
+      final requestId = DateTime.now().microsecondsSinceEpoch;
+      final completer = Completer<Object>();
 
-      // 注入搜索脚本
-      await controller.evaluateJavascript(source: searchJs);
-      
-      // 执行搜索（使用 JSON 编码避免注入/转义问题）
-      final keywordJson = jsonEncode(keyword);
-      await controller.evaluateJavascript(
-        source: 'window.__searchQcc($keywordJson, $requestId);',
-      );
+      // 将 completer 注册到 Map 中
+      final completerNotifier =
+          _ref.read(qichachaSearchCompleterProvider.notifier);
+      completerNotifier.state = {
+        ...completerNotifier.state,
+        requestId: completer,
+      };
 
-      // 等待结果，设置 15 秒超时（与 JS 侧一致）
-      final results = await completer.future.timeout(
-        const Duration(seconds: 15),
-        onTimeout: () {
-          throw TimeoutException('企查查搜索超时');
-        },
-      );
+      try {
+        const dataSource = QccDataSource();
+        final searchJs = dataSource.searchJs;
 
-      // 将抓取到的结果 Map 转换为 Enterprise 对象
-      final items = results.map((map) => Enterprise(
-        id: map['id'] ?? '',
-        name: map['name'] ?? '',
-        creditCode: map['creditCode'] ?? '',
-        legalPerson: map['legalPerson'] ?? '',
-        registeredCapital: map['registeredCapital'] ?? '',
-        establishDate: map['establishDate'] ?? '',
-        status: map['status'] ?? '',
-        address: map['address'] ?? '',
-        industry: map['industry'] ?? '',
-        businessScope: map['businessScope'] ?? '',
-        phone: map['phone'] ?? '',
-        email: map['email'] ?? '',
-        website: map['website'] ?? '',
-        source: 'qcc',
-      )).toList();
+        if (searchJs == null) {
+          return EnterpriseSearchResult.error('企查查数据源不支持搜索');
+        }
 
-      _logger.i('[企查查] 搜索成功，返回 ${items.length} 条结果');
-      return EnterpriseSearchResult(
-        success: true,
-        items: items,
-        total: items.length,
-      );
-    } on TimeoutException {
-      _logger.w('[企查查] 搜索超时');
-      return EnterpriseSearchResult(
-        success: false,
-        items: [],
-        total: 0,
-        message: '企查查搜索超时，请检查网络或重试',
-      );
-    } catch (e) {
-      _logger.e('[企查查] 搜索失败: $e');
-      
-      // 检查是否为 WebView 控制器已销毁的错误
-      final errorStr = e.toString();
-      if (errorStr.contains('MissingPluginException') ||
-          errorStr.contains('evaluateJavascript') ||
-          errorStr.contains('disposed')) {
-        // WebView 页面已关闭，清空控制器引用
-        _ref.read(webViewControllerProvider.notifier).state = null;
+        // 注入搜索脚本
+        await controller.evaluateJavascript(source: searchJs);
+
+        // 执行搜索（使用 JSON 编码避免注入/转义问题）
+        final keywordJson = jsonEncode(keyword);
+        await controller.evaluateJavascript(
+          source: 'window.__searchQcc($keywordJson, $requestId);',
+        );
+
+        // 等待结果，设置 15 秒超时（JS 侧 12s，Dart 侧 15s）
+        final result = await completer.future.timeout(
+          const Duration(seconds: 15),
+          onTimeout: () {
+            throw TimeoutException('企查查搜索超时');
+          },
+        );
+
+        // 处理 needNavigate 情况：JS 返回 Map 表示需要导航到搜索结果页
+        if (result is Map) {
+          final needNavigate = result['needNavigate'] == true;
+          final targetUrl = result['targetUrl']?.toString() ?? '';
+
+          if (needNavigate && targetUrl.isNotEmpty && retryCount < maxRetries) {
+            _logger.i('[企查查] 需要导航到搜索结果页: $targetUrl');
+
+            // 导航到搜索结果页
+            await controller.loadUrl(
+              urlRequest: URLRequest(url: WebUri(targetUrl)),
+            );
+
+            // 等待页面加载完成（最多 8 秒）
+            await _waitForPageLoad(controller, const Duration(seconds: 8));
+
+            retryCount++;
+            _logger.d('[企查查] 页面加载完成，重试搜索 (retry=$retryCount)');
+            continue; // 重试搜索
+          }
+
+          // 无法处理的 Map 响应
+          _logger.w('[企查查] 收到无法处理的响应: $result');
+          return EnterpriseSearchResult(
+            success: false,
+            items: [],
+            total: 0,
+            message: '企查查搜索失败，请手动打开企查查页面搜索',
+          );
+        }
+
+        // 处理 List 类型（搜索结果）
+        if (result is List) {
+          final items = result.map((item) {
+            final map = item as Map<String, dynamic>;
+            return Enterprise(
+              id: map['id']?.toString() ?? '',
+              name: map['name']?.toString() ?? '',
+              creditCode: map['creditCode']?.toString() ?? '',
+              legalPerson: map['legalPerson']?.toString() ?? '',
+              registeredCapital: map['registeredCapital']?.toString() ?? '',
+              establishDate: map['establishDate']?.toString() ?? '',
+              status: map['status']?.toString() ?? '',
+              address: map['address']?.toString() ?? '',
+              industry: map['industry']?.toString() ?? '',
+              businessScope: map['businessScope']?.toString() ?? '',
+              phone: map['phone']?.toString() ?? '',
+              email: map['email']?.toString() ?? '',
+              website: map['website']?.toString() ?? '',
+              source: 'qcc',
+            );
+          }).toList();
+
+          _logger.i('[企查查] 搜索成功，返回 ${items.length} 条结果');
+          return EnterpriseSearchResult(
+            success: true,
+            items: items,
+            total: items.length,
+          );
+        }
+
+        // 未知类型
+        _logger.w('[企查查] 收到未知类型的响应: ${result.runtimeType}');
         return EnterpriseSearchResult(
           success: false,
           items: [],
           total: 0,
-          message: '企查查页面已关闭，请重新打开企查查页面后再搜索',
+          message: '企查查搜索返回了无效的数据格式',
         );
-      }
-      
-      return EnterpriseSearchResult(
-        success: false,
-        items: [],
-        total: 0,
-        message: '企查查搜索失败: ${e.toString()}',
-      );
-    } finally {
-      // 清理 completer（按 requestId 移除，避免并发串包）
-      final current = _ref.read(qichachaSearchCompleterProvider);
-      if (current.isNotEmpty) {
-        final next = Map<int, Completer<List<Map<String, String>>>>.from(current)
-          ..remove(requestId);
-        _ref.read(qichachaSearchCompleterProvider.notifier).state = next;
+      } on TimeoutException {
+        _logger.w('[企查查] 搜索超时');
+        return EnterpriseSearchResult(
+          success: false,
+          items: [],
+          total: 0,
+          message: '企查查搜索超时，请检查网络或重试',
+        );
+      } catch (e) {
+        _logger.e('[企查查] 搜索失败: $e');
+
+        // 检查是否为 WebView 控制器已销毁的错误
+        final errorStr = e.toString();
+        if (errorStr.contains('MissingPluginException') ||
+            errorStr.contains('evaluateJavascript') ||
+            errorStr.contains('disposed')) {
+          // WebView 页面已关闭，清空控制器引用
+          _ref.read(webViewControllerProvider.notifier).state = null;
+          return EnterpriseSearchResult(
+            success: false,
+            items: [],
+            total: 0,
+            message: '企查查页面已关闭，请重新打开企查查页面后再搜索',
+          );
+        }
+
+        return EnterpriseSearchResult(
+          success: false,
+          items: [],
+          total: 0,
+          message: '企查查搜索失败: ${e.toString()}',
+        );
+      } finally {
+        // 清理 completer（按 requestId 移除，避免并发串包）
+        final current = _ref.read(qichachaSearchCompleterProvider);
+        if (current.isNotEmpty) {
+          final next = Map<int, Completer<Object>>.from(current)
+            ..remove(requestId);
+          _ref.read(qichachaSearchCompleterProvider.notifier).state = next;
+        }
       }
     }
+
+    // 超过最大重试次数
+    return EnterpriseSearchResult(
+      success: false,
+      items: [],
+      total: 0,
+      message: '企查查搜索失败，请手动打开企查查页面搜索',
+    );
+  }
+
+  /// 等待 WebView 页面加载完成
+  Future<void> _waitForPageLoad(
+    InAppWebViewController controller,
+    Duration timeout,
+  ) async {
+    final startTime = DateTime.now();
+    const pollInterval = Duration(milliseconds: 300);
+
+    while (DateTime.now().difference(startTime) < timeout) {
+      try {
+        // 检查 document.readyState
+        final readyState = await controller.evaluateJavascript(
+          source: 'document.readyState',
+        );
+        if (readyState == 'complete' || readyState == '"complete"') {
+          // 额外等待 500ms 让 JS 渲染完成
+          await Future.delayed(const Duration(milliseconds: 500));
+          return;
+        }
+      } catch (_) {
+        // 忽略错误，继续轮询
+      }
+      await Future.delayed(pollInterval);
+    }
+    // 超时后继续，不抛出异常
+    _logger.w('[企查查] 等待页面加载超时，继续执行');
   }
 
   /// Legacy：会调用后端 /api/enterprise/search（可能触发"服务端查爱企查"）

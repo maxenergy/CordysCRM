@@ -5,9 +5,10 @@ class AppConfig {
   static const String baseUrl = 'http://127.0.0.1:8081'; // USB 调试使用 adb reverse
   
   /// 请求超时时间（毫秒）
-  static const int connectTimeout = 15000;
-  static const int receiveTimeout = 15000;
-  static const int sendTimeout = 15000;
+  /// 导入等操作可能需要较长时间，设置为 30 秒
+  static const int connectTimeout = 30000;
+  static const int receiveTimeout = 30000;
+  static const int sendTimeout = 30000;
   
   /// 分页大小
   static const int pageSize = 20;

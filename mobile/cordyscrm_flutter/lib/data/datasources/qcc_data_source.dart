@@ -348,7 +348,15 @@ window.__searchQcc = function(keyword, requestId) {
         registeredCapital: registeredCapital,
         establishDate: establishDate,
         url: url,
-        source: 'qcc'
+        source: 'qcc',
+        // 搜索结果列表页只有基本信息，详细信息需要进入详情页获取
+        // 以下字段在列表页无法获取，设为空字符串
+        address: '',
+        industry: '',
+        businessScope: '',
+        phone: '',
+        email: '',
+        website: ''
       });
     });
     

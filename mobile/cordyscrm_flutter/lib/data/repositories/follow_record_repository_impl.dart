@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../domain/entities/follow_record.dart';
@@ -101,5 +103,44 @@ class FollowRecordRepositoryImpl implements FollowRecordRepository {
     for (final records in _clueRecords.values) {
       records.removeWhere((r) => r.id == id);
     }
+  }
+
+  @override
+  Future<FollowRecord> createFollowRecordWithMedia(
+    FollowRecord record, {
+    List<dynamic>? images,
+    dynamic audio,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    // 模拟上传图片并获取 URL
+    List<String>? imageUrls;
+    if (images != null && images.isNotEmpty) {
+      imageUrls = [];
+      for (int i = 0; i < images.length; i++) {
+        final file = images[i] as File;
+        // 模拟上传，实际应调用后端 API
+        debugPrint('[FollowRecordRepository] 上传图片: ${file.path}');
+        // 生成模拟 URL
+        imageUrls.add('https://example.com/uploads/images/${const Uuid().v4()}.jpg');
+      }
+    }
+
+    // 模拟上传音频并获取 URL
+    String? audioUrl;
+    if (audio != null) {
+      final file = audio as File;
+      debugPrint('[FollowRecordRepository] 上传音频: ${file.path}');
+      // 生成模拟 URL
+      audioUrl = 'https://example.com/uploads/audio/${const Uuid().v4()}.m4a';
+    }
+
+    // 创建带媒体 URL 的记录
+    final recordWithMedia = record.copyWith(
+      images: imageUrls,
+      audioUrl: audioUrl,
+    );
+
+    return createFollowRecord(recordWithMedia);
   }
 }

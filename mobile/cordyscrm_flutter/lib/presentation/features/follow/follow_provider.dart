@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/services/media_service.dart';
 import '../../../domain/entities/follow_record.dart';
 import '../../../domain/repositories/follow_record_repository.dart';
 import '../../../data/repositories/follow_record_repository_impl.dart';
@@ -8,6 +10,12 @@ import '../../../data/repositories/follow_record_repository_impl.dart';
 
 final followRecordRepositoryProvider = Provider<FollowRecordRepository>((ref) {
   return FollowRecordRepositoryImpl();
+});
+
+// ==================== Media Service Provider ====================
+
+final mediaServiceProvider = Provider<MediaService>((ref) {
+  return MediaService();
 });
 
 // ==================== Follow Records by Customer ====================
@@ -60,6 +68,31 @@ class FollowFormNotifier extends StateNotifier<FollowFormState> {
 
     try {
       await _repository.createFollowRecord(record);
+      state = state.copyWith(status: FollowFormStatus.success);
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        status: FollowFormStatus.error,
+        errorMessage: e.toString(),
+      );
+      return false;
+    }
+  }
+
+  /// 创建带媒体附件的跟进记录
+  Future<bool> createFollowRecordWithMedia(
+    FollowRecord record, {
+    List<File>? images,
+    File? audio,
+  }) async {
+    state = state.copyWith(status: FollowFormStatus.loading);
+
+    try {
+      await _repository.createFollowRecordWithMedia(
+        record,
+        images: images,
+        audio: audio,
+      );
       state = state.copyWith(status: FollowFormStatus.success);
       return true;
     } catch (e) {

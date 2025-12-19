@@ -14,6 +14,13 @@ abstract class FollowRecordRepository {
   /// 创建跟进记录
   Future<FollowRecord> createFollowRecord(FollowRecord record);
 
+  /// 创建带媒体附件的跟进记录
+  Future<FollowRecord> createFollowRecordWithMedia(
+    FollowRecord record, {
+    List<dynamic>? images,
+    dynamic audio,
+  });
+
   /// 更新跟进记录
   Future<FollowRecord> updateFollowRecord(FollowRecord record);
 

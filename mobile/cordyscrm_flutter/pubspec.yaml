@@ -70,7 +70,7 @@ dependencies:
   html: ^0.15.6
   
   # 音频录制和播放
-  record: ^5.1.2
+  record: ^6.0.0
   just_audio: ^0.9.40
   
   # 权限处理

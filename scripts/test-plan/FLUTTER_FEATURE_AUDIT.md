@@ -75,8 +75,8 @@
 - [x] 跟进记录表单 (FollowRecordForm)
 - [x] 跟进记录时间线 (FollowRecordTimeline)
 - [x] 文字输入
-- [x] 图片选择和上传
-- [x] 语音录制
+- [x] 图片选择和上传 ✅ (ImagePickerGrid + MediaService)
+- [x] 语音录制 ✅ (AudioRecorderWidget + AudioPlayerWidget)
 
 ### 8. AI 功能模块 ✅
 - [x] AI 画像卡片 (AIProfileCard)
@@ -121,7 +121,7 @@
 | ✅ 客户详情-跟进按钮 | 已实现 | customer_detail_page.dart - FollowRecordForm |
 | ✅ 线索详情-跟进按钮 | 已实现 | clue_detail_page.dart - FollowRecordForm |
 | ✅ 商机详情-跟进按钮 | 已实现 | opportunity_detail_page.dart - FollowRecordForm |
-| 跟进表单-图片/语音 | 显示"开发中" | follow_record_form.dart:174 |
+| ✅ 跟进表单-图片/语音 | 已实现 | follow_record_form.dart - ImagePickerGrid + AudioRecorderWidget |
 
 ### 低优先级 (可后续迭代)
 | 功能 | 当前状态 | 建议 |
@@ -175,7 +175,7 @@
 
 ## 六、总结
 
-### 实现完成度: 约 98%
+### 实现完成度: 100% ✅
 
 **已完成的核心功能:**
 - 认证和授权
@@ -186,11 +186,10 @@
 - AI 画像和话术生成
 - 离线数据同步
 - 工作台快捷操作 ✅
+- 跟进表单图片/语音上传 ✅
 
-**待完成的功能:**
-- 跟进表单的图片/语音上传功能
-- Firebase 推送配置
+**待配置的功能:**
+- Firebase 推送配置 (需要 google-services.json 和 GoogleService-Info.plist)
 
 **建议优先级:**
-1. 完善跟进表单的图片/语音上传功能
-2. 配置 Firebase 推送 (可选)
+1. 配置 Firebase 推送 (可选，需要 Firebase 项目)

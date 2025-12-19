@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/customer.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_bottom_nav_bar.dart';
 import 'customer_provider.dart';
 
 /// 客户编辑/新建页面
@@ -236,11 +237,42 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage> {
                 label: '客户来源',
                 hintText: '如：线上推广、客户转介绍等',
               ),
+              // 底部留白，避免被导航栏遮挡
+              const SizedBox(height: 80),
             ],
           ),
         ),
       ),
+      bottomNavigationBar: AppBottomNavBar(
+        currentModule: ModuleIndex.customer,
+        confirmBeforeNavigate: _hasUnsavedChanges(),
+        confirmMessage: '当前有未保存的客户信息，确定要离开吗？',
+      ),
     );
+  }
+
+  /// 检查是否有未保存的更改
+  bool _hasUnsavedChanges() {
+    if (!widget.isEditing) {
+      // 新建模式：检查是否有任何输入
+      return _nameController.text.isNotEmpty ||
+          _contactController.text.isNotEmpty ||
+          _phoneController.text.isNotEmpty ||
+          _emailController.text.isNotEmpty ||
+          _addressController.text.isNotEmpty ||
+          _industryController.text.isNotEmpty ||
+          _sourceController.text.isNotEmpty;
+    } else {
+      // 编辑模式：检查是否有修改
+      if (_initialCustomer == null) return false;
+      return _nameController.text != _initialCustomer!.name ||
+          _contactController.text != (_initialCustomer!.contactPerson ?? '') ||
+          _phoneController.text != (_initialCustomer!.phone ?? '') ||
+          _emailController.text != (_initialCustomer!.email ?? '') ||
+          _addressController.text != (_initialCustomer!.address ?? '') ||
+          _industryController.text != (_initialCustomer!.industry ?? '') ||
+          _sourceController.text != (_initialCustomer!.source ?? '');
+    }
   }
 
   Widget _buildSectionTitle(String title) {

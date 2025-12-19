@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/clue.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_bottom_nav_bar.dart';
 import 'clue_provider.dart';
 
 /// 线索编辑/新建页面
@@ -161,11 +162,37 @@ class _ClueEditPageState extends ConsumerState<ClueEditPage> {
               _buildSectionTitle('备注'),
               const SizedBox(height: 12),
               _buildTextField(controller: _remarkController, label: '备注信息', hintText: '请输入备注信息', maxLines: 3),
+              // 底部留白，避免被导航栏遮挡
+              const SizedBox(height: 80),
             ],
           ),
         ),
       ),
+      bottomNavigationBar: AppBottomNavBar(
+        currentModule: ModuleIndex.clue,
+        confirmBeforeNavigate: _hasUnsavedChanges(),
+        confirmMessage: '当前有未保存的线索信息，确定要离开吗？',
+      ),
     );
+  }
+
+  /// 检查是否有未保存的更改
+  bool _hasUnsavedChanges() {
+    if (!widget.isEditing) {
+      return _nameController.text.isNotEmpty ||
+          _phoneController.text.isNotEmpty ||
+          _emailController.text.isNotEmpty ||
+          _sourceController.text.isNotEmpty ||
+          _remarkController.text.isNotEmpty;
+    } else {
+      if (_initialClue == null) return false;
+      return _nameController.text != _initialClue!.name ||
+          _phoneController.text != (_initialClue!.phone ?? '') ||
+          _emailController.text != (_initialClue!.email ?? '') ||
+          _sourceController.text != (_initialClue!.source ?? '') ||
+          _remarkController.text != (_initialClue!.remark ?? '') ||
+          _selectedStatus != _initialClue!.status;
+    }
   }
 
   Widget _buildSectionTitle(String title) => Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimary));

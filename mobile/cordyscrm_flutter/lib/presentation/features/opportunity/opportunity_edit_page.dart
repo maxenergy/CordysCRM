@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../domain/entities/opportunity.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_bottom_nav_bar.dart';
 import 'opportunity_provider.dart';
 
 /// 商机编辑/新建页面
@@ -179,11 +180,37 @@ class _OpportunityEditPageState extends ConsumerState<OpportunityEditPage> {
               _buildSectionTitle('备注'),
               const SizedBox(height: 12),
               _buildTextField(controller: _remarkController, label: '备注信息', hintText: '请输入备注信息', maxLines: 3),
+              // 底部留白，避免被导航栏遮挡
+              const SizedBox(height: 80),
             ],
           ),
         ),
       ),
+      bottomNavigationBar: AppBottomNavBar(
+        currentModule: ModuleIndex.opportunity,
+        confirmBeforeNavigate: _hasUnsavedChanges(),
+        confirmMessage: '当前有未保存的商机信息，确定要离开吗？',
+      ),
     );
+  }
+
+  /// 检查是否有未保存的更改
+  bool _hasUnsavedChanges() {
+    if (!widget.isEditing) {
+      return _nameController.text.isNotEmpty ||
+          _customerNameController.text.isNotEmpty ||
+          _amountController.text.isNotEmpty ||
+          _remarkController.text.isNotEmpty ||
+          _expectedCloseDate != null;
+    } else {
+      if (_initialOpportunity == null) return false;
+      return _nameController.text != _initialOpportunity!.name ||
+          _customerNameController.text != (_initialOpportunity!.customerName ?? '') ||
+          _amountController.text != (_initialOpportunity!.amount?.toStringAsFixed(2) ?? '') ||
+          _remarkController.text != (_initialOpportunity!.remark ?? '') ||
+          _selectedStage != _initialOpportunity!.stage ||
+          _expectedCloseDate != _initialOpportunity!.expectedCloseDate;
+    }
   }
 
   Widget _buildSectionTitle(String title) => Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimary));

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../domain/entities/opportunity.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_bottom_nav_bar.dart';
 import '../follow/widgets/follow_record_form.dart';
 import 'opportunity_provider.dart';
 
@@ -53,9 +54,16 @@ class OpportunityDetailPage extends ConsumerWidget {
           ),
         ),
       ),
-      bottomNavigationBar: oppAsync.hasValue && oppAsync.value != null
-          ? _BottomActionBar(opportunity: oppAsync.value!, ref: ref)
-          : null,
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 操作按钮栏
+          if (oppAsync.hasValue && oppAsync.value != null)
+            _BottomActionBar(opportunity: oppAsync.value!, ref: ref),
+          // 主导航栏
+          const AppBottomNavBar(currentModule: ModuleIndex.opportunity),
+        ],
+      ),
     );
   }
 
@@ -342,36 +350,35 @@ class _BottomActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: AppTheme.dividerColor)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _ActionButton(icon: Icons.edit_outlined, label: '编辑', onTap: () => context.push('/opportunities/edit/${opportunity.id}')),
+    // 移除 SafeArea，因为导航栏会处理底部安全区域
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: AppTheme.dividerColor)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _ActionButton(icon: Icons.edit_outlined, label: '编辑', onTap: () => context.push('/opportunities/edit/${opportunity.id}')),
+          _ActionButton(
+            icon: Icons.add_comment_outlined,
+            label: '跟进',
+            onTap: () => _showAddFollowSheet(context),
+          ),
+          if (opportunity.canAdvance)
             _ActionButton(
-              icon: Icons.add_comment_outlined,
-              label: '跟进',
-              onTap: () => _showAddFollowSheet(context),
+              icon: Icons.check_circle_outline,
+              label: '赢单',
+              onTap: () => _markAsWon(context),
             ),
-            if (opportunity.canAdvance)
-              _ActionButton(
-                icon: Icons.check_circle_outline,
-                label: '赢单',
-                onTap: () => _markAsWon(context),
-              ),
-            if (opportunity.canAdvance)
-              _ActionButton(
-                icon: Icons.cancel_outlined,
-                label: '输单',
-                onTap: () => _markAsLost(context),
-              ),
-          ],
-        ),
+          if (opportunity.canAdvance)
+            _ActionButton(
+              icon: Icons.cancel_outlined,
+              label: '输单',
+              onTap: () => _markAsLost(context),
+            ),
+        ],
       ),
     );
   }

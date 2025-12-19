@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../domain/entities/customer.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_bottom_nav_bar.dart';
 import '../ai/widgets/ai_script_drawer.dart';
 import '../follow/follow_provider.dart';
 import '../follow/widgets/follow_record_form.dart';
@@ -61,9 +62,16 @@ class CustomerDetailPage extends ConsumerWidget {
           ),
         ),
       ),
-      bottomNavigationBar: customerAsync.hasValue && customerAsync.value != null
-          ? _BottomActionBar(customer: customerAsync.value!)
-          : null,
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 操作按钮栏
+          if (customerAsync.hasValue && customerAsync.value != null)
+            _BottomActionBar(customer: customerAsync.value!),
+          // 主导航栏
+          const AppBottomNavBar(currentModule: ModuleIndex.customer),
+        ],
+      ),
     );
   }
 
@@ -434,33 +442,32 @@ class _BottomActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: AppTheme.dividerColor)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _ActionButton(
-              icon: Icons.edit_outlined,
-              label: '编辑',
-              onTap: () => context.push('/customers/edit/${customer.id}'),
-            ),
-            _ActionButton(
-              icon: Icons.add_comment_outlined,
-              label: '跟进',
-              onTap: () => _showAddFollowSheet(context, customer.id),
-            ),
-            _ActionButton(
-              icon: Icons.speaker_notes_outlined,
-              label: '话术',
-              onTap: () => _showAIScriptDrawer(context, customer),
-            ),
-          ],
-        ),
+    // 移除 SafeArea，因为导航栏会处理底部安全区域
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: AppTheme.dividerColor)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _ActionButton(
+            icon: Icons.edit_outlined,
+            label: '编辑',
+            onTap: () => context.push('/customers/edit/${customer.id}'),
+          ),
+          _ActionButton(
+            icon: Icons.add_comment_outlined,
+            label: '跟进',
+            onTap: () => _showAddFollowSheet(context, customer.id),
+          ),
+          _ActionButton(
+            icon: Icons.speaker_notes_outlined,
+            label: '话术',
+            onTap: () => _showAIScriptDrawer(context, customer),
+          ),
+        ],
       ),
     );
   }

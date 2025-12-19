@@ -145,13 +145,15 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
     _logger.d('搜索企业(企查查): $keyword');
 
     final controller = _ref.read(webViewControllerProvider);
+    _logger.d('[企查查] WebView controller: ${controller != null ? "已就绪" : "null"}');
+    
     if (controller == null) {
-      _logger.w('[企查查] WebView 未就绪');
+      _logger.w('[企查查] WebView 未就绪，请确保企业搜索页面已加载');
       return EnterpriseSearchResult(
         success: false,
         items: [],
         total: 0,
-        message: '请先打开企查查页面并登录，然后返回搜索',
+        message: '请先点击右上角图标打开企查查页面并登录',
       );
     }
 

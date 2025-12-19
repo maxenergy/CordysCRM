@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../domain/entities/clue.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_bottom_nav_bar.dart';
 import '../follow/widgets/follow_record_form.dart';
 import 'clue_provider.dart';
 
@@ -53,9 +54,16 @@ class ClueDetailPage extends ConsumerWidget {
           ),
         ),
       ),
-      bottomNavigationBar: clueAsync.hasValue && clueAsync.value != null
-          ? _BottomActionBar(clue: clueAsync.value!, ref: ref)
-          : null,
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 操作按钮栏
+          if (clueAsync.hasValue && clueAsync.value != null)
+            _BottomActionBar(clue: clueAsync.value!, ref: ref),
+          // 主导航栏
+          const AppBottomNavBar(currentModule: ModuleIndex.clue),
+        ],
+      ),
     );
   }
 
@@ -250,34 +258,33 @@ class _BottomActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: AppTheme.dividerColor)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
+    // 移除 SafeArea，因为导航栏会处理底部安全区域
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: AppTheme.dividerColor)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _ActionButton(
+            icon: Icons.edit_outlined,
+            label: '编辑',
+            onTap: () => context.push('/clues/edit/${clue.id}'),
+          ),
+          _ActionButton(
+            icon: Icons.add_comment_outlined,
+            label: '跟进',
+            onTap: () => _showAddFollowSheet(context),
+          ),
+          if (clue.canConvert)
             _ActionButton(
-              icon: Icons.edit_outlined,
-              label: '编辑',
-              onTap: () => context.push('/clues/edit/${clue.id}'),
+              icon: Icons.transform,
+              label: '转客户',
+              onTap: () => _convertToCustomer(context),
             ),
-            _ActionButton(
-              icon: Icons.add_comment_outlined,
-              label: '跟进',
-              onTap: () => _showAddFollowSheet(context),
-            ),
-            if (clue.canConvert)
-              _ActionButton(
-                icon: Icons.transform,
-                label: '转客户',
-                onTap: () => _convertToCustomer(context),
-              ),
-          ],
-        ),
+        ],
       ),
     );
   }

@@ -1,53 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../routing/app_router.dart';
 import '../../widgets/app_bottom_nav_bar.dart';
-import '../dashboard/dashboard_page.dart';
-import '../customer/customer_list_page.dart';
-import '../clue/clue_list_page.dart';
-import '../opportunity/opportunity_list_page.dart';
-import '../enterprise/enterprise_search_with_webview_page.dart';
-import 'profile_page.dart';
 
 /// 首页 Shell - 包含底部导航栏的主框架
-class HomeShell extends ConsumerStatefulWidget {
-  const HomeShell({super.key});
+/// 
+/// 使用 go_router 的 ShellRoute 模式，为所有子页面提供统一的底部导航栏。
+class HomeShell extends StatelessWidget {
+  const HomeShell({
+    required this.child,
+    super.key,
+  });
 
-  @override
-  ConsumerState<HomeShell> createState() => _HomeShellState();
-}
-
-class _HomeShellState extends ConsumerState<HomeShell> {
-  int _selectedIndex = 0;
-
-  /// 页面列表 - 使用 late 延迟初始化以支持状态保持
-  late final List<Widget> _pages = const [
-    DashboardPage(),
-    CustomerListPage(),
-    ClueListPage(),
-    OpportunityListPage(),
-    EnterpriseSearchWithWebViewPage(),
-    ProfilePage(),
-  ];
-
-  void _onDestinationSelected(int index) {
-    if (index != _selectedIndex) {
-      setState(() {
-        _selectedIndex = index;
-      });
-    }
-  }
+  /// 由 go_router 提供的要在 Scaffold 主体中显示的 Widget
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
-      ),
+      body: child,
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: _onDestinationSelected,
+        selectedIndex: _calculateSelectedIndex(context),
+        onDestinationSelected: (index) => _onDestinationSelected(index, context),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         destinations: appNavItems
             .map(
@@ -60,5 +35,56 @@ class _HomeShellState extends ConsumerState<HomeShell> {
             .toList(),
       ),
     );
+  }
+
+  /// 根据当前路由计算选中的导航项索引
+  int _calculateSelectedIndex(BuildContext context) {
+    final String location = GoRouterState.of(context).matchedLocation;
+    
+    // 按优先级匹配路由
+    if (location.startsWith(AppRoutes.customerList)) {
+      return ModuleIndex.customer;
+    }
+    if (location.startsWith(AppRoutes.clueList)) {
+      return ModuleIndex.clue;
+    }
+    if (location.startsWith(AppRoutes.opportunityList)) {
+      return ModuleIndex.opportunity;
+    }
+    if (location.startsWith(AppRoutes.enterpriseSearch)) {
+      return ModuleIndex.enterprise;
+    }
+    if (location.startsWith(AppRoutes.profile)) {
+      return ModuleIndex.profile;
+    }
+    if (location.startsWith(AppRoutes.home)) {
+      return ModuleIndex.dashboard;
+    }
+    
+    return ModuleIndex.dashboard; // 默认返回仪表盘
+  }
+
+  /// 处理导航项选择事件
+  void _onDestinationSelected(int index, BuildContext context) {
+    switch (index) {
+      case ModuleIndex.dashboard:
+        context.go(AppRoutes.home);
+        break;
+      case ModuleIndex.customer:
+        context.go(AppRoutes.customerList);
+        break;
+      case ModuleIndex.clue:
+        context.go(AppRoutes.clueList);
+        break;
+      case ModuleIndex.opportunity:
+        context.go(AppRoutes.opportunityList);
+        break;
+      case ModuleIndex.enterprise:
+        context.go(AppRoutes.enterpriseSearch);
+        break;
+      case ModuleIndex.profile:
+        context.go(AppRoutes.profile);
+        break;
+    }
   }
 }

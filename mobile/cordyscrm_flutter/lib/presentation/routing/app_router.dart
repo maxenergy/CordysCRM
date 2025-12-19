@@ -11,28 +11,24 @@ import '../features/clue/clue_list_page.dart';
 import '../features/customer/customer_detail_page.dart';
 import '../features/customer/customer_edit_page.dart';
 import '../features/customer/customer_list_page.dart';
+import '../features/dashboard/dashboard_page.dart';
 import '../features/enterprise/enterprise_provider.dart';
-import '../features/enterprise/enterprise_search_page.dart';
 import '../features/enterprise/enterprise_search_with_webview_page.dart';
 import '../features/enterprise/enterprise_webview_page.dart';
 import '../features/home/home_shell.dart';
+import '../features/home/profile_page.dart';
 import '../features/opportunity/opportunity_detail_page.dart';
 import '../features/opportunity/opportunity_edit_page.dart';
 import '../features/opportunity/opportunity_list_page.dart';
 
 /// 企业 WebView 路由参数
-///
-/// 用于传递初始 URL 和数据源类型到 EnterpriseWebViewPage。
 class EnterpriseRouteParams {
   const EnterpriseRouteParams({
     this.initialUrl,
     this.dataSourceType,
   });
 
-  /// 初始加载的 URL（用于分享链接）
   final String? initialUrl;
-
-  /// 数据源类型（qcc/iqicha）
   final EnterpriseDataSourceType? dataSourceType;
 }
 
@@ -74,6 +70,9 @@ final routerRefreshProvider = Provider<RouterRefreshNotifier>((ref) {
   return RouterRefreshNotifier(ref);
 });
 
+/// Shell Navigator Key - 用于嵌套导航
+final _shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
+
 /// 路由配置 Provider
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refreshNotifier = ref.watch(routerRefreshProvider);
@@ -83,144 +82,168 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     debugLogDiagnostics: true,
     refreshListenable: refreshNotifier,
     routes: [
-      // 登录页
+      // 登录页（Shell 外部）
       GoRoute(
         path: AppRoutes.login,
         name: 'login',
         builder: (context, state) => const LoginPage(),
       ),
       
-      // 首页（底部导航）
-      GoRoute(
-        path: AppRoutes.home,
-        name: 'home',
-        builder: (context, state) => const HomeShell(),
-      ),
-      
-      // 客户列表
-      GoRoute(
-        path: AppRoutes.customerList,
-        name: 'customerList',
-        builder: (context, state) => const CustomerListPage(),
-      ),
-      
-      // 新建客户
-      GoRoute(
-        path: AppRoutes.customerNew,
-        name: 'customerNew',
-        builder: (context, state) => const CustomerEditPage(),
-      ),
-      
-      // 编辑客户
-      GoRoute(
-        path: AppRoutes.customerEdit,
-        name: 'customerEdit',
-        builder: (context, state) {
-          final id = state.pathParameters['id']!;
-          return CustomerEditPage(customerId: id);
+      // 主应用 Shell - 包含底部导航栏
+      ShellRoute(
+        navigatorKey: _shellNavigatorKey,
+        builder: (context, state, child) {
+          return HomeShell(child: child);
         },
+        routes: [
+          // 仪表盘（首页）
+          GoRoute(
+            path: AppRoutes.home,
+            name: 'home',
+            builder: (context, state) => const DashboardPage(),
+          ),
+          
+          // 客户模块
+          GoRoute(
+            path: AppRoutes.customerList,
+            name: 'customerList',
+            builder: (context, state) => const CustomerListPage(),
+            routes: [
+              // 新建客户
+              GoRoute(
+                path: 'new',
+                name: 'customerNew',
+                parentNavigatorKey: _shellNavigatorKey,
+                builder: (context, state) => const CustomerEditPage(),
+              ),
+              // 编辑客户
+              GoRoute(
+                path: 'edit/:id',
+                name: 'customerEdit',
+                parentNavigatorKey: _shellNavigatorKey,
+                builder: (context, state) {
+                  final id = state.pathParameters['id']!;
+                  return CustomerEditPage(customerId: id);
+                },
+              ),
+              // 客户详情
+              GoRoute(
+                path: ':id',
+                name: 'customerDetail',
+                parentNavigatorKey: _shellNavigatorKey,
+                builder: (context, state) {
+                  final id = state.pathParameters['id']!;
+                  return CustomerDetailPage(customerId: id);
+                },
+              ),
+            ],
+          ),
+          
+          // 线索模块
+          GoRoute(
+            path: AppRoutes.clueList,
+            name: 'clueList',
+            builder: (context, state) => const ClueListPage(),
+            routes: [
+              // 新建线索
+              GoRoute(
+                path: 'new',
+                name: 'clueNew',
+                parentNavigatorKey: _shellNavigatorKey,
+                builder: (context, state) => const ClueEditPage(),
+              ),
+              // 编辑线索
+              GoRoute(
+                path: 'edit/:id',
+                name: 'clueEdit',
+                parentNavigatorKey: _shellNavigatorKey,
+                builder: (context, state) {
+                  final id = state.pathParameters['id']!;
+                  return ClueEditPage(clueId: id);
+                },
+              ),
+              // 线索详情
+              GoRoute(
+                path: ':id',
+                name: 'clueDetail',
+                parentNavigatorKey: _shellNavigatorKey,
+                builder: (context, state) {
+                  final id = state.pathParameters['id']!;
+                  return ClueDetailPage(clueId: id);
+                },
+              ),
+            ],
+          ),
+          
+          // 商机模块
+          GoRoute(
+            path: AppRoutes.opportunityList,
+            name: 'opportunityList',
+            builder: (context, state) => const OpportunityListPage(),
+            routes: [
+              // 新建商机
+              GoRoute(
+                path: 'new',
+                name: 'opportunityNew',
+                parentNavigatorKey: _shellNavigatorKey,
+                builder: (context, state) => const OpportunityEditPage(),
+              ),
+              // 编辑商机
+              GoRoute(
+                path: 'edit/:id',
+                name: 'opportunityEdit',
+                parentNavigatorKey: _shellNavigatorKey,
+                builder: (context, state) {
+                  final id = state.pathParameters['id']!;
+                  return OpportunityEditPage(opportunityId: id);
+                },
+              ),
+              // 商机详情
+              GoRoute(
+                path: ':id',
+                name: 'opportunityDetail',
+                parentNavigatorKey: _shellNavigatorKey,
+                builder: (context, state) {
+                  final id = state.pathParameters['id']!;
+                  return OpportunityDetailPage(opportunityId: id);
+                },
+              ),
+            ],
+          ),
+          
+          // 企业搜索
+          GoRoute(
+            path: AppRoutes.enterpriseSearch,
+            name: 'enterpriseSearch',
+            builder: (context, state) => const EnterpriseSearchWithWebViewPage(),
+          ),
+          
+          // 个人中心
+          GoRoute(
+            path: AppRoutes.profile,
+            name: 'profile',
+            builder: (context, state) => const ProfilePage(),
+          ),
+        ],
       ),
       
-      // 客户详情
-      GoRoute(
-        path: AppRoutes.customerDetail,
-        name: 'customerDetail',
-        builder: (context, state) {
-          final id = state.pathParameters['id']!;
-          return CustomerDetailPage(customerId: id);
-        },
-      ),
-      
-      // 线索列表
-      GoRoute(
-        path: AppRoutes.clueList,
-        name: 'clueList',
-        builder: (context, state) => const ClueListPage(),
-      ),
-      
-      // 新建线索
-      GoRoute(
-        path: AppRoutes.clueNew,
-        name: 'clueNew',
-        builder: (context, state) => const ClueEditPage(),
-      ),
-      
-      // 编辑线索
-      GoRoute(
-        path: AppRoutes.clueEdit,
-        name: 'clueEdit',
-        builder: (context, state) {
-          final id = state.pathParameters['id']!;
-          return ClueEditPage(clueId: id);
-        },
-      ),
-      
-      // 线索详情
-      GoRoute(
-        path: AppRoutes.clueDetail,
-        name: 'clueDetail',
-        builder: (context, state) {
-          final id = state.pathParameters['id']!;
-          return ClueDetailPage(clueId: id);
-        },
-      ),
-      
-      // 商机列表
-      GoRoute(
-        path: AppRoutes.opportunityList,
-        name: 'opportunityList',
-        builder: (context, state) => const OpportunityListPage(),
-      ),
-      
-      // 新建商机
-      GoRoute(
-        path: AppRoutes.opportunityNew,
-        name: 'opportunityNew',
-        builder: (context, state) => const OpportunityEditPage(),
-      ),
-      
-      // 编辑商机
-      GoRoute(
-        path: AppRoutes.opportunityEdit,
-        name: 'opportunityEdit',
-        builder: (context, state) {
-          final id = state.pathParameters['id']!;
-          return OpportunityEditPage(opportunityId: id);
-        },
-      ),
-      
-      // 商机详情
-      GoRoute(
-        path: AppRoutes.opportunityDetail,
-        name: 'opportunityDetail',
-        builder: (context, state) {
-          final id = state.pathParameters['id']!;
-          return OpportunityDetailPage(opportunityId: id);
-        },
-      ),
-      
-      // 企业信息查询 WebView（支持多数据源）
+      // 企业 WebView（Shell 外部，全屏显示）
       GoRoute(
         path: AppRoutes.enterprise,
         name: 'enterprise',
         builder: (context, state) {
-          // 支持通过 extra 传递路由参数
           final extra = state.extra;
           String? initialUrl;
           EnterpriseDataSourceType? dataSourceType;
 
           if (extra is String) {
-            // 兼容旧格式：直接传递 URL 字符串
             initialUrl = extra;
           } else if (extra is EnterpriseRouteParams) {
-            // 新格式：传递路由参数对象
             initialUrl = extra.initialUrl;
             dataSourceType = extra.dataSourceType;
           }
 
-          // 如果指定了数据源类型，更新 Provider
           if (dataSourceType != null) {
-            // 使用 WidgetsBinding 延迟更新，避免在 build 期间修改状态
             WidgetsBinding.instance.addPostFrameCallback((_) {
               ref.read(enterpriseDataSourceTypeProvider.notifier).state =
                   dataSourceType!;
@@ -229,13 +252,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
           return EnterpriseWebViewPage(initialUrl: initialUrl);
         },
-      ),
-
-      // 企业搜索页面（集成 WebView，避免控制器失效）
-      GoRoute(
-        path: AppRoutes.enterpriseSearch,
-        name: 'enterpriseSearch',
-        builder: (context, state) => const EnterpriseSearchWithWebViewPage(),
       ),
     ],
     
@@ -251,19 +267,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final authState = ref.read(authProvider);
       final isLoginRoute = state.matchedLocation == AppRoutes.login;
       
-      // 初始状态时，不进行重定向，等待认证状态检查完成
       if (authState.status == AuthStatus.initial) {
         return null;
       }
       
       final isLoggedIn = authState.status == AuthStatus.authenticated;
       
-      // 未登录且不在登录页，重定向到登录页
       if (!isLoggedIn && !isLoginRoute) {
         return AppRoutes.login;
       }
       
-      // 已登录且在登录页，重定向到首页
       if (isLoggedIn && isLoginRoute) {
         return AppRoutes.home;
       }

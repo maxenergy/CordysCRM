@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 
 import '../../../domain/entities/customer.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/app_bottom_nav_bar.dart';
 import '../ai/widgets/ai_script_drawer.dart';
 import '../follow/follow_provider.dart';
 import '../follow/widgets/follow_record_form.dart';
@@ -43,7 +42,13 @@ class CustomerDetailPage extends ConsumerWidget {
           if (customer == null) {
             return const Center(child: Text('客户不存在'));
           }
-          return _CustomerDetailContent(customer: customer);
+          return Column(
+            children: [
+              Expanded(child: _CustomerDetailContent(customer: customer)),
+              // 操作按钮栏
+              _BottomActionBar(customer: customer),
+            ],
+          );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(
@@ -61,16 +66,6 @@ class CustomerDetailPage extends ConsumerWidget {
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 操作按钮栏
-          if (customerAsync.hasValue && customerAsync.value != null)
-            _BottomActionBar(customer: customerAsync.value!),
-          // 主导航栏
-          const AppBottomNavBar(currentModule: ModuleIndex.customer),
-        ],
       ),
     );
   }

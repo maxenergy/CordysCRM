@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 
 import '../../../domain/entities/opportunity.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/app_bottom_nav_bar.dart';
 import '../follow/widgets/follow_record_form.dart';
 import 'opportunity_provider.dart';
 
@@ -35,7 +34,13 @@ class OpportunityDetailPage extends ConsumerWidget {
       body: oppAsync.when(
         data: (opp) {
           if (opp == null) return const Center(child: Text('商机不存在'));
-          return _OpportunityDetailContent(opportunity: opp, ref: ref);
+          return Column(
+            children: [
+              Expanded(child: _OpportunityDetailContent(opportunity: opp, ref: ref)),
+              // 操作按钮栏
+              _BottomActionBar(opportunity: opp, ref: ref),
+            ],
+          );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(
@@ -53,16 +58,6 @@ class OpportunityDetailPage extends ConsumerWidget {
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 操作按钮栏
-          if (oppAsync.hasValue && oppAsync.value != null)
-            _BottomActionBar(opportunity: oppAsync.value!, ref: ref),
-          // 主导航栏
-          const AppBottomNavBar(currentModule: ModuleIndex.opportunity),
-        ],
       ),
     );
   }

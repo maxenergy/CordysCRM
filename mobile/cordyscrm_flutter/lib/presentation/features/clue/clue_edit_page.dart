@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/clue.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/app_bottom_nav_bar.dart';
 import 'clue_provider.dart';
 
 /// 线索编辑/新建页面
@@ -167,11 +166,6 @@ class _ClueEditPageState extends ConsumerState<ClueEditPage> {
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: AppBottomNavBar(
-        currentModule: ModuleIndex.clue,
-        confirmBeforeNavigate: _hasUnsavedChanges(),
-        confirmMessage: '当前有未保存的线索信息，确定要离开吗？',
       ),
     );
   }

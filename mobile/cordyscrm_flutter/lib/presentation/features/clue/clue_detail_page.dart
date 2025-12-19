@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 
 import '../../../domain/entities/clue.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/app_bottom_nav_bar.dart';
 import '../follow/widgets/follow_record_form.dart';
 import 'clue_provider.dart';
 
@@ -35,7 +34,13 @@ class ClueDetailPage extends ConsumerWidget {
       body: clueAsync.when(
         data: (clue) {
           if (clue == null) return const Center(child: Text('线索不存在'));
-          return _ClueDetailContent(clue: clue);
+          return Column(
+            children: [
+              Expanded(child: _ClueDetailContent(clue: clue)),
+              // 操作按钮栏
+              _BottomActionBar(clue: clue, ref: ref),
+            ],
+          );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(
@@ -53,16 +58,6 @@ class ClueDetailPage extends ConsumerWidget {
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 操作按钮栏
-          if (clueAsync.hasValue && clueAsync.value != null)
-            _BottomActionBar(clue: clueAsync.value!, ref: ref),
-          // 主导航栏
-          const AppBottomNavBar(currentModule: ModuleIndex.clue),
-        ],
       ),
     );
   }

@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 
 import '../../../domain/entities/opportunity.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/app_bottom_nav_bar.dart';
 import 'opportunity_provider.dart';
 
 /// 商机编辑/新建页面
@@ -185,11 +184,6 @@ class _OpportunityEditPageState extends ConsumerState<OpportunityEditPage> {
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: AppBottomNavBar(
-        currentModule: ModuleIndex.opportunity,
-        confirmBeforeNavigate: _hasUnsavedChanges(),
-        confirmMessage: '当前有未保存的商机信息，确定要离开吗？',
       ),
     );
   }

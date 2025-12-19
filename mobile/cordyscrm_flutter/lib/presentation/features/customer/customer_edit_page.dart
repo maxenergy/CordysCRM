@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/customer.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/app_bottom_nav_bar.dart';
 import 'customer_provider.dart';
 
 /// 客户编辑/新建页面
@@ -242,11 +241,6 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage> {
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: AppBottomNavBar(
-        currentModule: ModuleIndex.customer,
-        confirmBeforeNavigate: _hasUnsavedChanges(),
-        confirmMessage: '当前有未保存的客户信息，确定要离开吗？',
       ),
     );
   }

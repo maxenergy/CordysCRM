@@ -91,15 +91,27 @@ class QccDataSource extends EnterpriseDataSourceInterface {
 
   /// 数据提取脚本
   ///
-  /// 使用"按字段 label 扫描"策略，提高对 DOM 结构变化的适应性。
-  /// 优先通过文本标签定位元素，然后基于相对 DOM 位置获取数据。
-  /// 包含清理逻辑，去除"复制"按钮文本、"关联企业"链接等多余内容。
+  /// 使用多策略提取方式，提高对 DOM 结构变化的适应性：
+  /// 1. 优先使用企查查特定的 CSS 选择器
+  /// 2. 回退到通用的标签文本定位（精确匹配，避免字段错位）
+  /// 3. 支持多联系人提取（用逗号分隔）
   static const _extractDataJs = '''
 window.__extractEnterpriseData = function() {
+  // 调试日志
+  const debug = (...args) => {
+    try {
+      window.flutter_inappwebview.callHandler('onQccDebug', '[详情提取] ' + args.map(a => 
+        typeof a === 'object' ? JSON.stringify(a) : String(a)
+      ).join(' '));
+    } catch (_) {
+      console.log('[详情提取]', ...args);
+    }
+  };
+
   // 文本规范化：去除多余空白
   const norm = (s) => (s || '').replace(/\\s+/g, ' ').trim();
   
-  // 清理多余文本：去除"复制"按钮、"关联企业"链接、"附近企业"等
+  // 清理多余文本
   const clean = (s) => {
     if (!s) return '';
     return s
@@ -110,8 +122,29 @@ window.__extractEnterpriseData = function() {
       .replace(/邮编\\d+/g, '')
       .replace(/（仅限办公）/g, '')
       .replace(/\\(仅限办公\\)/g, '')
+      .replace(/查看更多/g, '')
+      .replace(/展开/g, '')
+      .replace(/收起/g, '')
       .replace(/\\s+/g, ' ')
       .trim();
+  };
+  
+  // 正则转义
+  const escapeRegExp = (s) => { if (!s) return ''; return s.replace(/[.*+?^\${}()|[\\]\\\\]/g, function(m) { return '\\\\' + m; }); };
+  
+  // 标签规范化：去除冒号
+  const normalizeLabel = (s) => norm(s).replace(/[：:]/g, '');
+  
+  // 检查值是否有意义（非空、非占位符）
+  const isMeaningful = (v) => {
+    if (!v) return false;
+    const trimmed = v.trim();
+    if (!trimmed) return false;
+    // 过滤无效值
+    if (['—', '-', '暂无', '无', '/', '未公开', '未知'].includes(trimmed)) return false;
+    // 过滤纯数字且长度小于3的值（避免匹配到 "2" 这样的无效数字）
+    if (/^\\d{1,2}\$/.test(trimmed)) return false;
+    return true;
   };
 
   // 通过选择器获取文本
@@ -120,82 +153,496 @@ window.__extractEnterpriseData = function() {
     return el ? clean(norm(el.textContent)) : '';
   };
   
-  // 通过标签文本定位并获取对应值
-  const getTextByLabel = (label) => {
-    // 扫描常见的信息容器元素
-    const items = document.querySelectorAll(
-      'tr, .info-item, .detail-item, .company-info, .content, .basic, .base, .keyInfo, .key-info, table, dl'
-    );
+  // ========== 企查查特定选择器策略 ==========
+  // 企查查详情页通常使用 table 结构或 div.detail-list 结构
+  
+  // 策略1：查找包含特定标签的 tr 或 div，然后获取相邻的值（支持多标签）
+  const getValueByLabelInTable = (labels) => {
+    const labelList = Array.isArray(labels) ? labels : [labels];
+    const labelSet = labelList.map(normalizeLabel);
     
-    for (const item of items) {
-      const text = norm(item.textContent);
-      if (!text || !text.includes(label)) continue;
-      
-      // 策略1：表格结构 - label 在 td:first-child，值在 td:last-child
-      const tds = item.querySelectorAll('td');
-      if (tds.length >= 2) {
-        for (let i = 0; i < tds.length - 1; i++) {
-          if (norm(tds[i].textContent).includes(label)) {
-            return clean(norm(tds[i + 1].textContent));
+    // 查找所有表格行
+    const rows = document.querySelectorAll('tr, .detail-item, .info-row, .cominfo-row, .info-line');
+    for (const row of rows) {
+      const cells = row.querySelectorAll('td, th, .label, .value, .td, span');
+      for (let i = 0; i < cells.length; i++) {
+        const cellText = norm(cells[i].textContent);
+        const normalized = normalizeLabel(cellText);
+        
+        // 处理 "标签：值" 格式（内联）
+        for (const label of labelList) {
+          const re = new RegExp('^' + escapeRegExp(label) + '\\\\s*[:：]\\\\s*(.+)\$');
+          const inline = cellText.match(re);
+          if (inline && inline[1]) {
+            const value = clean(inline[1]);
+            if (isMeaningful(value)) {
+              debug('冒号分隔策略找到', label, '=', value);
+              return value;
+            }
           }
         }
-      }
-      
-      // 策略2：键值结构 - 查找 .value 或最后一个子元素
-      const value = item.querySelector('.value, .val, dd, span:last-child, div:last-child');
-      if (value && !norm(value.textContent).includes(label)) {
-        return clean(norm(value.textContent));
+        
+        // 精确标签匹配，取相邻单元格
+        if (labelSet.includes(normalized) && cells[i + 1]) {
+          const value = clean(norm(cells[i + 1].textContent));
+          if (isMeaningful(value)) {
+            debug('表格策略找到', cellText, '=', value);
+            return value;
+          }
+        }
       }
     }
     return '';
   };
   
-  // 提取特定格式的字段
+  // 策略2：通过 class 名称查找特定字段
+  const getValueByClass = (classPatterns) => {
+    for (const pattern of classPatterns) {
+      const el = document.querySelector(pattern);
+      if (el) {
+        const value = clean(norm(el.textContent));
+        if (isMeaningful(value)) {
+          debug('Class策略找到', pattern, '=', value);
+          return value;
+        }
+      }
+    }
+    return '';
+  };
+  
+  // 策略3：通用标签扫描（改进版 - 精确匹配，支持多标签）
+  const getTextByLabel = (labelOrLabels) => {
+    const labels = Array.isArray(labelOrLabels) ? labelOrLabels : [labelOrLabels];
+    const labelSet = labels.map(normalizeLabel);
+    const isLabelMatch = (text) => labelSet.includes(normalizeLabel(text));
+    
+    // 从元素中提取值（支持链接 href）
+    const extractValueFromEl = (el) => {
+      if (!el) return '';
+      
+      // 首先检查元素本身是否是链接
+      if (el.tagName === 'A' && el.hasAttribute('href')) {
+        const href = el.getAttribute('href') || '';
+        if (href.startsWith('mailto:')) return href.replace('mailto:', '');
+        if (href.startsWith('tel:')) return href.replace('tel:', '');
+        if (href.startsWith('http') && !href.includes('qcc.com')) return href;
+      }
+      
+      // 然后检查子元素中的链接
+      const link = el.querySelector('a[href]');
+      if (link) {
+        const href = link.getAttribute('href') || '';
+        if (href.startsWith('mailto:')) return href.replace('mailto:', '');
+        if (href.startsWith('tel:')) return href.replace('tel:', '');
+        if (href.startsWith('http') && !href.includes('qcc.com')) return href;
+      }
+      return clean(norm(el.textContent));
+    };
+    
+    // 先尝试表格策略
+    const tableValue = getValueByLabelInTable(labels);
+    if (tableValue) return tableValue;
+    
+    // 精确 label 节点扫描
+    const labelSelectors = 'th, dt, .label, .item-label, .info-title, .info-name, .tit, .title, .name, .td-label';
+    const labelNodes = document.querySelectorAll(labelSelectors);
+    
+    for (const node of labelNodes) {
+      const text = norm(node.textContent);
+      if (!text || text.length > 30) continue;
+      
+      // 处理 "标签：值" 内联格式
+      for (const l of labels) {
+        const re = new RegExp('^' + escapeRegExp(l) + '\\\\s*[:：]\\\\s*(.+)\$');
+        const inline = text.match(re);
+        if (inline && inline[1]) {
+          const value = clean(inline[1]);
+          if (isMeaningful(value)) {
+            debug('内联策略找到', l, '=', value);
+            return value;
+          }
+        }
+      }
+      
+      if (!isLabelMatch(text)) continue;
+      
+      // 优先取相邻节点
+      let value = extractValueFromEl(node.nextElementSibling);
+      if (isMeaningful(value) && !isLabelMatch(value)) {
+        debug('相邻节点策略找到', text, '=', value);
+        return value;
+      }
+      
+      // 次选：同一行（tr/dl）内的下一个单元格
+      const row = node.closest('tr, dl, .info-row, .detail-item');
+      if (row) {
+        const cells = row.querySelectorAll('td, th, dd, dt, .value, .label');
+        const cellArray = Array.from(cells);
+        const nodeIndex = cellArray.findIndex(c => c === node || c.contains(node));
+        if (nodeIndex >= 0 && nodeIndex < cellArray.length - 1) {
+          // 取下一个单元格
+          const nextCell = cellArray[nodeIndex + 1];
+          value = extractValueFromEl(nextCell);
+          if (isMeaningful(value) && !isLabelMatch(value)) {
+            debug('同行下一单元格策略找到', text, '=', value);
+            return value;
+          }
+        }
+      }
+      
+      // 最后：同一父容器内的 value/dd（限制在小范围内）
+      const parent = node.parentElement;
+      if (parent && parent.children.length <= 5) {
+        const valueEl = parent.querySelector('.value, .val, dd, .copy-value, .item-value');
+        value = extractValueFromEl(valueEl);
+        if (isMeaningful(value) && !isLabelMatch(value)) {
+          debug('父容器策略找到', text, '=', value);
+          return value;
+        }
+      }
+    }
+    return '';
+  };
+  
+  // ========== 特定字段提取函数 ==========
+  
+  // 提取统一社会信用代码
   const extractCreditCode = () => {
-    // 统一社会信用代码是18位字母数字组合
+    debug('开始提取统一社会信用代码');
+    
+    // 方法1：查找特定选择器
+    const codeEl = document.querySelector('.copy-value[data-clipboard-text], .creditCode, [class*="credit"]');
+    if (codeEl) {
+      const code = codeEl.getAttribute('data-clipboard-text') || codeEl.textContent;
+      const match = (code || '').match(/([0-9A-Z]{18})/);
+      if (match) {
+        debug('信用代码选择器找到:', match[1]);
+        return match[1];
+      }
+    }
+    
+    // 方法2：通用标签查找
+    const raw = getTextByLabel(['统一社会信用代码', '信用代码', '社会信用代码']);
+    if (raw) {
+      const match = raw.match(/([0-9A-Z]{18})/);
+      if (match) {
+        debug('信用代码标签找到:', match[1]);
+        return match[1];
+      }
+    }
+    
+    // 方法3：从页面文本中提取（最后手段）
     const text = document.body.innerText || '';
     const match = text.match(/([0-9A-Z]{18})/);
-    return match ? match[1] : '';
+    if (match) {
+      debug('信用代码全文找到:', match[1]);
+      return match[1];
+    }
+    
+    debug('未找到统一社会信用代码');
+    return '';
   };
   
+  // 提取法定代表人
   const extractLegalPerson = () => {
-    const raw = getTextByLabel('法定代表人') || getTextByLabel('法人') || getTextByLabel('法人代表');
-    // 只取第一个词（名字），去除"关联企业 14"等后缀
-    return raw.split(/\\s/)[0].replace(/[,，]/g, '');
+    debug('开始提取法定代表人');
+    
+    // 方法1：查找特定链接
+    const lpLink = document.querySelector('a[href*="/pl/"], a[href*="/people/"], .legal-person a, .legalPerson');
+    if (lpLink) {
+      const name = clean(norm(lpLink.textContent)).split(/\\s/)[0];
+      if (name && name.length >= 2 && name.length <= 10) {
+        debug('法人链接找到:', name);
+        return name;
+      }
+    }
+    
+    // 方法2：通用标签查找（支持多标签）
+    const raw = getTextByLabel(['法定代表人', '法人', '法人代表', '负责人']);
+    if (raw) {
+      const name = raw.split(/\\s/)[0].replace(/[,，]/g, '').substring(0, 20);
+      debug('法人标签找到:', name);
+      return name;
+    }
+    
+    debug('未找到法定代表人');
+    return '';
   };
   
+  // 提取成立日期
   const extractDate = () => {
-    const raw = getTextByLabel('成立日期') || getTextByLabel('成立时间');
-    // 提取日期格式 YYYY-MM-DD 或 YYYY年MM月DD日
+    debug('开始提取成立日期');
+    const raw = getTextByLabel(['成立日期', '成立时间', '注册日期', '成立']);
     const match = raw.match(/(\\d{4}[-/年]\\d{1,2}[-/月]\\d{1,2}日?)/);
-    return match ? match[1].replace(/年/g, '-').replace(/月/g, '-').replace(/日/g, '') : raw;
+    const result = match ? match[1].replace(/年/g, '-').replace(/月/g, '-').replace(/日/g, '') : raw;
+    debug('成立日期:', result);
+    return result;
   };
   
+  // 提取经营状态
   const extractStatus = () => {
-    const raw = getTextByLabel('经营状态') || getTextByLabel('登记状态') || getTextByLabel('状态');
-    // 提取核心状态词
+    debug('开始提取经营状态');
+    
+    // 方法1：查找状态标签
+    const statusEl = document.querySelector('.tag, .status, .state, [class*="status"]');
+    if (statusEl) {
+      const text = norm(statusEl.textContent);
+      const match = text.match(/(存续|在业|在营|开业|在册|注销|吊销|迁出|清算|停业)/);
+      if (match) {
+        debug('状态标签找到:', match[1]);
+        return match[1];
+      }
+    }
+    
+    // 方法2：通用查找
+    const raw = getTextByLabel(['经营状态', '登记状态', '企业状态', '状态']);
     const match = raw.match(/(存续|在业|在营|开业|在册|注销|吊销|迁出|清算|停业)/);
-    return match ? match[1] : raw;
+    const result = match ? match[1] : raw;
+    debug('经营状态:', result);
+    return result;
   };
   
+  // 提取注册地址
   const extractAddress = () => {
-    const raw = getTextByLabel('注册地址') || getTextByLabel('地址');
-    // 清理地址中的多余内容
-    return raw.replace(/（邮编.*?）/g, '').replace(/\\(邮编.*?\\)/g, '').trim();
+    debug('开始提取注册地址');
+    const raw = getTextByLabel(['注册地址', '企业地址', '住所', '经营地址', '地址']);
+    const result = raw.replace(/（邮编.*?）/g, '').replace(/\\(邮编.*?\\)/g, '').trim();
+    debug('注册地址:', result);
+    return result;
   };
   
+  // 提取所属行业（改进版）
+  const extractIndustry = () => {
+    debug('开始提取所属行业');
+    
+    // 方法1：查找行业链接
+    const industryLink = document.querySelector('a[href*="/industry/"], a[href*="/hangye/"], .industry a');
+    if (industryLink) {
+      const industry = clean(norm(industryLink.textContent));
+      if (industry && industry.length >= 2 && industry.length <= 50) {
+        debug('行业链接找到:', industry);
+        return industry;
+      }
+    }
+    
+    // 方法2：通用标签查找（支持多标签）
+    const result = getTextByLabel(['所属行业', '行业', '行业分类', '行业类别']);
+    debug('所属行业:', result);
+    return result;
+  };
+  
+  // 提取联系电话（改进版，支持多个电话）
   const extractPhone = () => {
-    const raw = getTextByLabel('电话') || getTextByLabel('联系电话');
-    // 提取第一个电话号码
-    const match = raw.match(/([\\d-]+)/);
-    return match ? match[1] : raw;
+    debug('开始提取联系电话');
+    const phones = [];
+    
+    // 添加电话的辅助函数（带验证）
+    const addPhone = (p) => {
+      if (!p) return;
+      const phone = p.replace(/\\s+/g, '');
+      // 验证：至少7位数字
+      if (phone.length < 7) {
+        debug('电话太短，跳过:', phone);
+        return;
+      }
+      // 验证：必须包含足够的数字
+      const digitCount = (phone.match(/\\d/g) || []).length;
+      if (digitCount < 7) {
+        debug('电话数字不足，跳过:', phone);
+        return;
+      }
+      if (!phones.includes(phone)) {
+        phones.push(phone);
+        debug('添加电话:', phone);
+      }
+    };
+    
+    // 从文本中收集电话
+    const collectPhonesFromText = (text) => {
+      if (!text) return;
+      // 匹配中国电话格式：手机或固话
+      const matches = text.match(/(1[3-9]\\d{9}|0\\d{2,3}-?\\d{7,8}|\\d{3,4}-\\d{7,8})/g);
+      if (matches) matches.forEach(addPhone);
+    };
+    
+    // 方法1：查找电话链接
+    const phoneLinks = document.querySelectorAll('a[href^="tel:"]');
+    phoneLinks.forEach(el => {
+      const phone = el.getAttribute('href')?.replace('tel:', '');
+      addPhone(phone);
+    });
+    
+    // 方法2：查找电话相关元素（但要排除无关元素）
+    const phoneEls = document.querySelectorAll('.phone, .tel, [class*="phone"]:not([class*="smartphone"]):not([class*="iphone"])');
+    phoneEls.forEach(el => {
+      const text = norm(el.textContent);
+      collectPhonesFromText(text);
+    });
+    
+    // 方法3：从联系信息区域提取
+    const contactSection = document.querySelector('.contact, .contact-info, [class*="contact"]');
+    if (contactSection) {
+      collectPhonesFromText(contactSection.textContent || '');
+    }
+    
+    // 方法4：联系人列表条目
+    const contactItems = document.querySelectorAll('.contact-item, .person-item, [class*="contact"] li');
+    contactItems.forEach(item => {
+      collectPhonesFromText(item.textContent || '');
+      const phoneEl = item.querySelector('a[href^="tel:"], .phone, .tel');
+      if (phoneEl) {
+        const phone = phoneEl.getAttribute('href')?.replace('tel:', '') || phoneEl.textContent;
+        addPhone(phone);
+      }
+    });
+    
+    // 方法5：通用标签查找
+    if (phones.length === 0) {
+      const raw = getTextByLabel(['电话', '联系电话', '联系方式', '联系号码', '手机']);
+      collectPhonesFromText(raw);
+    }
+    
+    debug('提取到电话:', phones);
+    return phones.join(', ');
   };
   
+  // 提取电子邮箱（改进版，支持多个邮箱）
   const extractEmail = () => {
-    const raw = getTextByLabel('邮箱') || getTextByLabel('电子邮箱');
-    // 提取邮箱地址
-    const match = raw.match(/([\\w.-]+@[\\w.-]+\\.[a-zA-Z]+)/);
-    return match ? match[1] : raw;
+    debug('开始提取电子邮箱');
+    const emails = [];
+    const emailPattern = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/g;
+    
+    // 添加邮箱的辅助函数
+    const addEmail = (e) => {
+      if (!e) return;
+      const email = e.trim().toLowerCase();
+      if (!emails.includes(email)) {
+        emails.push(email);
+        debug('添加邮箱:', email);
+      }
+    };
+    
+    // 从文本中收集邮箱
+    const collectEmailsFromText = (text) => {
+      if (!text) return;
+      const matches = text.match(emailPattern);
+      if (matches) matches.forEach(addEmail);
+    };
+    
+    // 方法1：查找邮箱链接
+    const emailLinks = document.querySelectorAll('a[href^="mailto:"]');
+    emailLinks.forEach(el => {
+      const email = el.getAttribute('href')?.replace('mailto:', '');
+      addEmail(email);
+    });
+    
+    // 方法2：从联系信息区域查找
+    const contactSection = document.querySelector('.contact, .contact-info, [class*="contact"]');
+    if (contactSection) {
+      collectEmailsFromText(contactSection.textContent || '');
+    }
+    
+    // 方法3：联系人列表条目
+    const contactItems = document.querySelectorAll('.contact-item, .person-item, [class*="contact"] li');
+    contactItems.forEach(item => collectEmailsFromText(item.textContent || ''));
+    
+    // 方法4：通用标签查找
+    if (emails.length === 0) {
+      const raw = getTextByLabel(['邮箱', '电子邮箱', 'Email', '联系邮箱', '企业邮箱']);
+      collectEmailsFromText(raw);
+    }
+    
+    debug('提取到邮箱:', emails);
+    return emails.join(', ');
+  };
+  
+  // 提取官网（改进版）
+  const extractWebsite = () => {
+    debug('开始提取官网');
+    
+    // URL 验证函数 - 排除 mailto: 和 tel: 链接
+    const isValidWebsiteUrl = (url) => {
+      if (!url) return false;
+      const lower = url.toLowerCase();
+      // 排除非网站链接
+      if (lower.startsWith('mailto:') || lower.startsWith('tel:') || lower.startsWith('javascript:')) {
+        return false;
+      }
+      // 必须是 http/https 或域名格式
+      return lower.startsWith('http://') || lower.startsWith('https://') || 
+             /^(www\\.)?[a-zA-Z0-9-]+\\.[a-zA-Z]{2,}/.test(url);
+    };
+    
+    // 方法1：通用标签查找（优先，因为更精确）
+    const raw = getTextByLabel(['官网', '网址', '企业官网', '网站', '公司网站']);
+    if (raw) {
+      debug('官网标签找到原始值:', raw);
+      // 验证是否是有效的网站 URL
+      if (isValidWebsiteUrl(raw)) {
+        const result = raw.startsWith('http') ? raw : 'http://' + raw;
+        debug('官网已是URL:', result);
+        return result;
+      }
+      // 提取 URL
+      const urlMatch = raw.match(/(https?:\\/\\/[^\\s]+|www\\.[^\\s]+|[a-zA-Z0-9-]+\\.[a-zA-Z]{2,}[^\\s]*)/);
+      if (urlMatch && isValidWebsiteUrl(urlMatch[1])) {
+        const url = urlMatch[1];
+        const result = url.startsWith('http') ? url : 'http://' + url;
+        debug('官网提取URL:', result);
+        return result;
+      }
+    }
+    
+    // 方法2：查找官网链接
+    const websiteLinks = document.querySelectorAll('a[href*="http"]:not([href*="qcc.com"]):not([href*="qichacha"]):not([href*="baidu.com"])');
+    for (const link of websiteLinks) {
+      const text = norm(link.textContent);
+      const href = link.getAttribute('href') || '';
+      
+      // 验证 href 是否是有效的网站 URL
+      if (!isValidWebsiteUrl(href)) continue;
+      
+      // 检查是否是官网相关的链接
+      if (text.includes('官网') || text.includes('网站') || text.includes('官方')) {
+        debug('官网链接找到:', href);
+        return href;
+      }
+      
+      // 检查链接文本是否是域名格式
+      if (/^(www\\.)?[a-zA-Z0-9-]+\\.[a-zA-Z]{2,}/.test(text)) {
+        const result = text.startsWith('http') ? text : 'http://' + text;
+        debug('域名格式链接找到:', result);
+        return result;
+      }
+    }
+    
+    debug('未找到官网');
+    return '';
+  };
+  
+  // 提取联系人信息（支持多联系人）
+  const extractContacts = () => {
+    debug('开始提取联系人');
+    const contacts = [];
+    
+    // 查找联系人列表
+    const contactItems = document.querySelectorAll('.contact-item, .person-item, [class*="contact"] li, .key-person');
+    contactItems.forEach(item => {
+      const name = item.querySelector('.name, .person-name, .contact-name')?.textContent?.trim();
+      const phone = item.querySelector('.phone, .tel, a[href^="tel:"]')?.textContent?.trim();
+      const position = item.querySelector('.position, .title, .job')?.textContent?.trim();
+      if (name || phone) {
+        contacts.push({ 
+          name: name || '', 
+          phone: phone || '',
+          position: position || ''
+        });
+        debug('添加联系人:', { name, phone, position });
+      }
+    });
+    
+    debug('提取到联系人数量:', contacts.length);
+    return contacts;
   };
 
   // 从 URL 提取企业 ID
@@ -203,26 +650,57 @@ window.__extractEnterpriseData = function() {
   const companyMatch = location.href.match(/\\/company\\/([^/?#.]+)\\.html/i);
   const id = firmMatch ? firmMatch[1] : (companyMatch ? companyMatch[1] : '');
   
-  // 提取企业名称（通常在 h1 标签中）
+  // 提取企业名称
   const name = getText('h1') || getText('.title') || getText('.company-name') || 
                document.title.replace(/-.*\$/, '').trim();
   
-  return {
+  debug('========== 开始提取企业详情 ==========');
+  debug('企业名称:', name);
+  debug('企业ID:', id);
+  debug('当前URL:', location.href);
+  
+  // 打印页面关键区域的 HTML 结构（用于调试）
+  const basicInfoSection = document.querySelector('.cominfo-normal, .basic-info, .company-info, table');
+  if (basicInfoSection) {
+    debug('基本信息区域HTML(前500字符):', basicInfoSection.outerHTML.substring(0, 500));
+  }
+  
+  const contactSection = document.querySelector('.contact, .contact-info, [class*="contact"]');
+  if (contactSection) {
+    debug('联系信息区域HTML(前500字符):', contactSection.outerHTML.substring(0, 500));
+  }
+  
+  const result = {
     id: id,
     name: name,
     creditCode: extractCreditCode(),
     legalPerson: extractLegalPerson(),
-    registeredCapital: getTextByLabel('注册资本'),
+    registeredCapital: getTextByLabel(['注册资本', '注册资金']),
     establishDate: extractDate(),
     status: extractStatus(),
     address: extractAddress(),
-    industry: getTextByLabel('所属行业') || getTextByLabel('行业'),
-    businessScope: getTextByLabel('经营范围'),
+    industry: extractIndustry(),
+    businessScope: getTextByLabel(['经营范围', '业务范围']),
     phone: extractPhone(),
     email: extractEmail(),
-    website: getTextByLabel('官网') || getTextByLabel('网址'),
+    website: extractWebsite(),
     source: 'qcc'
   };
+  
+  debug('========== 提取结果汇总 ==========');
+  debug('统一社会信用代码:', result.creditCode);
+  debug('法定代表人:', result.legalPerson);
+  debug('注册资本:', result.registeredCapital);
+  debug('成立日期:', result.establishDate);
+  debug('经营状态:', result.status);
+  debug('注册地址:', result.address);
+  debug('所属行业:', result.industry);
+  debug('联系电话:', result.phone);
+  debug('电子邮箱:', result.email);
+  debug('官网:', result.website);
+  debug('========== 提取完成 ==========');
+  
+  return result;
 };
 ''';
 

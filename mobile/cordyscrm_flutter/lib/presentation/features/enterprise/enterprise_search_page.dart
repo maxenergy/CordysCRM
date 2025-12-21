@@ -178,8 +178,7 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
       body: Column(
         children: [
           // 剪贴板提示
-          if (_showClipboardHint)
-            _buildClipboardHint(),
+          if (_showClipboardHint) _buildClipboardHint(),
 
           // 搜索框
           Padding(
@@ -203,7 +202,9 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
                   borderRadius: BorderRadius.circular(12),
                 ),
                 filled: true,
-                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.3,
+                ),
               ),
               onChanged: _onSearchChanged,
               textInputAction: TextInputAction.search,
@@ -212,9 +213,7 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
           ),
 
           // 搜索结果
-          Expanded(
-            child: _buildSearchResults(),
-          ),
+          Expanded(child: _buildSearchResults()),
         ],
       ),
     );
@@ -260,10 +259,9 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onPrimaryContainer
-                        .withValues(alpha: 0.7),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -291,9 +289,7 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
     final searchState = ref.watch(enterpriseSearchProvider);
 
     if (searchState.isSearching) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     // 优先处理需要用户操作的特定错误
@@ -301,9 +297,11 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
       final error = searchState.error!;
       final dataSource = ref.read(enterpriseDataSourceProvider);
       final dataSourceName = dataSource.displayName;
-      
+
       // 检查是否为 WebView 页面已关闭的错误
-      if (error.contains('已关闭') || error.contains('请先打开') || error.contains('未就绪')) {
+      if (error.contains('已关闭') ||
+          error.contains('请先打开') ||
+          error.contains('未就绪')) {
         return _buildActionableError(
           message: error,
           buttonText: '打开$dataSourceName',
@@ -311,7 +309,7 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
           onPressed: () async {
             // 打开 WebView 页面
             await context.push(AppRoutes.enterprise);
-            
+
             // 用户返回后，如果页面仍然可用且搜索框有内容，自动重新搜索
             if (mounted && _searchController.text.trim().length >= 2) {
               _performSearch(_searchController.text.trim());
@@ -319,7 +317,7 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
           },
         );
       }
-      
+
       // 检查是否为 Cookie 或验证码相关的可操作错误
       if (error.contains('登录') || error.contains('验证')) {
         return _buildActionableError(
@@ -329,7 +327,7 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
           onPressed: () async {
             // 异步等待 WebView 页面关闭
             await context.push(AppRoutes.enterprise);
-            
+
             // 用户返回后，如果页面仍然可用且搜索框有内容，自动重新搜索
             if (mounted && _searchController.text.trim().length >= 2) {
               _performSearch(_searchController.text.trim());
@@ -337,7 +335,7 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
           },
         );
       }
-      
+
       // 其他一般性错误
       return _buildActionableError(
         message: error,
@@ -359,7 +357,9 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
       }
       // 初始欢迎页
       final dataSourceType = ref.read(enterpriseDataSourceTypeProvider);
-      final dataSourceName = dataSourceType == EnterpriseDataSourceType.qcc ? '企查查' : '爱企查';
+      final dataSourceName = dataSourceType == EnterpriseDataSourceType.qcc
+          ? '企查查'
+          : '爱企查';
       return _buildEmptyState(
         icon: Icons.business_center_outlined,
         title: '输入企业名称或信用代码',
@@ -401,19 +401,12 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 48,
-              color: theme.colorScheme.error,
-            ),
+            Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
             const SizedBox(height: 16),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: theme.colorScheme.error,
-                fontSize: 15,
-              ),
+              style: TextStyle(color: theme.colorScheme.error, fontSize: 15),
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
@@ -490,7 +483,29 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
               ),
             ),
           ),
+          // 重新搜索按钮（仅在本地结果时显示）
+          if (state.canReSearch) _buildReSearchButton(),
         ],
+      ),
+    );
+  }
+
+  /// 构建重新搜索按钮
+  Widget _buildReSearchButton() {
+    final dataSource = ref.read(enterpriseDataSourceProvider);
+    final dataSourceName = dataSource.displayName;
+
+    return TextButton.icon(
+      onPressed: () {
+        ref.read(enterpriseSearchProvider.notifier).reSearchExternal();
+      },
+      icon: const Icon(Icons.refresh, size: 16),
+      label: Text('搜索$dataSourceName'),
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        textStyle: const TextStyle(fontSize: 12),
       ),
     );
   }

@@ -355,6 +355,18 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
 
 // ==================== WebView State ====================
 
+/// 详情加载状态
+enum DetailFetchStatus {
+  /// 未开始
+  idle,
+  /// 加载中
+  loading,
+  /// 加载成功
+  success,
+  /// 加载失败
+  failed,
+}
+
 /// WebView 状态
 class EnterpriseWebState {
   const EnterpriseWebState({
@@ -365,6 +377,8 @@ class EnterpriseWebState {
     this.isImporting = false,
     this.importResult,
     this.error,
+    this.detailFetchStatus = DetailFetchStatus.idle,
+    this.detailFetchError,
   });
 
   /// 加载进度 (0-100)
@@ -388,8 +402,16 @@ class EnterpriseWebState {
   /// 错误信息
   final String? error;
 
+  /// 详情加载状态
+  final DetailFetchStatus detailFetchStatus;
+
+  /// 详情加载错误信息
+  final String? detailFetchError;
+
   bool get hasError => error != null;
   bool get hasPending => pendingEnterprise != null;
+  bool get isLoadingDetail => detailFetchStatus == DetailFetchStatus.loading;
+  bool get detailFetchFailed => detailFetchStatus == DetailFetchStatus.failed;
 
   EnterpriseWebState copyWith({
     int? progress,
@@ -399,9 +421,12 @@ class EnterpriseWebState {
     bool? isImporting,
     EnterpriseImportResult? importResult,
     String? error,
+    DetailFetchStatus? detailFetchStatus,
+    String? detailFetchError,
     bool clearPending = false,
     bool clearError = false,
     bool clearResult = false,
+    bool clearDetailError = false,
   }) {
     return EnterpriseWebState(
       progress: progress ?? this.progress,
@@ -412,6 +437,8 @@ class EnterpriseWebState {
       isImporting: isImporting ?? this.isImporting,
       importResult: clearResult ? null : (importResult ?? this.importResult),
       error: clearError ? null : (error ?? this.error),
+      detailFetchStatus: detailFetchStatus ?? this.detailFetchStatus,
+      detailFetchError: clearDetailError ? null : (detailFetchError ?? this.detailFetchError),
     );
   }
 }
@@ -421,14 +448,18 @@ class EnterpriseWebState {
 /// WebView 状态 Provider
 final enterpriseWebProvider =
     StateNotifierProvider<EnterpriseWebNotifier, EnterpriseWebState>((ref) {
-  return EnterpriseWebNotifier(ref.read(enterpriseRepositoryProvider));
+  return EnterpriseWebNotifier(
+    ref.read(enterpriseRepositoryProvider),
+    ref,
+  );
 });
 
 /// WebView 状态 Notifier
 class EnterpriseWebNotifier extends StateNotifier<EnterpriseWebState> {
-  EnterpriseWebNotifier(this._repository) : super(const EnterpriseWebState());
+  EnterpriseWebNotifier(this._repository, this._ref) : super(const EnterpriseWebState());
 
   final EnterpriseRepository _repository;
+  final Ref _ref;
 
   /// 更新加载进度
   void setProgress(int progress) {
@@ -534,5 +565,176 @@ class EnterpriseWebNotifier extends StateNotifier<EnterpriseWebState> {
   /// 保存 Cookie
   Future<void> saveCookies(Map<String, String> cookies) async {
     await _repository.saveCookies(cookies);
+  }
+
+  /// 获取企业详情
+  ///
+  /// 如果企业需要从详情页获取完整信息（needsDetailFetch），
+  /// 则通过 WebView 导航到详情页并执行 JS 提取脚本。
+  Future<void> fetchEnterpriseDetail() async {
+    final enterprise = state.pendingEnterprise;
+    if (enterprise == null) {
+      debugPrint('[详情获取] pendingEnterprise 为空，跳过');
+      return;
+    }
+
+    // 检查是否需要获取详情
+    if (!enterprise.needsDetailFetch) {
+      debugPrint('[详情获取] 企业 ${enterprise.name} 不需要获取详情');
+      state = state.copyWith(detailFetchStatus: DetailFetchStatus.success);
+      return;
+    }
+
+    // 检查是否有详情页 URL
+    final detailUrl = enterprise.detailUrl;
+    if (detailUrl.isEmpty) {
+      debugPrint('[详情获取] 企业 ${enterprise.name} 没有详情页 URL');
+      state = state.copyWith(
+        detailFetchStatus: DetailFetchStatus.failed,
+        detailFetchError: '无法获取详情：缺少详情页链接',
+      );
+      return;
+    }
+
+    // 获取 WebView 控制器
+    final controller = _ref.read(webViewControllerProvider);
+    if (controller == null) {
+      debugPrint('[详情获取] WebView 控制器不可用');
+      state = state.copyWith(
+        detailFetchStatus: DetailFetchStatus.failed,
+        detailFetchError: '请先打开企查查页面',
+      );
+      return;
+    }
+
+    debugPrint('[详情获取] 开始获取企业 ${enterprise.name} 的详情');
+    debugPrint('[详情获取] 详情页 URL: $detailUrl');
+    
+    state = state.copyWith(
+      detailFetchStatus: DetailFetchStatus.loading,
+      clearDetailError: true,
+    );
+
+    try {
+      // 导航到详情页
+      await controller.loadUrl(
+        urlRequest: URLRequest(url: WebUri(detailUrl)),
+      );
+
+      // 等待页面加载完成
+      await _waitForPageLoad(controller, const Duration(seconds: 10));
+
+      // 获取数据源的提取脚本
+      final dataSource = _ref.read(enterpriseDataSourceProvider);
+      final extractJs = dataSource.extractDataJs;
+
+      // 注入并执行提取脚本
+      await controller.evaluateJavascript(source: extractJs);
+      
+      // 执行提取函数
+      final resultJson = await controller.evaluateJavascript(
+        source: 'JSON.stringify(window.__extractEnterpriseData())',
+      );
+
+      if (!mounted) return;
+
+      if (resultJson == null || resultJson == 'null') {
+        debugPrint('[详情获取] 提取脚本返回空结果');
+        state = state.copyWith(
+          detailFetchStatus: DetailFetchStatus.failed,
+          detailFetchError: '无法从详情页提取数据',
+        );
+        return;
+      }
+
+      // 解析结果
+      final jsonStr = resultJson is String ? resultJson : resultJson.toString();
+      // 移除可能的引号包裹
+      final cleanJson = jsonStr.startsWith('"') && jsonStr.endsWith('"')
+          ? jsonStr.substring(1, jsonStr.length - 1).replaceAll(r'\"', '"')
+          : jsonStr;
+      
+      debugPrint('[详情获取] 提取结果: ${cleanJson.substring(0, cleanJson.length > 200 ? 200 : cleanJson.length)}...');
+      
+      final detailMap = jsonDecode(cleanJson) as Map<String, dynamic>;
+      final detailEnterprise = Enterprise.fromJson(detailMap);
+
+      // 合并详情到待导入企业（保留原有的基本信息，补充详情）
+      final mergedEnterprise = enterprise.copyWith(
+        creditCode: detailEnterprise.creditCode.isNotEmpty 
+            ? detailEnterprise.creditCode : enterprise.creditCode,
+        legalPerson: detailEnterprise.legalPerson.isNotEmpty 
+            ? detailEnterprise.legalPerson : enterprise.legalPerson,
+        registeredCapital: detailEnterprise.registeredCapital.isNotEmpty 
+            ? detailEnterprise.registeredCapital : enterprise.registeredCapital,
+        establishDate: detailEnterprise.establishDate.isNotEmpty 
+            ? detailEnterprise.establishDate : enterprise.establishDate,
+        status: detailEnterprise.status.isNotEmpty 
+            ? detailEnterprise.status : enterprise.status,
+        address: detailEnterprise.address.isNotEmpty 
+            ? detailEnterprise.address : enterprise.address,
+        industry: detailEnterprise.industry.isNotEmpty 
+            ? detailEnterprise.industry : enterprise.industry,
+        businessScope: detailEnterprise.businessScope.isNotEmpty 
+            ? detailEnterprise.businessScope : enterprise.businessScope,
+        phone: detailEnterprise.phone.isNotEmpty 
+            ? detailEnterprise.phone : enterprise.phone,
+        email: detailEnterprise.email.isNotEmpty 
+            ? detailEnterprise.email : enterprise.email,
+        website: detailEnterprise.website.isNotEmpty 
+            ? detailEnterprise.website : enterprise.website,
+      );
+
+      debugPrint('[详情获取] 合并后企业信息: phone=${mergedEnterprise.phone}, address=${mergedEnterprise.address}');
+
+      state = state.copyWith(
+        pendingEnterprise: mergedEnterprise,
+        detailFetchStatus: DetailFetchStatus.success,
+      );
+
+      debugPrint('[详情获取] 详情获取成功');
+    } catch (e) {
+      debugPrint('[详情获取] 获取详情失败: $e');
+      if (!mounted) return;
+      
+      state = state.copyWith(
+        detailFetchStatus: DetailFetchStatus.failed,
+        detailFetchError: '获取详情失败: ${e.toString()}',
+      );
+    }
+  }
+
+  /// 等待 WebView 页面加载完成
+  Future<void> _waitForPageLoad(
+    InAppWebViewController controller,
+    Duration timeout,
+  ) async {
+    final startTime = DateTime.now();
+    const pollInterval = Duration(milliseconds: 300);
+
+    while (DateTime.now().difference(startTime) < timeout) {
+      try {
+        final readyState = await controller.evaluateJavascript(
+          source: 'document.readyState',
+        );
+        if (readyState == 'complete' || readyState == '"complete"') {
+          // 额外等待 500ms 让 JS 渲染完成
+          await Future.delayed(const Duration(milliseconds: 500));
+          return;
+        }
+      } catch (_) {
+        // 忽略错误，继续轮询
+      }
+      await Future.delayed(pollInterval);
+    }
+    debugPrint('[详情获取] 等待页面加载超时，继续执行');
+  }
+
+  /// 重置详情加载状态
+  void resetDetailFetchStatus() {
+    state = state.copyWith(
+      detailFetchStatus: DetailFetchStatus.idle,
+      clearDetailError: true,
+    );
   }
 }

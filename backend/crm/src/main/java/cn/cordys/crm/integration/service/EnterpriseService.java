@@ -2,6 +2,7 @@ package cn.cordys.crm.integration.service;
 
 import cn.cordys.common.uid.IDGenerator;
 import cn.cordys.security.SessionUtils;
+import cn.cordys.crm.customer.domain.Customer;
 import cn.cordys.crm.integration.domain.EnterpriseProfile;
 import cn.cordys.crm.integration.dto.request.EnterpriseImportRequest;
 import cn.cordys.crm.integration.dto.response.EnterpriseImportResponse;
@@ -38,6 +39,9 @@ public class EnterpriseService {
 
     @Resource
     private BaseMapper<EnterpriseProfile> enterpriseProfileMapper;
+
+    @Resource
+    private BaseMapper<Customer> customerMapper;
 
     @Resource
     private ExtEnterpriseProfileMapper extEnterpriseProfileMapper;
@@ -392,18 +396,20 @@ public class EnterpriseService {
     }
 
     /**
-     * 创建新的企业档案
+     * 创建新的企业档案和对应的客户记录
      */
     private EnterpriseProfile createEnterpriseProfile(EnterpriseImportRequest request, String organizationId) {
         EnterpriseProfile profile = new EnterpriseProfile();
         profile.setId(IDGenerator.nextStr());
         
-        // 如果提供了客户ID则使用，否则生成新的
+        // 生成客户ID
+        String customerId;
         if (StringUtils.isNotBlank(request.getCustomerId())) {
-            profile.setCustomerId(request.getCustomerId());
+            customerId = request.getCustomerId();
         } else {
-            profile.setCustomerId(IDGenerator.nextStr());
+            customerId = IDGenerator.nextStr();
         }
+        profile.setCustomerId(customerId);
         
         copyRequestToProfile(request, profile);
         profile.setOrganizationId(organizationId);
@@ -413,7 +419,26 @@ public class EnterpriseService {
         profile.setUpdateUser(SessionUtils.getUserId());
         profile.setLastSyncAt(System.currentTimeMillis());
         
+        // 创建对应的客户记录
+        Customer customer = new Customer();
+        customer.setId(customerId);
+        customer.setName(request.getCompanyName());
+        customer.setOwner(SessionUtils.getUserId());
+        customer.setCollectionTime(System.currentTimeMillis());
+        customer.setInSharedPool(false);
+        customer.setOrganizationId(organizationId);
+        customer.setCreateTime(System.currentTimeMillis());
+        customer.setUpdateTime(System.currentTimeMillis());
+        customer.setCreateUser(SessionUtils.getUserId());
+        customer.setUpdateUser(SessionUtils.getUserId());
+        
+        // 先插入客户记录，再插入企业档案（因为企业档案引用客户ID）
+        customerMapper.insert(customer);
         enterpriseProfileMapper.insert(profile);
+        
+        log.info("创建新客户和企业档案: customerId={}, profileId={}, companyName={}", 
+                customerId, profile.getId(), request.getCompanyName());
+        
         return profile;
     }
 

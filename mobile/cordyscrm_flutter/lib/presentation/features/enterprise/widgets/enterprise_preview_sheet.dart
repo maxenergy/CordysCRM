@@ -54,6 +54,36 @@ class _EnterprisePreviewSheetState
     _phoneController = TextEditingController(text: enterprise.phone);
     _emailController = TextEditingController(text: enterprise.email);
     _websiteController = TextEditingController(text: enterprise.website);
+
+    // 如果企业需要获取详情，自动开始加载
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchDetailIfNeeded();
+    });
+  }
+
+  /// 如果需要，获取企业详情
+  Future<void> _fetchDetailIfNeeded() async {
+    final enterprise = ref.read(enterpriseWebProvider).pendingEnterprise;
+    if (enterprise != null && enterprise.needsDetailFetch) {
+      debugPrint('[预览弹窗] 企业需要获取详情，开始加载...');
+      await ref.read(enterpriseWebProvider.notifier).fetchEnterpriseDetail();
+    }
+  }
+
+  /// 当详情加载完成后，更新表单控制器
+  void _updateControllersFromEnterprise(Enterprise enterprise) {
+    _nameController.text = enterprise.name;
+    _creditCodeController.text = enterprise.creditCode;
+    _legalPersonController.text = enterprise.legalPerson;
+    _registeredCapitalController.text = enterprise.registeredCapital;
+    _establishDateController.text = enterprise.establishDate;
+    _statusController.text = enterprise.status;
+    _addressController.text = enterprise.address;
+    _industryController.text = enterprise.industry;
+    _businessScopeController.text = enterprise.businessScope;
+    _phoneController.text = enterprise.phone;
+    _emailController.text = enterprise.email;
+    _websiteController.text = enterprise.website;
   }
 
   @override
@@ -194,6 +224,7 @@ class _EnterprisePreviewSheetState
     bool required = false,
     int maxLines = 1,
     TextInputType? keyboardType,
+    bool isLoading = false,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -209,6 +240,16 @@ class _EnterprisePreviewSheetState
             horizontal: 12,
             vertical: 12,
           ),
+          suffixIcon: isLoading && controller.text.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              : null,
         ),
         validator: required
             ? (value) {
@@ -226,6 +267,16 @@ class _EnterprisePreviewSheetState
   Widget build(BuildContext context) {
     final state = ref.watch(enterpriseWebProvider);
     final theme = Theme.of(context);
+
+    // 监听详情加载完成，更新表单
+    ref.listen<EnterpriseWebState>(enterpriseWebProvider, (previous, next) {
+      if (previous?.detailFetchStatus == DetailFetchStatus.loading &&
+          next.detailFetchStatus == DetailFetchStatus.success &&
+          next.pendingEnterprise != null) {
+        debugPrint('[预览弹窗] 详情加载完成，更新表单');
+        _updateControllersFromEnterprise(next.pendingEnterprise!);
+      }
+    });
 
     return Container(
       decoration: BoxDecoration(
@@ -275,31 +326,11 @@ class _EnterprisePreviewSheetState
                 ),
               ),
 
-              // 提示信息：搜索结果列表页数据可能不完整
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.amber.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.amber.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.amber.shade700, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '搜索结果仅包含基本信息，如需完整信息请进入企业详情页后再导入',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.amber.shade900,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              // 详情加载状态提示
+              if (state.isLoadingDetail)
+                _buildDetailLoadingBanner(theme),
+              if (state.detailFetchFailed && state.detailFetchError != null)
+                _buildDetailErrorBanner(theme, state.detailFetchError!),
 
               const Divider(),
 
@@ -367,6 +398,7 @@ class _EnterprisePreviewSheetState
                         label: '注册地址',
                         controller: _addressController,
                         maxLines: 2,
+                        isLoading: state.isLoadingDetail,
                       ),
                       Row(
                         children: [
@@ -375,6 +407,7 @@ class _EnterprisePreviewSheetState
                               label: '联系电话',
                               controller: _phoneController,
                               keyboardType: TextInputType.phone,
+                              isLoading: state.isLoadingDetail,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -383,6 +416,7 @@ class _EnterprisePreviewSheetState
                               label: '电子邮箱',
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
+                              isLoading: state.isLoadingDetail,
                             ),
                           ),
                         ],
@@ -391,6 +425,7 @@ class _EnterprisePreviewSheetState
                         label: '官网',
                         controller: _websiteController,
                         keyboardType: TextInputType.url,
+                        isLoading: state.isLoadingDetail,
                       ),
 
                       // 经营范围
@@ -399,6 +434,7 @@ class _EnterprisePreviewSheetState
                         label: '经营范围',
                         controller: _businessScopeController,
                         maxLines: 4,
+                        isLoading: state.isLoadingDetail,
                       ),
 
                       const SizedBox(height: 24),
@@ -446,6 +482,77 @@ class _EnterprisePreviewSheetState
             ],
           );
         },
+      ),
+    );
+  }
+
+  /// 构建详情加载中提示
+  Widget _buildDetailLoadingBanner(ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue.shade200),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Colors.blue.shade700,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              '正在获取企业详细信息...',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.blue.shade900,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建详情加载失败提示
+  Widget _buildDetailErrorBanner(ThemeData theme, String error) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.orange.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.warning_amber_rounded, color: Colors.orange.shade700, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '详情获取失败，可直接导入基础信息',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.orange.shade900,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: _fetchDetailIfNeeded,
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              minimumSize: const Size(0, 32),
+            ),
+            child: const Text('重试'),
+          ),
+        ],
       ),
     );
   }

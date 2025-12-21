@@ -17,6 +17,7 @@ class Enterprise {
     this.email = '',
     this.website = '',
     this.source = '',
+    this.detailUrl = '',
   });
 
   /// 企业 ID（爱企查 ID）
@@ -60,6 +61,9 @@ class Enterprise {
 
   /// 数据来源: local(本地数据库) 或 iqicha(爱企查)
   final String source;
+
+  /// 详情页 URL（用于获取完整信息）
+  final String detailUrl;
 
   /// 是否为存续状态
   bool get isActive => status == '存续' || status == '在业';
@@ -105,6 +109,7 @@ class Enterprise {
     String? email,
     String? website,
     String? source,
+    String? detailUrl,
   }) {
     return Enterprise(
       id: id ?? this.id,
@@ -121,6 +126,7 @@ class Enterprise {
       email: email ?? this.email,
       website: website ?? this.website,
       source: source ?? this.source,
+      detailUrl: detailUrl ?? this.detailUrl,
     );
   }
 
@@ -141,6 +147,7 @@ class Enterprise {
       email: json['email'] as String? ?? '',
       website: json['website'] as String? ?? '',
       source: json['source'] as String? ?? '',
+      detailUrl: json['detailUrl'] as String? ?? json['url'] as String? ?? '',
     );
   }
 
@@ -161,6 +168,7 @@ class Enterprise {
       email: json['email'] as String? ?? '',
       website: json['website'] as String? ?? '',
       source: json['source'] as String? ?? '',
+      detailUrl: json['detailUrl'] as String? ?? json['url'] as String? ?? '',
     );
   }
 
@@ -181,6 +189,7 @@ class Enterprise {
       'email': email,
       'website': website,
       'source': source,
+      'detailUrl': detailUrl,
     };
   }
 

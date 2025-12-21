@@ -249,6 +249,7 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
               email: map['email']?.toString() ?? '',
               website: map['website']?.toString() ?? '',
               source: 'qcc',
+              detailUrl: map['url']?.toString() ?? '',
             );
           }).toList();
 

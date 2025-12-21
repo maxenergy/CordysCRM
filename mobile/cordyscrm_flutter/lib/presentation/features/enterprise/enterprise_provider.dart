@@ -112,6 +112,7 @@ class EnterpriseSearchState {
     this.reSearchError,
     this.keyword = '',
     this.dataSource,
+    this.externalDataSourceType,
   });
 
   final bool isSearching;
@@ -122,6 +123,7 @@ class EnterpriseSearchState {
   final String? reSearchError;
   final String keyword;
   final EnterpriseSearchDataSource? dataSource;
+  final EnterpriseDataSourceType? externalDataSourceType;
 
   bool get hasError => error != null;
   bool get hasReSearchError => reSearchError != null;
@@ -145,7 +147,11 @@ class EnterpriseSearchState {
       EnterpriseSearchDataSource.local => 'CRM 本地库',
       EnterpriseSearchDataSource.iqicha => '爱企查',
       EnterpriseSearchDataSource.qcc => '企查查',
-      EnterpriseSearchDataSource.mixed => '本地 + 外部数据源',
+      EnterpriseSearchDataSource.mixed => switch (externalDataSourceType) {
+        EnterpriseDataSourceType.iqicha => '本地 + 爱企查',
+        EnterpriseDataSourceType.qcc => '本地 + 企查查',
+        _ => '本地 + 外部数据源',
+      },
       _ => null,
     };
   }
@@ -159,6 +165,7 @@ class EnterpriseSearchState {
     String? reSearchError,
     String? keyword,
     EnterpriseSearchDataSource? dataSource,
+    EnterpriseDataSourceType? externalDataSourceType,
     bool clearError = false,
     bool clearReSearchError = false,
     bool clearDataSource = false,
@@ -174,6 +181,8 @@ class EnterpriseSearchState {
           : (reSearchError ?? this.reSearchError),
       keyword: keyword ?? this.keyword,
       dataSource: clearDataSource ? null : (dataSource ?? this.dataSource),
+      externalDataSourceType:
+          externalDataSourceType ?? this.externalDataSourceType,
     );
   }
 }
@@ -407,6 +416,7 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
           results: mergedResults,
           total: mergedResults.length,
           dataSource: EnterpriseSearchDataSource.mixed,
+          externalDataSourceType: currentDataSourceType,
         );
       } else {
         // 失败时保留本地结果，设置错误信息

@@ -576,6 +576,38 @@ window.__searchQcc = function(keyword, requestId) {
 
   const scrapeResults = () => {
     debug(' 开始抓取搜索结果');
+    debug(' 当前URL:', location.href);
+    debug(' 页面标题:', document.title);
+    
+    // 打印页面关键区域的 HTML 结构（用于调试）
+    const bodyHtml = document.body ? document.body.innerHTML : '';
+    debug(' 页面HTML长度:', bodyHtml.length);
+    
+    // 检查是否有搜索结果容器
+    const possibleContainers = [
+      '#search-result',
+      '#searchlist', 
+      '.search-result',
+      '.result-list',
+      '.search-list',
+      '.company-list',
+      '.m-search-result',
+      '.search-result-list',
+      '[class*="search"][class*="result"]',
+      '[class*="result"][class*="list"]',
+    ];
+    
+    debug(' 检查可能的容器:');
+    for (const sel of possibleContainers) {
+      try {
+        const el = document.querySelector(sel);
+        if (el) {
+          debug('   找到容器:', sel, '子元素数:', el.children.length);
+          // 打印前200字符的HTML
+          debug('   HTML片段:', el.outerHTML.substring(0, 200));
+        }
+      } catch (_) {}
+    }
     
     const containerSelectors = [
       '#search-result .result-list > div',
@@ -585,6 +617,13 @@ window.__searchQcc = function(keyword, requestId) {
       '.search-list .list-item',
       '.company-list .company-item',
       '[class*="result"] [class*="item"]',
+      // 新增更多选择器
+      '.m-search-result .result-item',
+      '.search-result-list .result-item',
+      '.search-result-list > div',
+      '.result-list > div',
+      '[class*="search-result"] > div',
+      '[class*="result-list"] > div',
     ];
     
     let items = [];
@@ -603,8 +642,21 @@ window.__searchQcc = function(keyword, requestId) {
     
     if (items.length === 0) {
       debug(' 标准选择器未匹配，尝试宽泛选择器');
+      
+      // 打印所有包含 /firm/ 或 /company/ 的链接
+      const allLinks = document.querySelectorAll('a[href]');
+      let firmLinks = [];
+      allLinks.forEach(link => {
+        const href = link.href || '';
+        if (href.includes('/firm/') || href.includes('/company/')) {
+          firmLinks.push({href: href, text: (link.innerText || '').substring(0, 50)});
+        }
+      });
+      debug(' 所有企业链接:', JSON.stringify(firmLinks.slice(0, 5)));
+      
       const links = document.querySelectorAll('a[href*="/firm/"], a[href*="/company/"]');
       debug(' 找到企业链接数:', links.length);
+      
       const containers = new Set();
       links.forEach((link, linkIdx) => {
         let parent = link.parentElement;
@@ -612,6 +664,7 @@ window.__searchQcc = function(keyword, requestId) {
           const text = parent.innerText || '';
           if (text.includes('法定代表人') || text.includes('注册资本') || text.includes('成立日期')) {
             containers.add(parent);
+            debug(' 找到包含关键词的父元素:', parent.tagName, parent.className);
             break;
           }
           if (parent.children.length > 3 && text.length > 100) {

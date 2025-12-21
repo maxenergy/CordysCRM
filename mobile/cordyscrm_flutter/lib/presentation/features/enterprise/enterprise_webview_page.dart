@@ -339,6 +339,15 @@ class _EnterpriseWebViewPageState extends ConsumerState<EnterpriseWebViewPage> {
             },
           );
 
+          // 注册企查查调试日志回调
+          controller.addJavaScriptHandler(
+            handlerName: 'onQccDebug',
+            callback: (args) {
+              final message = args.isNotEmpty ? args.first.toString() : '';
+              debugPrint('[QCC JS] $message');
+            },
+          );
+
           // 所有 handlers 注册完毕后，将 controller 写入 provider
           // 这样 Repository 使用 controller 时，handlers 已经就绪
           ref.read(webViewControllerProvider.notifier).state = controller;

@@ -373,6 +373,58 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
     );
   }
 
+  /// 重新搜索外部数据源
+  ///
+  /// 仅在当前结果来自本地库时触发外部搜索，并将外部结果追加到本地结果后。
+  /// 保留本地结果，成功时更新 dataSource 为 mixed，失败时设置 reSearchError。
+  Future<void> reSearchExternal() async {
+    if (!state.canReSearch) return;
+
+    final keyword = state.keyword;
+    final localResults = state.results;
+    final currentRequestId = _searchRequestId;
+
+    state = state.copyWith(isReSearching: true, clearReSearchError: true);
+
+    try {
+      final currentDataSourceType = _ref.read(enterpriseDataSourceTypeProvider);
+
+      final externalResult =
+          currentDataSourceType == EnterpriseDataSourceType.iqicha
+          ? await _repository.searchAiqicha(keyword: keyword)
+          : await _repository.searchQichacha(keyword: keyword);
+
+      // 检查是否已被新请求取代或 Provider 已销毁
+      if (!mounted || currentRequestId != _searchRequestId) {
+        return;
+      }
+
+      if (externalResult.success) {
+        // 追加外部结果到本地结果之后
+        final mergedResults = [...localResults, ...externalResult.items];
+        state = state.copyWith(
+          isReSearching: false,
+          results: mergedResults,
+          total: mergedResults.length,
+          dataSource: EnterpriseSearchDataSource.mixed,
+        );
+      } else {
+        // 失败时保留本地结果，设置错误信息
+        state = state.copyWith(
+          isReSearching: false,
+          reSearchError: externalResult.message ?? '重新搜索失败',
+        );
+      }
+    } catch (e) {
+      // 检查是否已被新请求取代或 Provider 已销毁
+      if (!mounted || currentRequestId != _searchRequestId) {
+        return;
+      }
+
+      state = state.copyWith(isReSearching: false, reSearchError: '重新搜索失败: $e');
+    }
+  }
+
   /// 清除搜索结果
   void clear() {
     // 递增请求序号，使任何进行中的搜索请求失效

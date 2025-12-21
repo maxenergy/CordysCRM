@@ -23,8 +23,8 @@ import '../../../domain/repositories/enterprise_repository.dart';
 /// 使用 [EnterpriseDataSourceType] 枚举，复用 URL 工具中的定义。
 final enterpriseDataSourceTypeProvider =
     StateProvider<EnterpriseDataSourceType>(
-  (ref) => EnterpriseDataSourceType.qcc,
-);
+      (ref) => EnterpriseDataSourceType.qcc,
+    );
 
 /// 企查查数据源实例
 ///
@@ -45,16 +45,16 @@ final aiqichaDataSourceProvider = Provider<EnterpriseDataSourceInterface>(
 ///
 /// 根据 [enterpriseDataSourceTypeProvider] 返回对应的数据源实例。
 /// 当类型为 `unknown` 时，回退到默认的企查查数据源。
-final enterpriseDataSourceProvider = Provider<EnterpriseDataSourceInterface>(
-  (ref) {
-    final type = ref.watch(enterpriseDataSourceTypeProvider);
-    return switch (type) {
-      EnterpriseDataSourceType.qcc => ref.watch(qccDataSourceProvider),
-      EnterpriseDataSourceType.iqicha => ref.watch(aiqichaDataSourceProvider),
-      EnterpriseDataSourceType.unknown => ref.watch(qccDataSourceProvider),
-    };
-  },
-);
+final enterpriseDataSourceProvider = Provider<EnterpriseDataSourceInterface>((
+  ref,
+) {
+  final type = ref.watch(enterpriseDataSourceTypeProvider);
+  return switch (type) {
+    EnterpriseDataSourceType.qcc => ref.watch(qccDataSourceProvider),
+    EnterpriseDataSourceType.iqicha => ref.watch(aiqichaDataSourceProvider),
+    EnterpriseDataSourceType.unknown => ref.watch(qccDataSourceProvider),
+  };
+});
 
 // ==================== Repository Provider ====================
 
@@ -70,12 +70,15 @@ final enterpriseRepositoryProvider = Provider<EnterpriseRepository>((ref) {
 /// WebView 控制器 Provider
 ///
 /// 由 EnterpriseWebViewPage 设置，供 Repository 使用执行 JS 搜索
-final webViewControllerProvider = StateProvider<InAppWebViewController?>((ref) => null);
+final webViewControllerProvider = StateProvider<InAppWebViewController?>(
+  (ref) => null,
+);
 
 /// 爱企查搜索结果 Completer Provider
 ///
 /// 用于 WebView JS 回调和 Repository 之间的异步通信
-final aiqichaSearchCompleterProvider = StateProvider<Completer<List<Map<String, String>>>?>((ref) => null);
+final aiqichaSearchCompleterProvider =
+    StateProvider<Completer<List<Map<String, String>>>?>((ref) => null);
 
 /// 企查查搜索结果 Completer Provider
 ///
@@ -84,8 +87,8 @@ final aiqichaSearchCompleterProvider = StateProvider<Completer<List<Map<String, 
 /// 允许返回两类 payload：List(搜索结果) 或 Map(needNavigate 状态)。
 final qichachaSearchCompleterProvider =
     StateProvider<Map<int, Completer<Object>>>(
-  (ref) => <int, Completer<Object>>{},
-);
+      (ref) => <int, Completer<Object>>{},
+    );
 
 // ==================== Mock Data (Demo Mode) ====================
 
@@ -96,33 +99,46 @@ const List<Enterprise> _mockEnterprises = [];
 // ==================== Search State ====================
 
 /// 企业搜索数据来源
-enum EnterpriseSearchDataSource {
-  local,
-  iqicha,
-  qcc,
-  mixed,
-}
+enum EnterpriseSearchDataSource { local, iqicha, qcc, mixed }
 
 /// 企业搜索状态
 class EnterpriseSearchState {
   const EnterpriseSearchState({
     this.isSearching = false,
+    this.isReSearching = false,
     this.results = const [],
     this.total = 0,
     this.error,
+    this.reSearchError,
     this.keyword = '',
     this.dataSource,
   });
 
   final bool isSearching;
+  final bool isReSearching;
   final List<Enterprise> results;
   final int total;
   final String? error;
+  final String? reSearchError;
   final String keyword;
   final EnterpriseSearchDataSource? dataSource;
 
   bool get hasError => error != null;
+  bool get hasReSearchError => reSearchError != null;
   bool get hasResults => results.isNotEmpty;
+
+  /// 是否可以执行重新搜索
+  ///
+  /// 条件：
+  /// - 数据来源为本地数据库
+  /// - 有搜索结果
+  /// - 当前没有正在进行的搜索
+  /// - 当前没有正在进行的重新搜索
+  bool get canReSearch =>
+      dataSource == EnterpriseSearchDataSource.local &&
+      results.isNotEmpty &&
+      !isSearching &&
+      !isReSearching;
 
   String? get dataSourceLabel {
     return switch (dataSource) {
@@ -136,19 +152,26 @@ class EnterpriseSearchState {
 
   EnterpriseSearchState copyWith({
     bool? isSearching,
+    bool? isReSearching,
     List<Enterprise>? results,
     int? total,
     String? error,
+    String? reSearchError,
     String? keyword,
     EnterpriseSearchDataSource? dataSource,
     bool clearError = false,
+    bool clearReSearchError = false,
     bool clearDataSource = false,
   }) {
     return EnterpriseSearchState(
       isSearching: isSearching ?? this.isSearching,
+      isReSearching: isReSearching ?? this.isReSearching,
       results: results ?? this.results,
       total: total ?? this.total,
       error: clearError ? null : (error ?? this.error),
+      reSearchError: clearReSearchError
+          ? null
+          : (reSearchError ?? this.reSearchError),
       keyword: keyword ?? this.keyword,
       dataSource: clearDataSource ? null : (dataSource ?? this.dataSource),
     );
@@ -157,22 +180,23 @@ class EnterpriseSearchState {
 
 /// 企业搜索 Provider
 final enterpriseSearchProvider =
-    StateNotifierProvider<EnterpriseSearchNotifier, EnterpriseSearchState>(
-        (ref) {
-  return EnterpriseSearchNotifier(
-    ref.read(enterpriseRepositoryProvider),
-    ref,
-  );
-});
+    StateNotifierProvider<EnterpriseSearchNotifier, EnterpriseSearchState>((
+      ref,
+    ) {
+      return EnterpriseSearchNotifier(
+        ref.read(enterpriseRepositoryProvider),
+        ref,
+      );
+    });
 
 /// 企业搜索 Notifier
 class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
   EnterpriseSearchNotifier(this._repository, this._ref)
-      : super(const EnterpriseSearchState());
+    : super(const EnterpriseSearchState());
 
   final EnterpriseRepository _repository;
   final Ref _ref;
-  
+
   /// 当前搜索请求的序号，用于处理竞态条件
   int _searchRequestId = 0;
 
@@ -210,7 +234,9 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
       }
 
       // 真实模式：先查 CRM 本地库（后端只查本地数据库，不调用爱企查）
-      final localResult = await _repository.searchLocal(keyword: trimmedKeyword);
+      final localResult = await _repository.searchLocal(
+        keyword: trimmedKeyword,
+      );
 
       // 检查是否已被新请求取代或 Provider 已销毁
       if (!mounted || currentRequestId != _searchRequestId) {
@@ -233,12 +259,13 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
       final currentDataSourceType = _ref.read(enterpriseDataSourceTypeProvider);
       final dataSource = _ref.read(enterpriseDataSourceProvider);
       final dataSourceName = dataSource.displayName;
-      
+
       // 根据数据源类型选择搜索方式
       if (currentDataSourceType == EnterpriseDataSourceType.iqicha) {
         // 爱企查：使用 WebView Cookie 进行 API 搜索
-        final iqichaResult =
-            await _repository.searchAiqicha(keyword: trimmedKeyword);
+        final iqichaResult = await _repository.searchAiqicha(
+          keyword: trimmedKeyword,
+        );
 
         if (!mounted || currentRequestId != _searchRequestId) {
           return;
@@ -263,8 +290,9 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
         }
       } else {
         // 企查查：通过 WebView 执行 JS 搜索
-        final qccResult =
-            await _repository.searchQichacha(keyword: trimmedKeyword);
+        final qccResult = await _repository.searchQichacha(
+          keyword: trimmedKeyword,
+        );
 
         if (!mounted || currentRequestId != _searchRequestId) {
           return;
@@ -359,10 +387,13 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
 enum DetailFetchStatus {
   /// 未开始
   idle,
+
   /// 加载中
   loading,
+
   /// 加载成功
   success,
+
   /// 加载失败
   failed,
 }
@@ -432,13 +463,16 @@ class EnterpriseWebState {
       progress: progress ?? this.progress,
       isLoading: isLoading ?? this.isLoading,
       sessionExpired: sessionExpired ?? this.sessionExpired,
-      pendingEnterprise:
-          clearPending ? null : (pendingEnterprise ?? this.pendingEnterprise),
+      pendingEnterprise: clearPending
+          ? null
+          : (pendingEnterprise ?? this.pendingEnterprise),
       isImporting: isImporting ?? this.isImporting,
       importResult: clearResult ? null : (importResult ?? this.importResult),
       error: clearError ? null : (error ?? this.error),
       detailFetchStatus: detailFetchStatus ?? this.detailFetchStatus,
-      detailFetchError: clearDetailError ? null : (detailFetchError ?? this.detailFetchError),
+      detailFetchError: clearDetailError
+          ? null
+          : (detailFetchError ?? this.detailFetchError),
     );
   }
 }
@@ -448,25 +482,20 @@ class EnterpriseWebState {
 /// WebView 状态 Provider
 final enterpriseWebProvider =
     StateNotifierProvider<EnterpriseWebNotifier, EnterpriseWebState>((ref) {
-  return EnterpriseWebNotifier(
-    ref.read(enterpriseRepositoryProvider),
-    ref,
-  );
-});
+      return EnterpriseWebNotifier(ref.read(enterpriseRepositoryProvider), ref);
+    });
 
 /// WebView 状态 Notifier
 class EnterpriseWebNotifier extends StateNotifier<EnterpriseWebState> {
-  EnterpriseWebNotifier(this._repository, this._ref) : super(const EnterpriseWebState());
+  EnterpriseWebNotifier(this._repository, this._ref)
+    : super(const EnterpriseWebState());
 
   final EnterpriseRepository _repository;
   final Ref _ref;
 
   /// 更新加载进度
   void setProgress(int progress) {
-    state = state.copyWith(
-      progress: progress,
-      isLoading: progress < 100,
-    );
+    state = state.copyWith(progress: progress, isLoading: progress < 100);
   }
 
   /// 标记会话过期
@@ -512,18 +541,24 @@ class EnterpriseWebNotifier extends StateNotifier<EnterpriseWebState> {
       return false;
     }
 
-    debugPrint('[EnterpriseWebNotifier] importPending: 开始导入 ${enterprise.name}');
+    debugPrint(
+      '[EnterpriseWebNotifier] importPending: 开始导入 ${enterprise.name}',
+    );
     state = state.copyWith(isImporting: true, clearError: true);
 
     try {
-      debugPrint('[EnterpriseWebNotifier] importPending: 调用 repository.importEnterprise()');
+      debugPrint(
+        '[EnterpriseWebNotifier] importPending: 调用 repository.importEnterprise()',
+      );
       final result = await _repository.importEnterprise(
         enterprise: enterprise,
         forceOverwrite: forceOverwrite,
       );
 
-      debugPrint('[EnterpriseWebNotifier] importPending: 结果 status=${result.status}, isSuccess=${result.isSuccess}, message=${result.message}');
-      
+      debugPrint(
+        '[EnterpriseWebNotifier] importPending: 结果 status=${result.status}, isSuccess=${result.isSuccess}, message=${result.message}',
+      );
+
       state = state.copyWith(
         isImporting: false,
         importResult: result,
@@ -534,10 +569,7 @@ class EnterpriseWebNotifier extends StateNotifier<EnterpriseWebState> {
     } catch (e, stackTrace) {
       debugPrint('[EnterpriseWebNotifier] importPending: 异常 $e');
       debugPrint('[EnterpriseWebNotifier] importPending: 堆栈 $stackTrace');
-      state = state.copyWith(
-        isImporting: false,
-        error: '导入失败: $e',
-      );
+      state = state.copyWith(isImporting: false, error: '导入失败: $e');
       return false;
     }
   }
@@ -609,7 +641,7 @@ class EnterpriseWebNotifier extends StateNotifier<EnterpriseWebState> {
 
     debugPrint('[详情获取] 开始获取企业 ${enterprise.name} 的详情');
     debugPrint('[详情获取] 详情页 URL: $detailUrl');
-    
+
     state = state.copyWith(
       detailFetchStatus: DetailFetchStatus.loading,
       clearDetailError: true,
@@ -617,9 +649,7 @@ class EnterpriseWebNotifier extends StateNotifier<EnterpriseWebState> {
 
     try {
       // 导航到详情页
-      await controller.loadUrl(
-        urlRequest: URLRequest(url: WebUri(detailUrl)),
-      );
+      await controller.loadUrl(urlRequest: URLRequest(url: WebUri(detailUrl)));
 
       // 等待页面加载完成
       await _waitForPageLoad(controller, const Duration(seconds: 10));
@@ -630,7 +660,7 @@ class EnterpriseWebNotifier extends StateNotifier<EnterpriseWebState> {
 
       // 注入并执行提取脚本
       await controller.evaluateJavascript(source: extractJs);
-      
+
       // 执行提取函数
       final resultJson = await controller.evaluateJavascript(
         source: 'JSON.stringify(window.__extractEnterpriseData())',
@@ -653,39 +683,54 @@ class EnterpriseWebNotifier extends StateNotifier<EnterpriseWebState> {
       final cleanJson = jsonStr.startsWith('"') && jsonStr.endsWith('"')
           ? jsonStr.substring(1, jsonStr.length - 1).replaceAll(r'\"', '"')
           : jsonStr;
-      
-      debugPrint('[详情获取] 提取结果: ${cleanJson.substring(0, cleanJson.length > 200 ? 200 : cleanJson.length)}...');
-      
+
+      debugPrint(
+        '[详情获取] 提取结果: ${cleanJson.substring(0, cleanJson.length > 200 ? 200 : cleanJson.length)}...',
+      );
+
       final detailMap = jsonDecode(cleanJson) as Map<String, dynamic>;
       final detailEnterprise = Enterprise.fromJson(detailMap);
 
       // 合并详情到待导入企业（保留原有的基本信息，补充详情）
       final mergedEnterprise = enterprise.copyWith(
-        creditCode: detailEnterprise.creditCode.isNotEmpty 
-            ? detailEnterprise.creditCode : enterprise.creditCode,
-        legalPerson: detailEnterprise.legalPerson.isNotEmpty 
-            ? detailEnterprise.legalPerson : enterprise.legalPerson,
-        registeredCapital: detailEnterprise.registeredCapital.isNotEmpty 
-            ? detailEnterprise.registeredCapital : enterprise.registeredCapital,
-        establishDate: detailEnterprise.establishDate.isNotEmpty 
-            ? detailEnterprise.establishDate : enterprise.establishDate,
-        status: detailEnterprise.status.isNotEmpty 
-            ? detailEnterprise.status : enterprise.status,
-        address: detailEnterprise.address.isNotEmpty 
-            ? detailEnterprise.address : enterprise.address,
-        industry: detailEnterprise.industry.isNotEmpty 
-            ? detailEnterprise.industry : enterprise.industry,
-        businessScope: detailEnterprise.businessScope.isNotEmpty 
-            ? detailEnterprise.businessScope : enterprise.businessScope,
-        phone: detailEnterprise.phone.isNotEmpty 
-            ? detailEnterprise.phone : enterprise.phone,
-        email: detailEnterprise.email.isNotEmpty 
-            ? detailEnterprise.email : enterprise.email,
-        website: detailEnterprise.website.isNotEmpty 
-            ? detailEnterprise.website : enterprise.website,
+        creditCode: detailEnterprise.creditCode.isNotEmpty
+            ? detailEnterprise.creditCode
+            : enterprise.creditCode,
+        legalPerson: detailEnterprise.legalPerson.isNotEmpty
+            ? detailEnterprise.legalPerson
+            : enterprise.legalPerson,
+        registeredCapital: detailEnterprise.registeredCapital.isNotEmpty
+            ? detailEnterprise.registeredCapital
+            : enterprise.registeredCapital,
+        establishDate: detailEnterprise.establishDate.isNotEmpty
+            ? detailEnterprise.establishDate
+            : enterprise.establishDate,
+        status: detailEnterprise.status.isNotEmpty
+            ? detailEnterprise.status
+            : enterprise.status,
+        address: detailEnterprise.address.isNotEmpty
+            ? detailEnterprise.address
+            : enterprise.address,
+        industry: detailEnterprise.industry.isNotEmpty
+            ? detailEnterprise.industry
+            : enterprise.industry,
+        businessScope: detailEnterprise.businessScope.isNotEmpty
+            ? detailEnterprise.businessScope
+            : enterprise.businessScope,
+        phone: detailEnterprise.phone.isNotEmpty
+            ? detailEnterprise.phone
+            : enterprise.phone,
+        email: detailEnterprise.email.isNotEmpty
+            ? detailEnterprise.email
+            : enterprise.email,
+        website: detailEnterprise.website.isNotEmpty
+            ? detailEnterprise.website
+            : enterprise.website,
       );
 
-      debugPrint('[详情获取] 合并后企业信息: phone=${mergedEnterprise.phone}, address=${mergedEnterprise.address}');
+      debugPrint(
+        '[详情获取] 合并后企业信息: phone=${mergedEnterprise.phone}, address=${mergedEnterprise.address}',
+      );
 
       state = state.copyWith(
         pendingEnterprise: mergedEnterprise,
@@ -696,7 +741,7 @@ class EnterpriseWebNotifier extends StateNotifier<EnterpriseWebState> {
     } catch (e) {
       debugPrint('[详情获取] 获取详情失败: $e');
       if (!mounted) return;
-      
+
       state = state.copyWith(
         detailFetchStatus: DetailFetchStatus.failed,
         detailFetchError: '获取详情失败: ${e.toString()}',

@@ -1,5 +1,124 @@
 import 'package:flutter/foundation.dart';
 
+/// 解析可选日期
+DateTime? _parseOptionalDate(dynamic value) {
+  if (value == null) return null;
+  if (value is int) {
+    return DateTime.fromMillisecondsSinceEpoch(value);
+  }
+  if (value is String) {
+    return DateTime.tryParse(value);
+  }
+  return null;
+}
+
+/// 企业画像
+@immutable
+class EnterpriseProfile {
+  const EnterpriseProfile({
+    this.creditCode,
+    this.legalPerson,
+    this.regCapital,
+    this.regDate,
+    this.staffSize,
+    this.industryName,
+    this.address,
+    this.phone,
+    this.email,
+    this.website,
+    this.status,
+    this.source,
+  });
+
+  final String? creditCode;
+  final String? legalPerson;
+  final String? regCapital;
+  final DateTime? regDate;
+  final String? staffSize;
+  final String? industryName;
+  final String? address;
+  final String? phone;
+  final String? email;
+  final String? website;
+  final String? status;
+  final String? source;
+
+  factory EnterpriseProfile.fromJson(Map<String, dynamic> json) {
+    // 处理注册资本，可能是数字或字符串
+    String? regCapitalStr;
+    final regCapitalRaw = json['regCapital'] ?? json['reg_capital'];
+    if (regCapitalRaw != null) {
+      if (regCapitalRaw is num) {
+        regCapitalStr = '${regCapitalRaw}万元';
+      } else {
+        regCapitalStr = regCapitalRaw.toString();
+      }
+    }
+
+    return EnterpriseProfile(
+      creditCode: json['creditCode'] as String? ?? json['credit_code'] as String?,
+      legalPerson: json['legalPerson'] as String? ?? json['legal_person'] as String?,
+      regCapital: regCapitalStr,
+      regDate: _parseOptionalDate(json['regDate'] ?? json['reg_date']),
+      staffSize: json['staffSize'] as String? ?? json['staff_size'] as String?,
+      industryName: json['industryName'] as String? ?? json['industry_name'] as String?,
+      address: json['address'] as String?,
+      phone: json['phone'] as String?,
+      email: json['email'] as String?,
+      website: json['website'] as String?,
+      status: json['status'] as String?,
+      source: json['source'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'creditCode': creditCode,
+      'legalPerson': legalPerson,
+      'regCapital': regCapital,
+      'regDate': regDate?.toIso8601String(),
+      'staffSize': staffSize,
+      'industryName': industryName,
+      'address': address,
+      'phone': phone,
+      'email': email,
+      'website': website,
+      'status': status,
+      'source': source,
+    };
+  }
+
+  EnterpriseProfile copyWith({
+    String? creditCode,
+    String? legalPerson,
+    String? regCapital,
+    DateTime? regDate,
+    String? staffSize,
+    String? industryName,
+    String? address,
+    String? phone,
+    String? email,
+    String? website,
+    String? status,
+    String? source,
+  }) {
+    return EnterpriseProfile(
+      creditCode: creditCode ?? this.creditCode,
+      legalPerson: legalPerson ?? this.legalPerson,
+      regCapital: regCapital ?? this.regCapital,
+      regDate: regDate ?? this.regDate,
+      staffSize: staffSize ?? this.staffSize,
+      industryName: industryName ?? this.industryName,
+      address: address ?? this.address,
+      phone: phone ?? this.phone,
+      email: email ?? this.email,
+      website: website ?? this.website,
+      status: status ?? this.status,
+      source: source ?? this.source,
+    );
+  }
+}
+
 /// 客户实体
 @immutable
 class Customer {
@@ -17,6 +136,7 @@ class Customer {
     this.industry,
     this.source,
     this.address,
+    this.enterpriseProfile,
   });
 
   final String id;
@@ -32,9 +152,13 @@ class Customer {
   final String? industry;
   final String? source;
   final String? address;
+  final EnterpriseProfile? enterpriseProfile;
 
   /// 从 JSON 创建
   factory Customer.fromJson(Map<String, dynamic> json) {
+    final rawProfile = json['enterpriseProfile'] ?? json['enterprise_profile'];
+    final profileMap = rawProfile is Map ? rawProfile.cast<String, dynamic>() : null;
+    
     return Customer(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -51,6 +175,7 @@ class Customer {
       industry: json['industry'] as String?,
       source: json['source'] as String?,
       address: json['address'] as String?,
+      enterpriseProfile: profileMap != null ? EnterpriseProfile.fromJson(profileMap) : null,
     );
   }
 
@@ -70,6 +195,7 @@ class Customer {
       'industry': industry,
       'source': source,
       'address': address,
+      'enterpriseProfile': enterpriseProfile?.toJson(),
     };
   }
 
@@ -88,6 +214,7 @@ class Customer {
     String? industry,
     String? source,
     String? address,
+    EnterpriseProfile? enterpriseProfile,
   }) {
     return Customer(
       id: id ?? this.id,
@@ -103,6 +230,7 @@ class Customer {
       industry: industry ?? this.industry,
       source: source ?? this.source,
       address: address ?? this.address,
+      enterpriseProfile: enterpriseProfile ?? this.enterpriseProfile,
     );
   }
 }

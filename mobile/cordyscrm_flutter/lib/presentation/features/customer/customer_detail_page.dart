@@ -287,28 +287,147 @@ class _BasicInfoTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              _DetailItem(label: '客户名称', value: customer.name),
-              _DetailItem(label: '负责人', value: customer.owner ?? '未分配'),
-              _DetailItem(label: '行业', value: customer.industry ?? '未设置'),
-              _DetailItem(label: '客户来源', value: customer.source ?? '未设置'),
-              _DetailItem(label: '地址', value: customer.address ?? '未设置'),
-              _DetailItem(
-                label: '创建时间',
-                value: DateFormat('yyyy-MM-dd HH:mm').format(customer.createdAt),
+      child: Column(
+        children: [
+          // 基础信息卡片
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '基础信息',
+                    style: TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _DetailItem(label: '客户名称', value: customer.name),
+                  _DetailItem(label: '负责人', value: customer.owner ?? '未分配'),
+                  _DetailItem(label: '行业', value: customer.industry ?? '未设置'),
+                  _DetailItem(label: '客户来源', value: customer.source ?? '未设置'),
+                  _DetailItem(label: '地址', value: customer.address ?? '未设置'),
+                  _DetailItem(
+                    label: '创建时间',
+                    value: DateFormat('yyyy-MM-dd HH:mm').format(customer.createdAt),
+                  ),
+                  _DetailItem(
+                    label: '最后更新',
+                    value: DateFormat('yyyy-MM-dd HH:mm').format(customer.updatedAt),
+                  ),
+                ],
               ),
-              _DetailItem(
-                label: '最后更新',
-                value: DateFormat('yyyy-MM-dd HH:mm').format(customer.updatedAt),
-              ),
-            ],
+            ),
           ),
+          const SizedBox(height: 12),
+          // 企业信息卡片
+          _EnterpriseInfoSection(profile: customer.enterpriseProfile),
+        ],
+      ),
+    );
+  }
+}
+
+/// 企业信息区域
+class _EnterpriseInfoSection extends StatelessWidget {
+  const _EnterpriseInfoSection({required this.profile});
+
+  final EnterpriseProfile? profile;
+
+  String _valueOrFallback(String? value) {
+    if (value == null || value.trim().isEmpty) return '未设置';
+    return value;
+  }
+
+  String _formatDate(DateTime? value) {
+    if (value == null) return '未设置';
+    return DateFormat('yyyy-MM-dd').format(value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.business, size: 20, color: AppTheme.primaryColor),
+                const SizedBox(width: 8),
+                const Text(
+                  '企业工商信息',
+                  style: TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                ),
+                const Spacer(),
+                if (profile != null && profile!.source != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      profile!.source == 'webview' ? '企查查' : '爱企查',
+                      style: const TextStyle(
+                        color: AppTheme.primaryColor,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (profile == null)
+              Container(
+                padding: const EdgeInsets.all(24),
+                child: const Center(
+                  child: Column(
+                    children: [
+                      Icon(Icons.info_outline, size: 32, color: AppTheme.textTertiary),
+                      SizedBox(height: 8),
+                      Text(
+                        '暂无企业工商信息',
+                        style: TextStyle(color: AppTheme.textSecondary),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        '可通过企查查搜索导入企业信息',
+                        style: TextStyle(color: AppTheme.textTertiary, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              Column(
+                children: [
+                  _DetailItem(label: '统一社会信用代码', value: _valueOrFallback(profile!.creditCode)),
+                  _DetailItem(label: '法定代表人', value: _valueOrFallback(profile!.legalPerson)),
+                  _DetailItem(label: '注册资本', value: _valueOrFallback(profile!.regCapital)),
+                  _DetailItem(label: '成立日期', value: _formatDate(profile!.regDate)),
+                  _DetailItem(label: '员工规模', value: _valueOrFallback(profile!.staffSize)),
+                  _DetailItem(label: '所属行业', value: _valueOrFallback(profile!.industryName)),
+                  _DetailItem(label: '企业地址', value: _valueOrFallback(profile!.address)),
+                  _DetailItem(label: '联系电话', value: _valueOrFallback(profile!.phone)),
+                  _DetailItem(label: '企业邮箱', value: _valueOrFallback(profile!.email)),
+                  _DetailItem(label: '企业网站', value: _valueOrFallback(profile!.website)),
+                  _DetailItem(label: '经营状态', value: _valueOrFallback(profile!.status)),
+                ],
+              ),
+          ],
         ),
       ),
     );

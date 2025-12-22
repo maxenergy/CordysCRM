@@ -158,6 +158,30 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    // 监听重新搜索错误，显示 SnackBar
+    ref.listen<EnterpriseSearchState>(enterpriseSearchProvider, (
+      previous,
+      next,
+    ) {
+      // 当 reSearchError 从 null 变为非 null 时显示错误提示
+      if (previous?.reSearchError == null && next.reSearchError != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.reSearchError!),
+            backgroundColor: theme.colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: '关闭',
+              textColor: theme.colorScheme.onError,
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+            ),
+          ),
+        );
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('企业搜索'),

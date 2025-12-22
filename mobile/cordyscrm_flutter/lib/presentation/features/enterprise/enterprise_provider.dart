@@ -230,8 +230,10 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
 
     state = state.copyWith(
       isSearching: true,
+      isReSearching: false, // 清理重新搜索状态
       keyword: trimmedKeyword,
       clearError: true,
+      clearReSearchError: true, // 清理重新搜索错误
       clearDataSource: true,
     );
 

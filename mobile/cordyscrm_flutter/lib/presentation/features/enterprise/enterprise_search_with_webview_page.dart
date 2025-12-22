@@ -196,9 +196,7 @@ class _EnterpriseSearchWithWebViewPageState
 
     if (dataSourceType != null) {
       // 检测到链接，加载到 WebView
-      _webViewController?.loadUrl(
-        urlRequest: URLRequest(url: WebUri(content)),
-      );
+      _webViewController?.loadUrl(urlRequest: URLRequest(url: WebUri(content)));
       _showWebView();
     } else {
       _searchController.text = content;
@@ -222,8 +220,9 @@ class _EnterpriseSearchWithWebViewPageState
   Future<void> _performSearch(String keyword) async {
     if (keyword.length < 2) return;
     // 搜索前记录 WebView URL 状态，便于调试
-    await _logQccUrlBeforeSearch(keyword)
-        .timeout(const Duration(milliseconds: 500), onTimeout: () {});
+    await _logQccUrlBeforeSearch(
+      keyword,
+    ).timeout(const Duration(milliseconds: 500), onTimeout: () {});
     await ref.read(enterpriseSearchProvider.notifier).search(keyword);
   }
 
@@ -244,8 +243,9 @@ class _EnterpriseSearchWithWebViewPageState
       final url = await controller.getUrl();
       String? href;
       try {
-        final jsValue =
-            await controller.evaluateJavascript(source: 'location.href');
+        final jsValue = await controller.evaluateJavascript(
+          source: 'location.href',
+        );
         href = jsValue?.toString();
       } catch (_) {}
 
@@ -264,7 +264,7 @@ class _EnterpriseSearchWithWebViewPageState
       _fetchDetailAndImport(enterprise);
       return;
     }
-    
+
     ref.read(enterpriseWebProvider.notifier).setPendingEnterprise(enterprise);
     _showPreviewSheet();
   }
@@ -282,17 +282,17 @@ class _EnterpriseSearchWithWebViewPageState
       );
       return;
     }
-    
+
     // 构建详情页 URL
     final detailUrl = 'https://www.qcc.com/firm/${enterprise.id}.html';
-    
+
     // 设置自动提取标志
     setState(() {
       _pendingAutoExtract = true;
     });
-    
+
     debugPrint('[企查查] 开始跳转详情页: $detailUrl');
-    
+
     // 显示加载提示
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -302,13 +302,13 @@ class _EnterpriseSearchWithWebViewPageState
         ),
       );
     }
-    
+
     // 在后台 WebView 中加载详情页，不切换视图（保持搜索界面）
     // _showWebView();  // 注释掉：不再切换到 WebView 视图
     await _webViewController!.loadUrl(
       urlRequest: URLRequest(url: WebUri(detailUrl)),
     );
-    
+
     // 设置超时定时器（10秒后如果还没提取成功，提示用户手动操作）
     _autoExtractTimeoutTimer?.cancel();
     _autoExtractTimeoutTimer = Timer(const Duration(seconds: 10), () {
@@ -327,28 +327,31 @@ class _EnterpriseSearchWithWebViewPageState
       }
     });
   }
-  
+
   /// 自动提取详情页数据
   Future<void> _autoExtractDetailData() async {
     if (_webViewController == null || !mounted) return;
-    
+
     debugPrint('[企查查] 开始自动提取详情页数据');
-    
+
     try {
       // 先注入提取脚本
-      await _webViewController!.evaluateJavascript(source: _dataSource.extractDataJs);
-      
+      await _webViewController!.evaluateJavascript(
+        source: _dataSource.extractDataJs,
+      );
+
       // 等待 DOM 渲染完成后执行提取
       await Future.delayed(const Duration(milliseconds: 500));
-      
+
       // 再次检查状态
       if (!mounted || !_pendingAutoExtract) {
         debugPrint('[企查查] 提取前状态已变化，跳过');
         return;
       }
-      
+
       // 调用提取函数并通过 handler 回调
-      await _webViewController!.evaluateJavascript(source: '''
+      await _webViewController!.evaluateJavascript(
+        source: '''
         (function() {
           try {
             if (typeof window.__extractEnterpriseData === 'function') {
@@ -365,7 +368,8 @@ class _EnterpriseSearchWithWebViewPageState
             window.flutter_inappwebview.callHandler('onError', '提取失败: ' + e.toString());
           }
         })();
-      ''');
+      ''',
+      );
     } catch (e) {
       debugPrint('[企查查] 自动提取异常: $e');
       // 异常时重置状态，让超时定时器处理
@@ -375,10 +379,7 @@ class _EnterpriseSearchWithWebViewPageState
         });
         _autoExtractTimeoutTimer?.cancel();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('自动提取失败: $e'),
-            backgroundColor: Colors.orange,
-          ),
+          SnackBar(content: Text('自动提取失败: $e'), backgroundColor: Colors.orange),
         );
       }
     }
@@ -413,14 +414,42 @@ class _EnterpriseSearchWithWebViewPageState
     if (_webViewController == null) return;
 
     final dataSource = _dataSource;
-    await _webViewController!.evaluateJavascript(source: dataSource.extractDataJs);
-    await _webViewController!.evaluateJavascript(source: dataSource.injectButtonJs);
+    await _webViewController!.evaluateJavascript(
+      source: dataSource.extractDataJs,
+    );
+    await _webViewController!.evaluateJavascript(
+      source: dataSource.injectButtonJs,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dataSource = ref.watch(enterpriseDataSourceProvider);
+
+    // 监听重新搜索错误，显示 SnackBar
+    ref.listen<EnterpriseSearchState>(enterpriseSearchProvider, (
+      previous,
+      next,
+    ) {
+      // 当 reSearchError 从 null 变为非 null 时显示错误提示
+      if (previous?.reSearchError == null && next.reSearchError != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.reSearchError!),
+            backgroundColor: theme.colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: '关闭',
+              textColor: theme.colorScheme.onError,
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+            ),
+          ),
+        );
+      }
+    });
 
     return PopScope(
       canPop: _currentViewIndex == 0,
@@ -487,9 +516,7 @@ class _EnterpriseSearchWithWebViewPageState
             ),
             // 搜索视图在顶层，通过条件渲染控制
             if (_currentViewIndex == 0)
-              Positioned.fill(
-                child: _buildSearchView(theme),
-              ),
+              Positioned.fill(child: _buildSearchView(theme)),
           ],
         ),
       ),
@@ -522,8 +549,9 @@ class _EnterpriseSearchWithWebViewPageState
                 borderRadius: BorderRadius.circular(12),
               ),
               filled: true,
-              fillColor:
-                  theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+              fillColor: theme.colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.3,
+              ),
             ),
             onChanged: _onSearchChanged,
             textInputAction: TextInputAction.search,
@@ -540,9 +568,7 @@ class _EnterpriseSearchWithWebViewPageState
     final dataSource = ref.watch(enterpriseDataSourceProvider);
 
     return InAppWebView(
-      initialUrlRequest: URLRequest(
-        url: WebUri(dataSource.startUrl),
-      ),
+      initialUrlRequest: URLRequest(url: WebUri(dataSource.startUrl)),
       initialSettings: _webViewSettings,
       onWebViewCreated: (controller) {
         _webViewController = controller;
@@ -554,8 +580,10 @@ class _EnterpriseSearchWithWebViewPageState
             if (!mounted) return;
             if (args.isNotEmpty) {
               final json = args.first as String? ?? '{}';
-              debugPrint('[企查查] onEnterpriseData 收到数据: ${json.substring(0, json.length > 200 ? 200 : json.length)}...');
-              
+              debugPrint(
+                '[企查查] onEnterpriseData 收到数据: ${json.substring(0, json.length > 200 ? 200 : json.length)}...',
+              );
+
               // 重置自动提取状态
               if (_pendingAutoExtract) {
                 setState(() {
@@ -563,8 +591,10 @@ class _EnterpriseSearchWithWebViewPageState
                 });
                 _autoExtractTimeoutTimer?.cancel();
               }
-              
-              ref.read(enterpriseWebProvider.notifier).onEnterpriseCaptured(json);
+
+              ref
+                  .read(enterpriseWebProvider.notifier)
+                  .onEnterpriseCaptured(json);
               _showPreviewSheet();
             }
           },
@@ -576,7 +606,7 @@ class _EnterpriseSearchWithWebViewPageState
             if (!mounted) return;
             final error = args.isNotEmpty ? args.first.toString() : '未知错误';
             debugPrint('[企查查] onError: $error');
-            
+
             // 重置自动提取状态
             if (_pendingAutoExtract) {
               setState(() {
@@ -584,7 +614,7 @@ class _EnterpriseSearchWithWebViewPageState
               });
               _autoExtractTimeoutTimer?.cancel();
             }
-            
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('提取失败: $error'),
@@ -629,7 +659,8 @@ class _EnterpriseSearchWithWebViewPageState
 
               // 处理 Map 类型（needNavigate 状态）
               if (decoded is Map) {
-                final needNavigate = decoded['needNavigate'] == true ||
+                final needNavigate =
+                    decoded['needNavigate'] == true ||
                     decoded['needNavigate']?.toString() == 'true';
                 if (needNavigate) {
                   completer.complete(<String, Object?>{
@@ -719,9 +750,7 @@ class _EnterpriseSearchWithWebViewPageState
           if (uri.host == 'm.qcc.com') {
             final desktopUrl = url.replaceFirst('m.qcc.com', 'www.qcc.com');
             debugPrint('[WebView] 重定向移动版到桌面版: $url -> $desktopUrl');
-            controller.loadUrl(
-              urlRequest: URLRequest(url: WebUri(desktopUrl)),
-            );
+            controller.loadUrl(urlRequest: URLRequest(url: WebUri(desktopUrl)));
             return NavigationActionPolicy.CANCEL;
           }
         }
@@ -738,23 +767,25 @@ class _EnterpriseSearchWithWebViewPageState
         final currentUrl = url?.toString() ?? '';
         final currentDataSource = ref.read(enterpriseDataSourceProvider);
 
-        debugPrint('[企查查] onLoadStop: url=$currentUrl, pendingAutoExtract=$_pendingAutoExtract');
+        debugPrint(
+          '[企查查] onLoadStop: url=$currentUrl, pendingAutoExtract=$_pendingAutoExtract',
+        );
 
         if (currentDataSource.isDetailPage(currentUrl)) {
           await _injectScripts();
-          
+
           // 如果是从搜索结果跳转过来的，自动提取数据
           if (_pendingAutoExtract) {
             debugPrint('[企查查] 检测到详情页加载完成，开始自动提取数据');
             // 延迟等待 DOM 渲染完成
             await Future.delayed(const Duration(milliseconds: 800));
-            
+
             // 延迟后再次检查状态（可能已被超时或其他操作重置）
             if (!mounted || !_pendingAutoExtract) {
               debugPrint('[企查查] 延迟后状态已变化，跳过自动提取');
               return;
             }
-            
+
             await _autoExtractDetailData();
           }
         }
@@ -801,10 +832,9 @@ class _EnterpriseSearchWithWebViewPageState
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onPrimaryContainer
-                        .withValues(alpha: 0.7),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -879,8 +909,9 @@ class _EnterpriseSearchWithWebViewPageState
         );
       }
       final dataSourceType = ref.read(enterpriseDataSourceTypeProvider);
-      final dataSourceName =
-          dataSourceType == EnterpriseDataSourceType.qcc ? '企查查' : '爱企查';
+      final dataSourceName = dataSourceType == EnterpriseDataSourceType.qcc
+          ? '企查查'
+          : '爱企查';
       return _buildEmptyState(
         icon: Icons.business_center_outlined,
         title: '输入企业名称或信用代码',
@@ -954,9 +985,15 @@ class _EnterpriseSearchWithWebViewPageState
         children: [
           Icon(icon, size: 64, color: Colors.grey.shade400),
           const SizedBox(height: 16),
-          Text(title, style: TextStyle(fontSize: 16, color: Colors.grey.shade700)),
+          Text(
+            title,
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
+          ),
           const SizedBox(height: 8),
-          Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+          Text(
+            subtitle,
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+          ),
         ],
       ),
     );
@@ -994,7 +1031,39 @@ class _EnterpriseSearchWithWebViewPageState
               ),
             ),
           ),
+          // 重新搜索按钮（仅在本地结果时显示）
+          if (state.canReSearch || state.isReSearching)
+            _buildReSearchButton(state),
         ],
+      ),
+    );
+  }
+
+  /// 构建重新搜索按钮
+  Widget _buildReSearchButton(EnterpriseSearchState state) {
+    final dataSource = ref.read(enterpriseDataSourceProvider);
+    final dataSourceName = dataSource.displayName;
+    final isLoading = state.isReSearching;
+
+    return TextButton.icon(
+      onPressed: isLoading
+          ? null
+          : () {
+              ref.read(enterpriseSearchProvider.notifier).reSearchExternal();
+            },
+      icon: isLoading
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.refresh, size: 16),
+      label: Text(isLoading ? '搜索中...' : '搜索$dataSourceName'),
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        textStyle: const TextStyle(fontSize: 12),
       ),
     );
   }

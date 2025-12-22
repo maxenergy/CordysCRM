@@ -1048,8 +1048,31 @@ class _EnterpriseSearchWithWebViewPageState
     return TextButton.icon(
       onPressed: isLoading
           ? null
-          : () {
-              ref.read(enterpriseSearchProvider.notifier).reSearchExternal();
+          : () async {
+              // 获取当前输入框的值，确保与搜索关键词同步
+              final keyword = _searchController.text.trim();
+              if (keyword.length < 2) {
+                // 关键词太短，触发错误提示
+                ref
+                    .read(enterpriseSearchProvider.notifier)
+                    .reSearchExternal(keyword: keyword);
+                return;
+              }
+
+              final currentState = ref.read(enterpriseSearchProvider);
+              // 如果输入框的值与 state.keyword 不一致，先执行一次完整搜索
+              if (keyword != currentState.keyword) {
+                await _performSearch(keyword);
+                if (!mounted) return;
+              }
+
+              // 检查最新状态，确保可以执行外部搜索
+              final latestState = ref.read(enterpriseSearchProvider);
+              if (latestState.canReSearch && !latestState.isReSearching) {
+                await ref
+                    .read(enterpriseSearchProvider.notifier)
+                    .reSearchExternal(keyword: keyword);
+              }
             },
       icon: isLoading
           ? const SizedBox(

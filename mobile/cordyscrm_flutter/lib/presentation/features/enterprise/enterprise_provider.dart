@@ -388,22 +388,36 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
   ///
   /// 仅在当前结果来自本地库时触发外部搜索，并将外部结果追加到本地结果后。
   /// 保留本地结果，成功时更新 dataSource 为 mixed，失败时设置 reSearchError。
-  Future<void> reSearchExternal() async {
+  ///
+  /// [keyword] 可选参数，允许调用方传入当前输入框的值，解决输入框与 state.keyword 不同步的问题。
+  Future<void> reSearchExternal({String? keyword}) async {
     if (!state.canReSearch) return;
 
-    final keyword = state.keyword;
+    // 优先使用传入的 keyword，否则使用 state 中保存的 keyword
+    final resolvedKeyword = (keyword ?? state.keyword).trim();
+    if (resolvedKeyword.length < 2) {
+      state = state.copyWith(
+        reSearchError: '请输入至少2个字符的企业名称',
+      );
+      return;
+    }
+
     final localResults = state.results;
     final currentRequestId = _searchRequestId;
 
-    state = state.copyWith(isReSearching: true, clearReSearchError: true);
+    state = state.copyWith(
+      isReSearching: true,
+      clearReSearchError: true,
+      keyword: resolvedKeyword, // 同步更新 keyword
+    );
 
     try {
       final currentDataSourceType = _ref.read(enterpriseDataSourceTypeProvider);
 
       final externalResult =
           currentDataSourceType == EnterpriseDataSourceType.iqicha
-          ? await _repository.searchAiqicha(keyword: keyword)
-          : await _repository.searchQichacha(keyword: keyword);
+          ? await _repository.searchAiqicha(keyword: resolvedKeyword)
+          : await _repository.searchQichacha(keyword: resolvedKeyword);
 
       // 检查是否已被新请求取代或 Provider 已销毁
       if (!mounted || currentRequestId != _searchRequestId) {

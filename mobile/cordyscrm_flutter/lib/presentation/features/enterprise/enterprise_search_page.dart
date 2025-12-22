@@ -484,23 +484,33 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
             ),
           ),
           // 重新搜索按钮（仅在本地结果时显示）
-          if (state.canReSearch) _buildReSearchButton(),
+          if (state.canReSearch || state.isReSearching)
+            _buildReSearchButton(state),
         ],
       ),
     );
   }
 
   /// 构建重新搜索按钮
-  Widget _buildReSearchButton() {
+  Widget _buildReSearchButton(EnterpriseSearchState state) {
     final dataSource = ref.read(enterpriseDataSourceProvider);
     final dataSourceName = dataSource.displayName;
+    final isLoading = state.isReSearching;
 
     return TextButton.icon(
-      onPressed: () {
-        ref.read(enterpriseSearchProvider.notifier).reSearchExternal();
-      },
-      icon: const Icon(Icons.refresh, size: 16),
-      label: Text('搜索$dataSourceName'),
+      onPressed: isLoading
+          ? null
+          : () {
+              ref.read(enterpriseSearchProvider.notifier).reSearchExternal();
+            },
+      icon: isLoading
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.refresh, size: 16),
+      label: Text(isLoading ? '搜索中...' : '搜索$dataSourceName'),
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         minimumSize: Size.zero,

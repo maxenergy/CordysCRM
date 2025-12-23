@@ -21,13 +21,15 @@ ShareHandler? _shareHandler;
 /// Firebase 是否已初始化
 bool _firebaseInitialized = false;
 
+/// 全局窗口管理服务（仅桌面平台使用）
+final WindowManagerService _windowManagerService = WindowManagerService();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // 初始化窗口管理（仅在桌面平台）
   if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
-    final windowManager = WindowManagerService();
-    await windowManager.initialize();
+    await _windowManagerService.initialize();
   }
   
   // 设置状态栏样式
@@ -132,6 +134,8 @@ class _CordysCRMAppState extends State<CordysCRMApp> {
   void dispose() {
     // 释放分享处理器资源
     _shareHandler?.dispose();
+    // 释放窗口管理服务
+    _windowManagerService.dispose();
     super.dispose();
   }
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -103,20 +104,28 @@ class WindowManagerService with WindowListener {
   /// 保存窗口状态
   /// 
   /// 将当前窗口的大小、位置和最大化状态保存到 SharedPreferences。
+  /// 最大化时仅保存最大化状态，避免覆盖正常尺寸和位置。
   Future<void> _saveWindowState() async {
     if (!_isDesktop) return;
 
     try {
       final prefs = await SharedPreferences.getInstance();
+      final isMaximized = await windowManager.isMaximized();
+
+      // 最大化时仅保存最大化状态，避免覆盖正常尺寸和位置
+      if (isMaximized) {
+        await prefs.setBool(_kPrefMaximized, true);
+        return;
+      }
+
       final size = await windowManager.getSize();
       final position = await windowManager.getPosition();
-      final isMaximized = await windowManager.isMaximized();
 
       await prefs.setDouble(_kPrefWidth, size.width);
       await prefs.setDouble(_kPrefHeight, size.height);
       await prefs.setDouble(_kPrefX, position.dx);
       await prefs.setDouble(_kPrefY, position.dy);
-      await prefs.setBool(_kPrefMaximized, isMaximized);
+      await prefs.setBool(_kPrefMaximized, false);
     } catch (e) {
       debugPrint('[WindowManagerService] 保存窗口状态失败: $e');
     }

@@ -8,13 +8,15 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 import 'package:uuid/uuid.dart';
 
+import '../utils/adaptive_file_picker.dart';
+import 'platform_service.dart';
+
 /// 媒体服务 - 处理图片选择、压缩和音频录制
 class MediaService {
   static final MediaService _instance = MediaService._internal();
   factory MediaService() => _instance;
   MediaService._internal();
 
-  final ImagePicker _imagePicker = ImagePicker();
   final AudioRecorder _audioRecorder = AudioRecorder();
   final _uuid = const Uuid();
 
@@ -44,24 +46,21 @@ class MediaService {
     return true;
   }
 
-  /// 从相册选择图片
+  /// 从相册选择图片（自适应移动端和桌面端）
   Future<List<File>> pickImagesFromGallery({int maxImages = 9}) async {
     try {
-      final pickedFiles = await _imagePicker.pickMultiImage(
-        imageQuality: 80,
-        maxWidth: 1920,
-        maxHeight: 1920,
+      // 使用自适应文件选择器
+      final filePaths = await AdaptiveFilePicker.pickImages(
+        maxImages: maxImages,
+        allowCamera: false,
       );
       
-      if (pickedFiles.isEmpty) return [];
-      
-      // 限制数量
-      final limitedFiles = pickedFiles.take(maxImages).toList();
+      if (filePaths == null || filePaths.isEmpty) return [];
       
       // 压缩图片
       final compressedFiles = <File>[];
-      for (final xFile in limitedFiles) {
-        final compressed = await _compressImage(File(xFile.path));
+      for (final path in filePaths) {
+        final compressed = await _compressImage(File(path));
         if (compressed != null) {
           compressedFiles.add(compressed);
         }
@@ -74,25 +73,27 @@ class MediaService {
     }
   }
 
-  /// 拍照
+  /// 拍照（仅移动端支持）
   Future<File?> takePhoto() async {
     try {
+      // 桌面端不支持相机
+      final platformService = PlatformService();
+      if (!platformService.supportsCameraFeatures) {
+        debugPrint('[MediaService] 当前平台不支持相机功能');
+        return null;
+      }
+
       final hasPermission = await requestCameraPermission();
       if (!hasPermission) {
         debugPrint('[MediaService] 相机权限被拒绝');
         return null;
       }
 
-      final pickedFile = await _imagePicker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 80,
-        maxWidth: 1920,
-        maxHeight: 1920,
-      );
+      final filePath = await AdaptiveFilePicker.pickImageFromCamera();
       
-      if (pickedFile == null) return null;
+      if (filePath == null) return null;
       
-      return await _compressImage(File(pickedFile.path));
+      return await _compressImage(File(filePath));
     } catch (e) {
       debugPrint('[MediaService] 拍照失败: $e');
       return null;

@@ -1,0 +1,61 @@
+{
+  "description": "Real-time memory capture hooks for memorymcp integration",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${KIRO_WORKSPACE}/.kiro/hooks/scripts/session-start-hook.js\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${KIRO_WORKSPACE}/.kiro/hooks/scripts/user-prompt-hook.js\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${KIRO_WORKSPACE}/.kiro/hooks/scripts/tool-use-hook.js\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${KIRO_WORKSPACE}/.kiro/hooks/scripts/stop-hook.js\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${KIRO_WORKSPACE}/.kiro/hooks/scripts/session-end-hook.js\"",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,12 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/services/media_service.dart';
+import '../../core/services/platform_service.dart';
 import '../theme/app_theme.dart';
 
 /// 图片选择网格组件
-class ImagePickerGrid extends StatelessWidget {
+class ImagePickerGrid extends ConsumerWidget {
   const ImagePickerGrid({
     super.key,
     required this.images,
@@ -23,7 +25,8 @@ class ImagePickerGrid extends StatelessWidget {
   final double imageSize;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final platformService = ref.read(platformServiceProvider);
     final canAddMore = images.length < maxImages;
 
     return Wrap(
@@ -48,6 +51,7 @@ class ImagePickerGrid extends StatelessWidget {
         if (canAddMore)
           _AddImageButton(
             size: imageSize,
+            supportsCameraFeatures: platformService.supportsCameraFeatures,
             onPickFromGallery: () => _pickFromGallery(context),
             onTakePhoto: () => _takePhoto(context),
           ),
@@ -197,18 +201,22 @@ class _ImageTile extends StatelessWidget {
 class _AddImageButton extends StatelessWidget {
   const _AddImageButton({
     required this.size,
+    required this.supportsCameraFeatures,
     required this.onPickFromGallery,
     required this.onTakePhoto,
   });
 
   final double size;
+  final bool supportsCameraFeatures;
   final VoidCallback onPickFromGallery;
   final VoidCallback onTakePhoto;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => _showOptions(context),
+      onTap: () => supportsCameraFeatures 
+          ? _showOptions(context) 
+          : onPickFromGallery(),
       child: Container(
         width: size,
         height: size,
@@ -247,14 +255,15 @@ class _AddImageButton extends StatelessWidget {
                 onPickFromGallery();
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('拍照'),
-              onTap: () {
-                Navigator.pop(context);
-                onTakePhoto();
-              },
-            ),
+            if (supportsCameraFeatures)
+              ListTile(
+                leading: const Icon(Icons.camera_alt_outlined),
+                title: const Text('拍照'),
+                onTap: () {
+                  Navigator.pop(context);
+                  onTakePhoto();
+                },
+              ),
             const SizedBox(height: 8),
           ],
         ),

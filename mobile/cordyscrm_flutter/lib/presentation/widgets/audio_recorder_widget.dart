@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/services/media_service.dart';
+import '../../core/services/platform_service.dart';
 import '../theme/app_theme.dart';
 
 /// 音频录制组件
-class AudioRecorderWidget extends StatefulWidget {
+class AudioRecorderWidget extends ConsumerStatefulWidget {
   const AudioRecorderWidget({
     super.key,
     required this.onRecordingComplete,
@@ -17,10 +19,10 @@ class AudioRecorderWidget extends StatefulWidget {
   final Duration maxDuration;
 
   @override
-  State<AudioRecorderWidget> createState() => _AudioRecorderWidgetState();
+  ConsumerState<AudioRecorderWidget> createState() => _AudioRecorderWidgetState();
 }
 
-class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
+class _AudioRecorderWidgetState extends ConsumerState<AudioRecorderWidget> {
   final MediaService _mediaService = MediaService();
   bool _isRecording = false;
   Duration _recordDuration = Duration.zero;
@@ -36,6 +38,21 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
   }
 
   Future<void> _startRecording() async {
+    final platformService = ref.read(platformServiceProvider);
+    
+    // 桌面端不支持录音
+    if (!platformService.supportsVoiceRecording) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('语音录制功能仅在移动端可用'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+      return;
+    }
+    
     final success = await _mediaService.startRecording();
     if (success) {
       setState(() {
@@ -100,6 +117,44 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final platformService = ref.read(platformServiceProvider);
+    
+    // 桌面端显示不可用提示
+    if (!platformService.supportsVoiceRecording) {
+      return Tooltip(
+        message: '此功能仅在移动端可用',
+        child: Opacity(
+          opacity: 0.5,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppTheme.borderColor),
+              borderRadius: BorderRadius.circular(8),
+              color: AppTheme.backgroundColor,
+            ),
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.mic_off_outlined, size: 20, color: AppTheme.textTertiary),
+                    SizedBox(width: 6),
+                    Text('语音', style: TextStyle(color: AppTheme.textTertiary)),
+                  ],
+                ),
+                SizedBox(height: 2),
+                Text(
+                  '仅移动端可用',
+                  style: TextStyle(fontSize: 10, color: AppTheme.textTertiary),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    
     if (_isRecording) {
       return Container(
         padding: const EdgeInsets.all(16),

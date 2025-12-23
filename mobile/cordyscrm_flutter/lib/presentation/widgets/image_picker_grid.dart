@@ -213,6 +213,9 @@ class _AddImageButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 根据平台调整按钮文案
+    final buttonText = supportsCameraFeatures ? '添加图片' : '从文件选择';
+    
     return GestureDetector(
       onTap: () => supportsCameraFeatures 
           ? _showOptions(context) 
@@ -225,12 +228,18 @@ class _AddImageButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AppTheme.borderColor, style: BorderStyle.solid),
         ),
-        child: const Column(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.add_photo_alternate_outlined, size: 28, color: AppTheme.textTertiary),
             SizedBox(height: 4),
-            Text('添加图片', style: TextStyle(fontSize: 10, color: AppTheme.textTertiary)),
+            Text(
+              buttonText, 
+              style: TextStyle(fontSize: 10, color: AppTheme.textTertiary),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
       ),

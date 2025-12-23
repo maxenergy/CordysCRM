@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/services/enterprise_settings_service.dart';
+import 'core/services/window_manager_service.dart';
 import 'presentation/features/enterprise/enterprise_provider.dart';
 import 'presentation/routing/app_router.dart';
 import 'presentation/theme/app_theme.dart';
@@ -20,6 +23,12 @@ bool _firebaseInitialized = false;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // 初始化窗口管理（仅在桌面平台）
+  if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+    final windowManager = WindowManagerService();
+    await windowManager.initialize();
+  }
   
   // 设置状态栏样式
   SystemChrome.setSystemUIOverlayStyle(

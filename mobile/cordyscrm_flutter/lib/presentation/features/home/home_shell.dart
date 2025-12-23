@@ -18,22 +18,56 @@ class HomeShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _calculateSelectedIndex(context),
-        onDestinationSelected: (index) => _onDestinationSelected(index, context),
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        destinations: appNavItems
-            .map(
-              (item) => NavigationDestination(
-                icon: Icon(item.icon),
-                selectedIcon: Icon(item.selectedIcon),
-                label: item.label,
-              ),
-            )
-            .toList(),
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 600;
+        final selectedIndex = _calculateSelectedIndex(context);
+
+        if (isDesktop) {
+          // Desktop layout with NavigationRail
+          return Scaffold(
+            body: Row(
+              children: [
+                NavigationRail(
+                  selectedIndex: selectedIndex,
+                  onDestinationSelected: (index) => _onDestinationSelected(index, context),
+                  labelType: NavigationRailLabelType.selected,
+                  destinations: appNavItems
+                      .map(
+                        (item) => NavigationRailDestination(
+                          icon: Icon(item.icon),
+                          selectedIcon: Icon(item.selectedIcon),
+                          label: Text(item.label),
+                        ),
+                      )
+                      .toList(),
+                ),
+                const VerticalDivider(thickness: 1, width: 1),
+                Expanded(child: child),
+              ],
+            ),
+          );
+        } else {
+          // Mobile layout with BottomNavigationBar
+          return Scaffold(
+            body: child,
+            bottomNavigationBar: NavigationBar(
+              selectedIndex: selectedIndex,
+              onDestinationSelected: (index) => _onDestinationSelected(index, context),
+              labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+              destinations: appNavItems
+                  .map(
+                    (item) => NavigationDestination(
+                      icon: Icon(item.icon),
+                      selectedIcon: Icon(item.selectedIcon),
+                      label: item.label,
+                    ),
+                  )
+                  .toList(),
+            ),
+          );
+        }
+      },
     );
   }
 

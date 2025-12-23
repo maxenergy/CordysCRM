@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/services/enterprise_settings_service.dart';
+import 'core/services/platform_service.dart';
 import 'core/services/window_manager_service.dart';
 import 'presentation/features/enterprise/enterprise_provider.dart';
 import 'presentation/routing/app_router.dart';
@@ -120,16 +121,16 @@ void _restoreEnterpriseDataSource(ProviderContainer container) {
 }
 
 /// CordysCRM 应用
-class CordysCRMApp extends StatefulWidget {
+class CordysCRMApp extends ConsumerStatefulWidget {
   const CordysCRMApp({super.key, required this.router});
 
   final GoRouter router;
 
   @override
-  State<CordysCRMApp> createState() => _CordysCRMAppState();
+  ConsumerState<CordysCRMApp> createState() => _CordysCRMAppState();
 }
 
-class _CordysCRMAppState extends State<CordysCRMApp> {
+class _CordysCRMAppState extends ConsumerState<CordysCRMApp> {
   @override
   void dispose() {
     // 释放分享处理器资源
@@ -141,11 +142,14 @@ class _CordysCRMAppState extends State<CordysCRMApp> {
 
   @override
   Widget build(BuildContext context) {
+    final platformService = ref.watch(platformServiceProvider);
+    final isDesktop = platformService.isDesktop;
+
     return MaterialApp.router(
       title: 'CordysCRM',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: AppTheme.lightTheme(isDesktop),
+      darkTheme: AppTheme.darkTheme(isDesktop),
       themeMode: ThemeMode.system,
       routerConfig: widget.router,
     );

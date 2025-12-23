@@ -81,6 +81,11 @@ dependencies:
   
   # 剪贴板
   # clipboard 功能使用 flutter/services
+  
+  # 桌面平台支持
+  window_manager: ^0.3.7
+  desktop_webview_window: ^0.2.3
+  file_picker: ^6.1.1
 
 dev_dependencies:
   flutter_test:

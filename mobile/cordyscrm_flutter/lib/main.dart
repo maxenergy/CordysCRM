@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,11 +29,14 @@ void main() async {
     ),
   );
   
-  // 设置屏幕方向
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+  // 设置屏幕方向（仅在移动平台）
+  if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.android || 
+                  defaultTargetPlatform == TargetPlatform.iOS)) {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+  }
   
   // 初始化 Firebase（如果配置文件存在）
   await _initializeFirebase();

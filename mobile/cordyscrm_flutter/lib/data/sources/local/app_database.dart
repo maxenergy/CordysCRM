@@ -105,11 +105,42 @@ class AppDatabase extends _$AppDatabase {
   }
 }
 
+/// 数据库文件名
+const String _kDatabaseFileName = 'cordyscrm.sqlite';
+
+/// 应用数据目录名
+const String _kAppDataFolderName = 'CordysCRM';
+
 /// 打开数据库连接
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'cordyscrm.sqlite'));
-    return NativeDatabase.createInBackground(file);
+    try {
+      // 根据平台选择合适的目录
+      final Directory dbFolderParent;
+      if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+        // 桌面平台使用 Application Support 目录
+        dbFolderParent = await getApplicationSupportDirectory();
+      } else if (Platform.isAndroid || Platform.isIOS) {
+        // 移动平台使用 Application Documents 目录
+        dbFolderParent = await getApplicationDocumentsDirectory();
+      } else {
+        // 未知平台，使用 Application Support 作为兜底
+        dbFolderParent = await getApplicationSupportDirectory();
+      }
+
+      // 在选定的目录下创建一个特定于应用的子目录
+      final dbFolder = Directory(p.join(dbFolderParent.path, _kAppDataFolderName));
+
+      // 确保目录存在（recursive: true 会自动处理已存在的情况）
+      await dbFolder.create(recursive: true);
+
+      // 拼接最终的数据库文件路径
+      final file = File(p.join(dbFolder.path, _kDatabaseFileName));
+
+      // 创建数据库实例
+      return NativeDatabase.createInBackground(file);
+    } catch (e) {
+      throw Exception('Failed to open database connection: $e');
+    }
   });
 }

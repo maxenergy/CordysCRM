@@ -115,7 +115,7 @@
     - _Requirements: 3.5_
 
 - [ ] 11. 数据存储路径适配
-  - [ ] 11.1 验证 Drift 数据库路径
+  - [x] 11.1 验证 Drift 数据库路径
     - 确认 `lib/data/sources/local/app_database.dart` 使用平台适当路径
     - 桌面端使用 `path_provider` 的 `getApplicationDocumentsDirectory()`
     - _Requirements: 6.2_
@@ -124,16 +124,16 @@
     - **Validates: Requirements 6.2**
 
 - [ ] 12. 性能优化
-  - [ ] 12.1 优化列表渲染
+  - [x] 12.1 优化列表渲染
     - 在客户、线索、商机列表中增加桌面端的每页数量（50 条）
     - 移动端保持 20 条
     - _Requirements: 7.2_
-  - [ ] 12.2 优化图片加载
+  - [x] 12.2 优化图片加载
     - 桌面端使用更高分辨率的图片缓存
     - 调整缓存策略
     - _Requirements: 7.1_
 
-- [ ] 13. Checkpoint - 功能完整性验证
+- [x] 13. Checkpoint - 功能完整性验证
   - 测试所有核心功能在桌面端正常工作
   - 测试文件选择功能
   - 测试 WebView 功能
@@ -158,15 +158,15 @@
     - 测试文件选择流程
     - _Requirements: 8.3_
 
-- [ ] 15. 文档更新
-  - [ ] 15.1 更新 README.md
+- [x] 15. 文档更新
+  - [x] 15.1 更新 README.md
     - 添加桌面端运行说明
     - 添加桌面端构建说明
     - 添加平台特定注意事项
-  - [ ] 15.2 更新开发状态文档
+  - [x] 15.2 更新开发状态文档
     - 在 `memory-bank/development-status.md` 中添加桌面端适配完成状态
 
-- [ ] 16. Final Checkpoint - 全平台验证
+- [x] 16. Final Checkpoint - 全平台验证
   - 在 Windows 上运行并测试: `flutter run -d windows`
   - 在 macOS 上运行并测试: `flutter run -d macos`
   - 在 Linux 上运行并测试: `flutter run -d linux`

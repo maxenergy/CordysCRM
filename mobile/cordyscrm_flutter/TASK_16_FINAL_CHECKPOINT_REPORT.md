@@ -24,19 +24,25 @@ Flutter 桌面应用在 Linux 平台上**编译成功**，但在运行时遇到 
 
 ### ❌ 运行时问题
 
-**错误信息**:
+**错误信息** (Debug 和 Release 模式均出现):
 ```
 GLib-GObject:ERROR:../src/glib-2-2240d0273c.clean/gobject/gtype.c:2556:g_type_register_static: 
 assertion failed: (static_quark_type_flags)
-Error launching application on Linux.
+Bail out! GLib-GObject:ERROR:../src/glib-2-2240d0273c.clean/gobject/gtype.c:2556:g_type_register_static: 
+assertion failed: (static_quark_type_flags)
 ```
 
-**问题分析**:
-这是一个 GLib-GObject 库版本冲突问题，可能由以下原因引起：
+**测试场景**:
+1. ❌ Debug 模式: `flutter run -d linux`
+2. ❌ Release 模式: `flutter build linux --release && ./build/linux/x64/release/bundle/cordyscrm_flutter`
+3. ❌ 清除 LD_LIBRARY_PATH: `env -u LD_LIBRARY_PATH ./build/linux/x64/release/bundle/cordyscrm_flutter`
 
-1. **vcpkg 库冲突**: 系统检测到 `/home/rogers/vcpkg/installed/x64-linux/lib` 中的库可能与系统库冲突
+**问题分析**:
+这是一个 GLib-GObject 库版本冲突问题，根本原因：
+
+1. **vcpkg 库冲突**: 环境变量 `LD_LIBRARY_PATH` 包含 `/home/rogers/vcpkg/installed/x64-linux/lib`，与系统 GLib 库冲突
 2. **desktop_webview_window 插件**: CMake 警告显示该插件可能与系统 libdbus-1.so.3 冲突
-3. **环境问题**: 这是开发环境特定的问题，不是代码问题
+3. **环境特定问题**: 这是开发环境配置问题，不是 Flutter 代码问题
 
 **CMake 警告**:
 ```
@@ -68,22 +74,20 @@ because files in some directories may conflict with libraries in implicit direct
 
 ### 短期解决方案
 
-1. **清理 vcpkg 环境变量**:
+1. **在干净的 Linux 环境中测试**:
    ```bash
-   # 临时移除 vcpkg 路径
-   unset VCPKG_ROOT
-   export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
+   # 使用 Docker 容器
+   docker run -it --rm -v $(pwd):/workspace ubuntu:24.04
+   # 安装 Flutter 和依赖后测试
    ```
 
-2. **使用 Release 模式**:
-   ```bash
-   flutter build linux --release
-   ./build/linux/x64/release/bundle/cordyscrm_flutter
-   ```
+2. **移除 desktop_webview_window 依赖测试**:
+   - 临时注释 `pubspec.yaml` 中的 `desktop_webview_window` 依赖
+   - 重新编译测试是否解决冲突
 
-3. **跳过 desktop_webview_window**:
-   - Task 9 (WebView 适配) 已标记为跳过
-   - 可以考虑在 pubspec.yaml 中临时注释该依赖进行测试
+3. **在其他 Linux 发行版测试**:
+   - Fedora/Arch Linux 等可能没有此问题
+   - 或在虚拟机中使用全新安装的 Ubuntu
 
 ### 长期解决方案
 

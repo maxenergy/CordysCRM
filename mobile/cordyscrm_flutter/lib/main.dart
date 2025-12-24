@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'core/config/app_perf_config.dart';
 import 'core/services/enterprise_settings_service.dart';
 import 'core/services/platform_service.dart';
 import 'core/services/window_manager_service.dart';
@@ -62,6 +63,13 @@ void main() async {
       sharedPreferencesProvider.overrideWithValue(prefs),
     ],
   );
+
+  // 调整全局图片缓存（按平台优化）
+  final perfConfig = container.read(appPerfConfigProvider);
+  PaintingBinding.instance.imageCache.maximumSize =
+      perfConfig.imageCacheMaxEntries;
+  PaintingBinding.instance.imageCache.maximumSizeBytes =
+      perfConfig.imageCacheMaxBytes;
 
   // 恢复用户的数据源选择
   _restoreEnterpriseDataSource(container);

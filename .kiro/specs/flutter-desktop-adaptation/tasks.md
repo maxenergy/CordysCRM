@@ -76,12 +76,12 @@
     - 修改跟进记录表单使用自适应文件选择
     - _Requirements: 4.2_
 
-- [ ] 8. 处理移动端特有功能
-  - [ ] 8.1 修改语音录制组件
+- [x] 8. 处理移动端特有功能
+  - [x] 8.1 修改语音录制组件
     - 在 `lib/presentation/widgets/audio_recorder_widget.dart` 中添加平台检测
     - 桌面端显示"此功能仅在移动端可用"提示
     - _Requirements: 4.1_
-  - [ ] 8.2 修改相机功能
+  - [x] 8.2 修改相机功能
     - 在图片选择器中禁用桌面端的相机选项
     - 仅保留"从文件选择"选项
     - _Requirements: 4.1_
@@ -89,7 +89,7 @@
     - **Property 5: Feature Availability Consistency**
     - **Validates: Requirements 4.1**
 
-- [ ] 9. 适配 WebView 功能
+- [-] 9. 适配 WebView 功能
   - [ ] 9.1 创建 `lib/presentation/widgets/adaptive_webview.dart`
     - 移动端使用 `flutter_inappwebview`
     - 桌面端使用 `desktop_webview_window`
@@ -101,16 +101,16 @@
     - _Requirements: 4.3_
 
 - [ ] 10. 桌面端 UI 优化
-  - [ ] 10.1 更新主题配置
+  - [x] 10.1 更新主题配置
     - 在 `lib/presentation/theme/app_theme.dart` 中添加桌面端特定样式
     - 增加桌面端的 padding 和 spacing
     - 添加 hover 效果样式
     - _Requirements: 3.1, 3.3_
-  - [ ] 10.2 添加键盘快捷键支持
+  - [x] 10.2 添加键盘快捷键支持
     - 创建 `lib/core/utils/keyboard_shortcuts.dart`
     - 实现常用快捷键（Ctrl+N 新建、Ctrl+S 保存、Ctrl+F 搜索等）
     - _Requirements: 3.2_
-  - [ ] 10.3 设置最小窗口尺寸
+  - [x] 10.3 设置最小窗口尺寸
     - 在窗口管理服务中设置 minimumSize 为 800x600
     - _Requirements: 3.5_
 

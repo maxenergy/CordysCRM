@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
+import '../../../core/config/app_perf_config.dart';
 import '../../../domain/entities/opportunity.dart';
 import '../../../domain/repositories/opportunity_repository.dart';
 import '../../../data/repositories/opportunity_repository_impl.dart';
@@ -21,7 +22,7 @@ final opportunityFilterProvider = StateProvider<OpportunityQuery>((ref) {
 
 final opportunityPagingControllerProvider =
     Provider.autoDispose<PagingController<int, Opportunity>>((ref) {
-  const pageSize = 20;
+  final pageSize = ref.watch(appPerfConfigProvider).pageSize;
   final repo = ref.watch(opportunityRepositoryProvider);
   final query = ref.watch(opportunityFilterProvider);
 

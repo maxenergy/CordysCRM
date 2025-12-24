@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/config/app_perf_config.dart';
+import '../../core/services/app_image_cache_manager.dart';
 import '../../core/services/media_service.dart';
 import '../../core/services/platform_service.dart';
 import '../theme/app_theme.dart';
@@ -27,6 +29,8 @@ class ImagePickerGrid extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final platformService = ref.read(platformServiceProvider);
+    final perfConfig = ref.read(appPerfConfigProvider);
+    final cacheManager = ref.read(appImageCacheManagerProvider);
     final canAddMore = images.length < maxImages;
 
     return Wrap(
@@ -40,11 +44,13 @@ class ImagePickerGrid extends ConsumerWidget {
           return _ImageTile(
             image: image,
             size: imageSize,
+            cacheManager: cacheManager,
+            perfConfig: perfConfig,
             onDelete: () {
               final newImages = List<ImageItem>.from(images)..removeAt(index);
               onImagesChanged(newImages);
             },
-            onTap: () => _showImagePreview(context, images, index),
+            onTap: () => _showImagePreview(context, images, index, cacheManager, perfConfig),
           );
         }),
         // 添加按钮
@@ -83,12 +89,20 @@ class ImagePickerGrid extends ConsumerWidget {
     }
   }
 
-  void _showImagePreview(BuildContext context, List<ImageItem> images, int initialIndex) {
+  void _showImagePreview(
+    BuildContext context,
+    List<ImageItem> images,
+    int initialIndex,
+    AppImageCacheManager cacheManager,
+    AppPerfConfig perfConfig,
+  ) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => _ImagePreviewPage(
           images: images,
           initialIndex: initialIndex,
+          cacheManager: cacheManager,
+          perfConfig: perfConfig,
         ),
       ),
     );
@@ -114,12 +128,16 @@ class _ImageTile extends StatelessWidget {
   const _ImageTile({
     required this.image,
     required this.size,
+    required this.cacheManager,
+    required this.perfConfig,
     required this.onDelete,
     required this.onTap,
   });
 
   final ImageItem image;
   final double size;
+  final AppImageCacheManager cacheManager;
+  final AppPerfConfig perfConfig;
   final VoidCallback onDelete;
   final VoidCallback onTap;
 
@@ -144,6 +162,11 @@ class _ImageTile extends StatelessWidget {
                   : CachedNetworkImage(
                       imageUrl: image.url!,
                       fit: BoxFit.cover,
+                      cacheManager: cacheManager,
+                      memCacheWidth: perfConfig.imageMemCacheSize,
+                      memCacheHeight: perfConfig.imageMemCacheSize,
+                      maxWidthDiskCache: perfConfig.imageMemCacheSize,
+                      maxHeightDiskCache: perfConfig.imageMemCacheSize,
                       placeholder: (context, url) => _buildLoadingPlaceholder(),
                       errorWidget: (context, url, error) => _buildErrorPlaceholder(),
                     ),
@@ -286,10 +309,14 @@ class _ImagePreviewPage extends StatefulWidget {
   const _ImagePreviewPage({
     required this.images,
     required this.initialIndex,
+    required this.cacheManager,
+    required this.perfConfig,
   });
 
   final List<ImageItem> images;
   final int initialIndex;
+  final AppImageCacheManager cacheManager;
+  final AppPerfConfig perfConfig;
 
   @override
   State<_ImagePreviewPage> createState() => _ImagePreviewPageState();
@@ -334,6 +361,11 @@ class _ImagePreviewPageState extends State<_ImagePreviewPage> {
                   : CachedNetworkImage(
                       imageUrl: image.url!,
                       fit: BoxFit.contain,
+                      cacheManager: widget.cacheManager,
+                      memCacheWidth: widget.perfConfig.imageMemCacheSize,
+                      memCacheHeight: widget.perfConfig.imageMemCacheSize,
+                      maxWidthDiskCache: widget.perfConfig.imageMemCacheSize,
+                      maxHeightDiskCache: widget.perfConfig.imageMemCacheSize,
                       placeholder: (context, url) => const Center(
                         child: CircularProgressIndicator(color: Colors.white),
                       ),

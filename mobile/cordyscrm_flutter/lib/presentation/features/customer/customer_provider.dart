@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
+import '../../../core/config/app_perf_config.dart';
 import '../../../domain/entities/customer.dart';
 import '../../../domain/repositories/customer_repository.dart';
 import '../../../data/repositories/customer_repository_impl.dart';
@@ -28,7 +29,7 @@ final customerFilterProvider = StateProvider<CustomerQuery>((ref) {
 /// 使用 autoDispose 确保页面销毁时自动清理资源
 final customerPagingControllerProvider =
     Provider.autoDispose<PagingController<int, Customer>>((ref) {
-  const pageSize = 20;
+  final pageSize = ref.watch(appPerfConfigProvider).pageSize;
   final repo = ref.watch(customerRepositoryProvider);
   final query = ref.watch(customerFilterProvider);
 

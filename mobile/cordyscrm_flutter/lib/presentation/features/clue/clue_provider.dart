@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
+import '../../../core/config/app_perf_config.dart';
 import '../../../domain/entities/clue.dart';
 import '../../../domain/repositories/clue_repository.dart';
 import '../../../data/repositories/clue_repository_impl.dart';
@@ -26,7 +27,7 @@ final clueFilterProvider = StateProvider<ClueQuery>((ref) {
 /// 分页控制器 Provider
 final cluePagingControllerProvider =
     Provider.autoDispose<PagingController<int, Clue>>((ref) {
-  const pageSize = 20;
+  final pageSize = ref.watch(appPerfConfigProvider).pageSize;
   final repo = ref.watch(clueRepositoryProvider);
   final query = ref.watch(clueFilterProvider);
 

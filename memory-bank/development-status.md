@@ -20,12 +20,41 @@
 | Web 前端集成 | ✅ 完成 | 100% | AI 组件、模板管理、配置 |
 | **企业重新搜索** | ✅ 完成 | 100% | 本地+外部混合搜索 |
 | **企查查数据源** | ✅ 完成 | 100% | 多数据源抽象层 |
+| **Flutter 桌面适配** | ✅ 完成 | 95% | Windows/macOS/Linux 支持 |
 
 ---
 
 ## 🎯 最近完成的功能
 
-### 1. 企业重新搜索功能 (enterprise-research)
+### 1. Flutter 桌面平台适配 (flutter-desktop-adaptation)
+**完成时间**: 2024-12-24  
+**状态**: ✅ 核心功能完成 (95%)
+
+实现了 Flutter 应用的跨平台桌面支持：
+
+- ✅ 启用 Windows/macOS/Linux 平台支持
+- ✅ 响应式布局（NavigationRail/BottomNavigationBar 自动切换）
+- ✅ 窗口管理服务（尺寸约束、状态持久化）
+- ✅ 自适应文件选择器（桌面/移动端统一接口）
+- ✅ 移动端特有功能处理（相机、语音录制禁用提示）
+- ✅ 桌面端 UI 优化（主题、hover 效果、键盘快捷键）
+- ✅ 数据库路径适配（桌面端使用 ApplicationSupport）
+- ✅ 性能优化（动态分页、图片缓存策略）
+- ✅ 文档更新（README.md、开发状态）
+- ⏭️ WebView 适配（跳过，flutter_inappwebview 不支持桌面）
+
+**技术亮点**:
+- 响应式断点设计（600px 阈值）
+- 平台检测服务统一管理
+- 窗口状态自动保存恢复
+- 最小窗口尺寸约束（800x600）
+
+**已知限制**:
+- 桌面端不支持 WebView（企业搜索功能需使用 Web 版）
+- 桌面端不支持相机和语音录制
+- 部分测试任务标记为可选（加快 MVP 开发）
+
+### 2. 企业重新搜索功能 (enterprise-research)
 **完成时间**: 2024-12-23  
 **状态**: ✅ 全部完成
 
@@ -43,7 +72,7 @@
 - 错误不影响已有结果展示
 - 支持动态数据源切换
 
-### 2. 企查查数据源集成 (flutter-qichacha-search)
+### 3. 企查查数据源集成 (flutter-qichacha-search)
 **完成时间**: 2024-12-23  
 **状态**: ✅ 全部完成
 
@@ -271,8 +300,19 @@ flutter analyze
 # 测试
 flutter test
 
-# 运行
-flutter run
+# 运行（移动端）
+flutter run -d android
+flutter run -d ios
+
+# 运行（桌面端）
+flutter run -d windows
+flutter run -d macos
+flutter run -d linux
+
+# 构建（桌面端）
+flutter build windows --release
+flutter build macos --release
+flutter build linux --release
 ```
 
 ### Chrome Extension

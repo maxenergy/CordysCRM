@@ -168,14 +168,22 @@ window.__extractEnterpriseData = function() {
   };
 
   // ========== 核心函数：按标签文本查找对应的值 ==========
-  const findValueByLabel = (labels, rootSelector) => {
+  const findValueByLabel = (labels, rootSelector, _isGlobalSearch) => {
     const labelList = Array.isArray(labels) ? labels : [labels];
-    debug('查找标签:', labelList.join('/'));
+    debug('查找标签:', labelList.join('/'), _isGlobalSearch ? '(全局搜索)' : '');
     
     // 确定搜索范围（优先在基本信息区域搜索）
-    const root = rootSelector 
-      ? document.querySelector(rootSelector) 
-      : document.querySelector('.cominfo-normal, .basic-info, .company-info, .ntable') || document;
+    let root;
+    if (_isGlobalSearch) {
+      // 全局搜索时直接使用 document
+      root = document;
+    } else if (rootSelector) {
+      root = document.querySelector(rootSelector);
+      if (!root) root = document;
+    } else {
+      // 默认先在基本信息区域搜索
+      root = document.querySelector('.cominfo-normal, .basic-info, .company-info, .ntable') || document;
+    }
     
     // 策略0：检查同节点"标签：值"格式
     const checkInlineValue = (el) => {
@@ -223,11 +231,13 @@ window.__extractEnterpriseData = function() {
       }
     }
     
-    // 策略2：遍历所有可能的标签元素
+    // 策略2：遍历所有可能的标签元素（限制遍历深度，避免堆栈溢出）
     const selectors = 'td, th, dt, div, span, label';
     const elements = root.querySelectorAll(selectors);
+    const maxElements = 500; // 限制最大遍历元素数
+    const elementsToCheck = Array.from(elements).slice(0, maxElements);
     
-    for (const el of elements) {
+    for (const el of elementsToCheck) {
       const text = el.textContent || '';
       const hasDirectText = Array.from(el.childNodes).some(n => n.nodeType === 3 && norm(n.textContent));
       if (!hasDirectText && el.children.length > 2) continue;
@@ -266,10 +276,10 @@ window.__extractEnterpriseData = function() {
       }
     }
     
-    // 策略3：如果在限定范围内没找到，扩展到全局搜索
-    if (root !== document) {
+    // 策略3：如果在限定范围内没找到，且不是全局搜索，则扩展到全局搜索（只执行一次）
+    if (root !== document && !_isGlobalSearch) {
       debug('在限定范围内未找到，扩展到全局搜索');
-      return findValueByLabel(labels, null);
+      return findValueByLabel(labels, null, true);
     }
     
     debug('未找到', labelList.join('/'), '的值');

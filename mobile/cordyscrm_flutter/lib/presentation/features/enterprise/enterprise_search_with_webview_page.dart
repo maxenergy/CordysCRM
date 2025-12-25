@@ -309,9 +309,9 @@ class _EnterpriseSearchWithWebViewPageState
       urlRequest: URLRequest(url: WebUri(detailUrl)),
     );
 
-    // 设置超时定时器（10秒后如果还没提取成功，提示用户手动操作）
+    // 设置超时定时器（20秒后如果还没提取成功，提示用户手动操作）
     _autoExtractTimeoutTimer?.cancel();
-    _autoExtractTimeoutTimer = Timer(const Duration(seconds: 10), () {
+    _autoExtractTimeoutTimer = Timer(const Duration(seconds: 20), () {
       if (_pendingAutoExtract && mounted) {
         debugPrint('[企查查] 自动提取超时');
         setState(() {
@@ -319,8 +319,8 @@ class _EnterpriseSearchWithWebViewPageState
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('自动获取超时，请点击右上角"打开网页"按钮后手动操作'),
-            duration: Duration(seconds: 4),
+            content: Text('页面加载较慢，请稍后点击"导入CRM"按钮手动提取'),
+            duration: Duration(seconds: 5),
             backgroundColor: Colors.orange,
           ),
         );

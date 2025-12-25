@@ -8,10 +8,18 @@ class EnterpriseSearchResultItem extends StatelessWidget {
     super.key,
     required this.enterprise,
     required this.onTap,
+    this.isSelectionMode = false,
+    this.isSelected = false,
+    this.onSelectionChanged,
+    this.onLongPress,
   });
 
   final Enterprise enterprise;
   final VoidCallback onTap;
+  final bool isSelectionMode;
+  final bool isSelected;
+  final ValueChanged<bool?>? onSelectionChanged;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -20,13 +28,29 @@ class EnterpriseSearchResultItem extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: onTap,
+        onTap: isSelectionMode
+            ? () => onSelectionChanged?.call(!isSelected)
+            : onTap,
+        onLongPress: !isSelectionMode ? onLongPress : null,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Checkbox in selection mode
+              if (isSelectionMode)
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Checkbox(
+                    value: isSelected,
+                    onChanged: enterprise.isLocal ? null : onSelectionChanged,
+                  ),
+                ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
               // 企业名称和状态
               Row(
                 children: [
@@ -78,16 +102,20 @@ class EnterpriseSearchResultItem extends StatelessWidget {
 
               const SizedBox(height: 8),
 
-              // 操作按钮
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton.icon(
-                    onPressed: onTap,
-                    icon: const Icon(Icons.visibility_outlined, size: 18),
-                    label: const Text('查看详情'),
-                  ),
-                ],
+              // 操作按钮（非选择模式下显示）
+              if (!isSelectionMode)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton.icon(
+                      onPressed: onTap,
+                      icon: const Icon(Icons.visibility_outlined, size: 18),
+                      label: const Text('查看详情'),
+                    ),
+                  ],
+                ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -98,8 +126,27 @@ class EnterpriseSearchResultItem extends StatelessWidget {
 
   /// 构建来源标签
   Widget _buildSourceChip(BuildContext context) {
+    // 本地企业显示"已导入"
+    if (enterprise.isLocal) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.blue.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+        ),
+        child: const Text(
+          '已导入',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.blue,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      );
+    }
+    
     final (color, label) = switch (enterprise.source) {
-      'local' => (Colors.blue, '本地'),
       'qcc' => (Colors.green, '企查查'),
       'iqicha' => (Colors.purple, '爱企查'),
       _ => (Colors.grey, '未知'),

@@ -101,6 +101,17 @@ const List<Enterprise> _mockEnterprises = [];
 /// 企业搜索数据来源
 enum EnterpriseSearchDataSource { local, iqicha, qcc, mixed }
 
+/// 批量导入错误信息
+class BatchImportError {
+  const BatchImportError({
+    required this.enterprise,
+    required this.error,
+  });
+
+  final Enterprise enterprise;
+  final String error;
+}
+
 /// 企业搜索状态
 class EnterpriseSearchState {
   const EnterpriseSearchState({
@@ -113,6 +124,12 @@ class EnterpriseSearchState {
     this.keyword = '',
     this.dataSource,
     this.externalDataSourceType,
+    this.isSelectionMode = false,
+    this.selectedIds = const {},
+    this.isBatchImporting = false,
+    this.importProgress = 0,
+    this.importTotal = 0,
+    this.importErrors = const [],
   });
 
   final bool isSearching;
@@ -124,10 +141,28 @@ class EnterpriseSearchState {
   final String keyword;
   final EnterpriseSearchDataSource? dataSource;
   final EnterpriseDataSourceType? externalDataSourceType;
+  
+  // 批量导入相关字段
+  final bool isSelectionMode;
+  final Set<String> selectedIds;
+  final bool isBatchImporting;
+  final int importProgress;
+  final int importTotal;
+  final List<BatchImportError> importErrors;
 
   bool get hasError => error != null;
   bool get hasReSearchError => reSearchError != null;
   bool get hasResults => results.isNotEmpty;
+  
+  // 批量导入相关 getters
+  int get selectedCount => selectedIds.length;
+  bool get hasSelection => selectedIds.isNotEmpty;
+  bool get canBatchImport => isSelectionMode && hasSelection && !isBatchImporting;
+  bool get isAllSelected => results
+      .where((e) => !e.isLocal)
+      .every((e) => selectedIds.contains(e.creditCode));
+  List<Enterprise> get selectedEnterprises =>
+      results.where((e) => selectedIds.contains(e.creditCode)).toList();
 
   /// 是否可以执行重新搜索
   ///
@@ -166,9 +201,16 @@ class EnterpriseSearchState {
     String? keyword,
     EnterpriseSearchDataSource? dataSource,
     EnterpriseDataSourceType? externalDataSourceType,
+    bool? isSelectionMode,
+    Set<String>? selectedIds,
+    bool? isBatchImporting,
+    int? importProgress,
+    int? importTotal,
+    List<BatchImportError>? importErrors,
     bool clearError = false,
     bool clearReSearchError = false,
     bool clearDataSource = false,
+    bool clearImportErrors = false,
   }) {
     return EnterpriseSearchState(
       isSearching: isSearching ?? this.isSearching,
@@ -183,6 +225,12 @@ class EnterpriseSearchState {
       dataSource: clearDataSource ? null : (dataSource ?? this.dataSource),
       externalDataSourceType:
           externalDataSourceType ?? this.externalDataSourceType,
+      isSelectionMode: isSelectionMode ?? this.isSelectionMode,
+      selectedIds: selectedIds ?? this.selectedIds,
+      isBatchImporting: isBatchImporting ?? this.isBatchImporting,
+      importProgress: importProgress ?? this.importProgress,
+      importTotal: importTotal ?? this.importTotal,
+      importErrors: clearImportErrors ? const [] : (importErrors ?? this.importErrors),
     );
   }
 }
@@ -456,6 +504,143 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
     // 递增请求序号，使任何进行中的搜索请求失效
     _searchRequestId++;
     state = const EnterpriseSearchState();
+  }
+
+  /// 进入选择模式
+  void enterSelectionMode(String initialSelectedId) {
+    state = state.copyWith(
+      isSelectionMode: true,
+      selectedIds: {initialSelectedId},
+    );
+  }
+
+  /// 退出选择模式
+  void exitSelectionMode() {
+    state = state.copyWith(
+      isSelectionMode: false,
+      selectedIds: const <String>{},
+      clearImportErrors: true,
+    );
+  }
+
+  /// 切换选择状态
+  void toggleSelection(String creditCode) {
+    final enterprise = state.results.firstWhere(
+      (e) => e.creditCode == creditCode,
+      orElse: () => throw StateError('Enterprise not found'),
+    );
+
+    // 本地企业不可选
+    if (enterprise.isLocal) {
+      // 触发 toast 提示将在 UI 层处理
+      return;
+    }
+
+    final newSelectedIds = Set<String>.from(state.selectedIds);
+    if (newSelectedIds.contains(creditCode)) {
+      newSelectedIds.remove(creditCode);
+    } else {
+      // 检查是否达到上限
+      if (newSelectedIds.length >= 50) {
+        // 触发 toast 提示将在 UI 层处理
+        return;
+      }
+      newSelectedIds.add(creditCode);
+    }
+
+    state = state.copyWith(selectedIds: newSelectedIds);
+  }
+
+  /// 全选/取消全选
+  void toggleSelectAll() {
+    final selectableEnterprises =
+        state.results.where((e) => !e.isLocal).toList();
+
+    if (state.isAllSelected) {
+      // 取消全选
+      state = state.copyWith(selectedIds: const <String>{});
+    } else {
+      // 全选（最多50个）
+      final idsToSelect =
+          selectableEnterprises.take(50).map((e) => e.creditCode).toSet();
+      state = state.copyWith(selectedIds: idsToSelect);
+    }
+  }
+
+  /// 批量导入选中的企业
+  Future<void> batchImport() async {
+    if (!state.canBatchImport) return;
+
+    final enterprises = state.selectedEnterprises;
+    final total = enterprises.length;
+
+    debugPrint('[批量导入] 开始导入 $total 个企业');
+
+    state = state.copyWith(
+      isBatchImporting: true,
+      importProgress: 0,
+      importTotal: total,
+      clearImportErrors: true,
+    );
+
+    final errors = <BatchImportError>[];
+
+    for (int i = 0; i < enterprises.length; i++) {
+      final enterprise = enterprises[i];
+
+      debugPrint('[批量导入] 正在导入 ${i + 1}/$total: ${enterprise.name}');
+
+      try {
+        final result = await _repository.importEnterprise(
+          enterprise: enterprise,
+          forceOverwrite: false,
+        );
+
+        if (!result.isSuccess) {
+          debugPrint('[批量导入] 导入失败: ${enterprise.name}, ${result.message}');
+          errors.add(BatchImportError(
+            enterprise: enterprise,
+            error: result.message ?? '导入失败',
+          ));
+        } else {
+          debugPrint('[批量导入] 导入成功: ${enterprise.name}');
+        }
+      } catch (e) {
+        debugPrint('[批量导入] 导入异常: ${enterprise.name}, $e');
+        errors.add(BatchImportError(
+          enterprise: enterprise,
+          error: e.toString(),
+        ));
+      }
+
+      // 更新进度
+      if (mounted) {
+        state = state.copyWith(importProgress: i + 1);
+      }
+
+      // 避免请求过快
+      if (i < enterprises.length - 1) {
+        await Future.delayed(const Duration(milliseconds: 300));
+      }
+    }
+
+    if (!mounted) return;
+
+    debugPrint('[批量导入] 完成，成功: ${total - errors.length}, 失败: ${errors.length}');
+
+    state = state.copyWith(
+      isBatchImporting: false,
+      importErrors: errors,
+    );
+
+    // 如果全部成功，退出选择模式并刷新
+    if (errors.isEmpty) {
+      exitSelectionMode();
+      // 刷新搜索结果以更新本地状态
+      if (state.keyword.isNotEmpty) {
+        await search(state.keyword);
+      }
+    }
   }
 }
 

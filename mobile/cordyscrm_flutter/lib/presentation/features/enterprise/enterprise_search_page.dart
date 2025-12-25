@@ -10,6 +10,7 @@ import '../../../domain/entities/enterprise.dart';
 import '../../routing/app_router.dart';
 import 'enterprise_provider.dart';
 import 'widgets/enterprise_search_result_item.dart';
+import 'widgets/selection_bar.dart';
 
 /// 企业搜索页面
 ///
@@ -144,6 +145,13 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
   /// 执行搜索
   Future<void> _performSearch(String keyword) async {
     if (keyword.length < 2) return;
+    
+    // 新搜索时退出选择模式
+    final searchState = ref.read(enterpriseSearchProvider);
+    if (searchState.isSelectionMode) {
+      ref.read(enterpriseSearchProvider.notifier).exitSelectionMode();
+    }
+    
     await ref.read(enterpriseSearchProvider.notifier).search(keyword);
   }
 
@@ -157,6 +165,7 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final searchState = ref.watch(enterpriseSearchProvider);
 
     // 监听重新搜索错误，显示 SnackBar
     ref.listen<EnterpriseSearchState>(enterpriseSearchProvider, (
@@ -180,64 +189,223 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
           ),
         );
       }
+
+      // 监听批量导入状态变化
+      // 开始导入时显示进度对话框
+      if (previous?.isBatchImporting == false && next.isBatchImporting) {
+        _showBatchImportProgressDialog();
+      }
+
+      // 导入完成时关闭进度对话框并显示结果
+      if (previous?.isBatchImporting == true && !next.isBatchImporting) {
+        Navigator.of(context).pop(); // 关闭进度对话框
+        _showBatchImportSummaryDialog(next);
+      }
     });
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('企业搜索'),
+    return PopScope(
+      canPop: !searchState.isSelectionMode,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && searchState.isSelectionMode) {
+          ref.read(enterpriseSearchProvider.notifier).exitSelectionMode();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(searchState.isSelectionMode ? '选择企业' : '企业搜索'),
+          actions: [
+            // 跳转到当前数据源的 WebView 页面
+            if (!searchState.isSelectionMode)
+              Consumer(
+                builder: (context, ref, _) {
+                  final dataSource = ref.watch(enterpriseDataSourceProvider);
+                  return IconButton(
+                    icon: const Icon(Icons.open_in_browser),
+                    onPressed: () => context.push(AppRoutes.enterprise),
+                    tooltip: '打开${dataSource.displayName}',
+                  );
+                },
+              ),
+          ],
+        ),
+        body: Column(
+          children: [
+            // 剪贴板提示
+            if (_showClipboardHint && !searchState.isSelectionMode)
+              _buildClipboardHint(),
+
+            // 搜索框（非选择模式下显示）
+            if (!searchState.isSelectionMode)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: TextField(
+                  controller: _searchController,
+                  focusNode: _focusNode,
+                  decoration: InputDecoration(
+                    hintText: '输入企业名称或信用代码搜索',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              ref
+                                  .read(enterpriseSearchProvider.notifier)
+                                  .clear();
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor:
+                        theme.colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.3,
+                    ),
+                  ),
+                  onChanged: _onSearchChanged,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: (value) => _performSearch(value.trim()),
+                ),
+              ),
+
+            // 搜索结果
+            Expanded(child: _buildSearchResults()),
+          ],
+        ),
+        // 底部选择栏
+        bottomNavigationBar: searchState.isSelectionMode
+            ? SelectionBar(
+                selectedCount: searchState.selectedCount,
+                isAllSelected: searchState.isAllSelected,
+                onCancel: () {
+                  ref.read(enterpriseSearchProvider.notifier).exitSelectionMode();
+                },
+                onSelectAll: () {
+                  ref.read(enterpriseSearchProvider.notifier).toggleSelectAll();
+                },
+                onBatchImport: () => _showBatchImportConfirmation(),
+              )
+            : null,
+      ),
+    );
+  }
+
+  /// 显示批量导入确认对话框
+  Future<void> _showBatchImportConfirmation() async {
+    final searchState = ref.read(enterpriseSearchProvider);
+    final selectedCount = searchState.selectedCount;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('确认批量导入'),
+        content: Text('确定要导入选中的 $selectedCount 个企业吗？'),
         actions: [
-          // 跳转到当前数据源的 WebView 页面
-          Consumer(
-            builder: (context, ref, _) {
-              final dataSource = ref.watch(enterpriseDataSourceProvider);
-              return IconButton(
-                icon: const Icon(Icons.open_in_browser),
-                onPressed: () => context.push(AppRoutes.enterprise),
-                tooltip: '打开${dataSource.displayName}',
-              );
-            },
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('确认'),
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // 剪贴板提示
-          if (_showClipboardHint) _buildClipboardHint(),
+    );
 
-          // 搜索框
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              focusNode: _focusNode,
-              decoration: InputDecoration(
-                hintText: '输入企业名称或信用代码搜索',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          ref.read(enterpriseSearchProvider.notifier).clear();
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(
-                  alpha: 0.3,
+    if (confirmed == true && mounted) {
+      await ref.read(enterpriseSearchProvider.notifier).batchImport();
+    }
+  }
+
+  /// 显示批量导入进度对话框
+  void _showBatchImportProgressDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          title: const Text('正在导入'),
+          content: Consumer(
+            builder: (context, ref, _) {
+              final searchState = ref.watch(enterpriseSearchProvider);
+              final progress = searchState.importTotal > 0
+                  ? searchState.importProgress / searchState.importTotal
+                  : 0.0;
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  LinearProgressIndicator(value: progress),
+                  const SizedBox(height: 16),
+                  Text(
+                    '${searchState.importProgress} / ${searchState.importTotal}',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 显示批量导入结果摘要对话框
+  void _showBatchImportSummaryDialog(EnterpriseSearchState state) {
+    final successCount = state.importTotal - state.importErrors.length;
+    final failCount = state.importErrors.length;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('导入完成'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '成功: $successCount / ${state.importTotal}',
+                style: TextStyle(
+                  color: successCount > 0 ? Colors.green : null,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              onChanged: _onSearchChanged,
-              textInputAction: TextInputAction.search,
-              onSubmitted: (value) => _performSearch(value.trim()),
-            ),
+              if (failCount > 0) ...[
+                const SizedBox(height: 8),
+                Text(
+                  '失败: $failCount',
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  '失败企业:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                ...state.importErrors.map((e) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        '• ${e.enterprise.name}: ${e.error}',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    )),
+              ],
+            ],
           ),
-
-          // 搜索结果
-          Expanded(child: _buildSearchResults()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('确定'),
+          ),
         ],
       ),
     );
@@ -406,6 +574,38 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
         return EnterpriseSearchResultItem(
           enterprise: enterprise,
           onTap: () => _onEnterpriseSelected(enterprise),
+          isSelectionMode: searchState.isSelectionMode,
+          isSelected: searchState.selectedIds.contains(enterprise.creditCode),
+          onSelectionChanged: (selected) {
+            ref
+                .read(enterpriseSearchProvider.notifier)
+                .toggleSelection(enterprise.creditCode);
+            
+            // 显示提示信息
+            if (enterprise.isLocal) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('该企业已在本地库中'),
+                  duration: Duration(seconds: 1),
+                ),
+              );
+            } else if (searchState.selectedCount >= 50 && 
+                       !searchState.selectedIds.contains(enterprise.creditCode)) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('最多选择50个企业'),
+                  duration: Duration(seconds: 1),
+                ),
+              );
+            }
+          },
+          onLongPress: !searchState.isSelectionMode
+              ? () {
+                  ref
+                      .read(enterpriseSearchProvider.notifier)
+                      .enterSelectionMode(enterprise.creditCode);
+                }
+              : null,
         );
       },
     );

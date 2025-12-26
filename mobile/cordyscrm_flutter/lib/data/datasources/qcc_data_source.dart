@@ -234,8 +234,13 @@ window.__extractEnterpriseData = function() {
     // 策略2：遍历所有可能的标签元素（限制遍历深度，避免堆栈溢出）
     const selectors = 'td, th, dt, div, span, label';
     const elements = root.querySelectorAll(selectors);
-    const maxElements = 500; // 限制最大遍历元素数
+    // 限制最大遍历元素数：本地搜索允许更多元素，全局搜索限制更严格
+    const maxElements = _isGlobalSearch ? 500 : 1000;
     const elementsToCheck = Array.from(elements).slice(0, maxElements);
+    
+    if (elements.length > maxElements) {
+      debug(`元素数量 ${elements.length} 超过限制 ${maxElements}，已截断`);
+    }
     
     for (const el of elementsToCheck) {
       const text = el.textContent || '';

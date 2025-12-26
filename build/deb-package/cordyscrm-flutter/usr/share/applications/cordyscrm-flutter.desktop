@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=CordysCRM Flutter
+Comment=CordysCRM Flutter 移动端应用 - Linux 桌面版
+Exec=cordyscrm-flutter
+Icon=cordyscrm-flutter
+Terminal=false
+Categories=Office;ContactManagement;
+Keywords=CRM;Customer;Management;

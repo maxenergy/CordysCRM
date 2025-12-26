@@ -21,13 +21,24 @@ class SelectionBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    // 计算 Checkbox 的状态
+    // true = 全选, false = 未选, null = 部分选择
+    final bool? checkboxState;
+    if (selectedCount == 0) {
+      checkboxState = false;
+    } else if (isAllSelected) {
+      checkboxState = true;
+    } else {
+      checkboxState = null; // tristate 为 true 时，null 会显示为横杠
+    }
+
     return Container(
       height: 60,
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -36,31 +47,44 @@ class SelectionBar extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // 取消按钮
-            TextButton(
-              onPressed: onCancel,
-              child: const Text('取消'),
+            // 左侧：取消按钮和全选 Checkbox
+            Row(
+              children: [
+                // 取消按钮
+                TextButton(
+                  onPressed: onCancel,
+                  child: const Text('取消'),
+                ),
+                const SizedBox(width: 16),
+                // 全选 Checkbox 区域
+                InkWell(
+                  onTap: onSelectAll,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                    child: Row(
+                      children: [
+                        Checkbox(
+                          value: checkboxState,
+                          tristate: true, // 开启三态支持
+                          onChanged: (_) => onSelectAll(),
+                        ),
+                        const SizedBox(width: 4),
+                        const Text('全选'),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const Spacer(),
-            // 已选数量
-            Text(
-              '已选 $selectedCount',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(width: 16),
-            // 全选/取消全选按钮
-            TextButton(
-              onPressed: onSelectAll,
-              child: Text(isAllSelected ? '取消全选' : '全选'),
-            ),
-            const SizedBox(width: 8),
-            // 批量导入按钮
-            FilledButton(
+
+            // 右侧：批量导入按钮
+            FilledButton.icon(
               onPressed: selectedCount > 0 ? onBatchImport : null,
-              child: Text('批量导入 ($selectedCount)'),
+              icon: const Icon(Icons.cloud_upload_outlined),
+              label: Text('批量导入 ($selectedCount)'),
             ),
           ],
         ),

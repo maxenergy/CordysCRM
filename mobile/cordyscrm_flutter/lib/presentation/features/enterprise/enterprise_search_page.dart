@@ -214,7 +214,18 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
         appBar: AppBar(
           title: Text(searchState.isSelectionMode ? '选择企业' : '企业搜索'),
           actions: [
-            // 跳转到当前数据源的 WebView 页面
+            // 非选择模式下，显示"选择"按钮
+            if (!searchState.isSelectionMode &&
+                searchState.hasResults &&
+                searchState.results.any((e) => !e.isLocal))
+              TextButton(
+                onPressed: () {
+                  ref.read(enterpriseSearchProvider.notifier).enterSelectionMode();
+                },
+                child: const Text('选择'),
+              ),
+
+            // 非选择模式下，显示打开数据源网站的按钮
             if (!searchState.isSelectionMode)
               Consumer(
                 builder: (context, ref, _) {
@@ -571,41 +582,11 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
           return _buildDataSourceBanner(searchState);
         }
         final enterprise = searchState.results[index - headerOffset];
+        
+        // 现在，EnterpriseSearchResultItem 自己处理所有与选择相关的逻辑
         return EnterpriseSearchResultItem(
           enterprise: enterprise,
           onTap: () => _onEnterpriseSelected(enterprise),
-          isSelectionMode: searchState.isSelectionMode,
-          isSelected: searchState.selectedIds.contains(enterprise.creditCode),
-          onSelectionChanged: (selected) {
-            ref
-                .read(enterpriseSearchProvider.notifier)
-                .toggleSelection(enterprise.creditCode);
-            
-            // 显示提示信息
-            if (enterprise.isLocal) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('该企业已在本地库中'),
-                  duration: Duration(seconds: 1),
-                ),
-              );
-            } else if (searchState.selectedCount >= 50 && 
-                       !searchState.selectedIds.contains(enterprise.creditCode)) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('最多选择50个企业'),
-                  duration: Duration(seconds: 1),
-                ),
-              );
-            }
-          },
-          onLongPress: !searchState.isSelectionMode
-              ? () {
-                  ref
-                      .read(enterpriseSearchProvider.notifier)
-                      .enterSelectionMode(enterprise.creditCode);
-                }
-              : null,
         );
       },
     );

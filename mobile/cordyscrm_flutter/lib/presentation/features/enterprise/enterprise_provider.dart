@@ -507,10 +507,20 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
   }
 
   /// 进入选择模式
-  void enterSelectionMode(String initialSelectedId) {
+  void enterSelectionMode({String? initialSelectedId}) {
+    final initialIds = <String>{};
+    if (initialSelectedId != null) {
+      final hasMatch = state.results.any(
+        (e) => e.creditCode == initialSelectedId && !e.isLocal,
+      );
+      if (hasMatch) {
+        initialIds.add(initialSelectedId);
+      }
+    }
     state = state.copyWith(
       isSelectionMode: true,
-      selectedIds: {initialSelectedId},
+      selectedIds: initialIds,
+      clearImportErrors: true, // 进入选择模式时清空上次的导入错误
     );
   }
 

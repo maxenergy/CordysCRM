@@ -1,0 +1,6 @@
+#!/bin/bash
+# CordysCRM Flutter 启动脚本
+
+APP_DIR="/usr/lib/cordyscrm-flutter"
+cd "$APP_DIR"
+exec "$APP_DIR/cordyscrm_flutter" "$@"

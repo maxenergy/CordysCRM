@@ -1,0 +1,8 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: CordysCRM Flutter
+Source: https://github.com/cordyscrm/cordyscrm
+
+Files: *
+Copyright: 2024 CordysCRM Team
+License: Proprietary
+ This is proprietary software.

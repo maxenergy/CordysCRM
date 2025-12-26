@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,6 +29,9 @@ final WindowManagerService _windowManagerService = WindowManagerService();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // 启用手势竞争诊断（调试长按手势问题）
+  debugPrintGestureArenaDiagnostics = true;
   
   // 初始化窗口管理（仅在桌面平台）
   if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {

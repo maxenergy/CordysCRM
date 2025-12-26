@@ -91,19 +91,20 @@
   - _Requirements: 5.1, 5.2, 5.3_
   - _Completed: 2025-12-26, Commit: 3c0b7329f_
 
-- [ ] 12. 编写属性测试（高优先级）
-  - [ ] 12.1 Property 5: 错误处理保留本地结果测试
+- [x] 12. 编写属性测试（高优先级） ✅
+  - [x] 12.1 Property 5: 错误处理保留本地结果测试
     - **Property 5: Error handling preserves local results**
     - **Validates: Requirements 2.5, 4.2**
-    - 使用 `glados` 库生成随机失败场景，验证本地结果不变
-  - [ ] 12.2 Property 3: 结果排序与合并测试
+    - 使用 `Random()` 生成随机失败场景，验证本地结果不变
+  - [x] 12.2 Property 3: 结果排序与合并测试
     - **Property 3: Result ordering and merging after re-search**
     - **Validates: Requirements 2.3, 3.1, 3.4, 4.1**
     - 验证本地结果在前、去重后的外部结果在后
-  - [ ] 12.3 Property 6: 清除操作状态重置测试
+  - [x] 12.3 Property 6: 清除操作状态重置测试
     - **Property 6: Clear action clears all results**
     - **Validates: Requirements 4.3**
     - 验证 `clear()` 方法正确重置所有状态
+  - _Completed: 2025-12-26, Commit: [pending]_
 
 - [ ] 13. Final Checkpoint - 代码审核和提交
   - 使用 Codex MCP 审核代码改动

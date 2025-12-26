@@ -121,6 +121,7 @@ class EnterpriseSearchState {
     this.total = 0,
     this.error,
     this.reSearchError,
+    this.reSearchNotice,
     this.keyword = '',
     this.dataSource,
     this.externalDataSourceType,
@@ -138,6 +139,7 @@ class EnterpriseSearchState {
   final int total;
   final String? error;
   final String? reSearchError;
+  final String? reSearchNotice;
   final String keyword;
   final EnterpriseSearchDataSource? dataSource;
   final EnterpriseDataSourceType? externalDataSourceType;
@@ -152,6 +154,7 @@ class EnterpriseSearchState {
 
   bool get hasError => error != null;
   bool get hasReSearchError => reSearchError != null;
+  bool get hasReSearchNotice => reSearchNotice != null;
   bool get hasResults => results.isNotEmpty;
   
   // 批量导入相关 getters
@@ -198,6 +201,7 @@ class EnterpriseSearchState {
     int? total,
     String? error,
     String? reSearchError,
+    String? reSearchNotice,
     String? keyword,
     EnterpriseSearchDataSource? dataSource,
     EnterpriseDataSourceType? externalDataSourceType,
@@ -209,6 +213,7 @@ class EnterpriseSearchState {
     List<BatchImportError>? importErrors,
     bool clearError = false,
     bool clearReSearchError = false,
+    bool clearReSearchNotice = false,
     bool clearDataSource = false,
     bool clearImportErrors = false,
   }) {
@@ -221,6 +226,9 @@ class EnterpriseSearchState {
       reSearchError: clearReSearchError
           ? null
           : (reSearchError ?? this.reSearchError),
+      reSearchNotice: clearReSearchNotice
+          ? null
+          : (reSearchNotice ?? this.reSearchNotice),
       keyword: keyword ?? this.keyword,
       dataSource: clearDataSource ? null : (dataSource ?? this.dataSource),
       externalDataSourceType:
@@ -282,6 +290,7 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
       keyword: trimmedKeyword,
       clearError: true,
       clearReSearchError: true, // 清理重新搜索错误
+      clearReSearchNotice: true, // 清理重新搜索通知
       clearDataSource: true,
     );
 
@@ -456,6 +465,7 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
     state = state.copyWith(
       isReSearching: true,
       clearReSearchError: true,
+      clearReSearchNotice: true,
       keyword: resolvedKeyword, // 同步更新 keyword
     );
 
@@ -486,16 +496,29 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
             )
             .toList();
         
-        // 追加去重后的外部结果到本地结果之后
-        final mergedResults = [...localResults, ...uniqueExternalResults];
-        
-        state = state.copyWith(
-          isReSearching: false,
-          results: mergedResults,
-          total: mergedResults.length,
-          dataSource: EnterpriseSearchDataSource.mixed,
-          externalDataSourceType: currentDataSourceType,
-        );
+        // 检查是否有新结果
+        if (uniqueExternalResults.isEmpty) {
+          // 无新结果：设置通知
+          final dataSourceName = currentDataSourceType == EnterpriseDataSourceType.iqicha 
+              ? '爱企查' 
+              : '企查查';
+          
+          state = state.copyWith(
+            isReSearching: false,
+            reSearchNotice: '已从$dataSourceName搜索，未发现新结果。',
+          );
+        } else {
+          // 有新结果：追加去重后的外部结果到本地结果之后
+          final mergedResults = [...localResults, ...uniqueExternalResults];
+          
+          state = state.copyWith(
+            isReSearching: false,
+            results: mergedResults,
+            total: mergedResults.length,
+            dataSource: EnterpriseSearchDataSource.mixed,
+            externalDataSourceType: currentDataSourceType,
+          );
+        }
       } else {
         // 失败时保留本地结果，设置错误信息
         state = state.copyWith(

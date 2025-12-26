@@ -172,6 +172,24 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
       previous,
       next,
     ) {
+      // 只在当前页面显示
+      if (ModalRoute.of(context)?.isCurrent != true) return;
+      
+      // 当 reSearchNotice 从 null 变为非 null 时显示通知
+      if (previous?.reSearchNotice == null && next.reSearchNotice != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              next.reSearchNotice!,
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+            ),
+            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+      
       // 当 reSearchError 从 null 变为非 null 时显示错误提示
       if (previous?.reSearchError == null && next.reSearchError != null) {
         ScaffoldMessenger.of(context).showSnackBar(

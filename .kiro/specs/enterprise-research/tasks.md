@@ -66,21 +66,43 @@
     5. 确认横幅显示"本地 + 企查查"
   - 如有问题，请告知用户
 
-- [ ]* 9. 编写属性测试
-  - [ ]* 9.1 Property 1: canReSearch 逻辑测试
-    - **Property 1: Re-search button visibility depends on data source**
-    - **Validates: Requirements 1.1, 1.2, 1.3, 1.4**
-  - [ ]* 9.2 Property 3: 结果排序测试
-    - **Property 3: Result ordering after re-search**
-    - **Validates: Requirements 2.3, 3.1, 4.1**
-  - [ ]* 9.3 Property 5: 错误处理保留本地结果测试
+- [ ] 9. 实现结果去重逻辑
+  - 在 `reSearchExternal` 方法中，合并结果前，根据 `creditCode` 移除与本地结果重复的外部结果
+  - 使用 `Set<String>` 存储本地结果的 `creditCode` 以提升查找效率
+  - 保留本地版本的记录，丢弃外部重复记录
+  - _Requirements: 3.4_
+
+- [ ] 10. 实现"未找到新结果"的 UI 反馈
+  - 当 `reSearchExternal` 成功但去重后的外部结果为空时，触发一个 SnackBar 通知
+  - 提示文案：`"已从[数据源名称]搜索，未发现新结果。"`
+  - 这属于成功场景，不应触发 `reSearchError`
+  - _Requirements: 2.6_
+
+- [ ] 11. 重构错误处理为结构化错误
+  - 定义 `ReSearchError` 类和 `ReSearchErrorType` 枚举
+  - 修改 `EnterpriseSearchState` 的 `reSearchError` 字段类型从 `String?` 改为 `ReSearchError?`
+  - 在 `reSearchExternal` 方法中根据错误消息分类错误类型
+  - 在 UI 层根据错误类型显示不同的 SnackBar 消息和操作建议
+  - _Requirements: 5.1, 5.2, 5.3_
+
+- [ ] 12. 编写属性测试（高优先级）
+  - [ ] 12.1 Property 5: 错误处理保留本地结果测试
     - **Property 5: Error handling preserves local results**
     - **Validates: Requirements 2.5, 4.2**
+    - 使用 `glados` 库生成随机失败场景，验证本地结果不变
+  - [ ] 12.2 Property 3: 结果排序与合并测试
+    - **Property 3: Result ordering and merging after re-search**
+    - **Validates: Requirements 2.3, 3.1, 3.4, 4.1**
+    - 验证本地结果在前、去重后的外部结果在后
+  - [ ] 12.3 Property 6: 清除操作状态重置测试
+    - **Property 6: Clear action clears all results**
+    - **Validates: Requirements 4.3**
+    - 验证 `clear()` 方法正确重置所有状态
 
-- [x] 10. Final Checkpoint - 代码审核和提交
+- [ ] 13. Final Checkpoint - 代码审核和提交
   - 使用 Codex MCP 审核代码改动
   - 运行 `flutter analyze` 确保无警告
-  - 提交代码：`git commit -m "feat(flutter): 企业搜索添加重新搜索功能"`
+  - 提交代码：`git commit -m "feat(flutter): 企业搜索重新搜索功能完善（去重+结构化错误+属性测试）"`
 
 ## Notes
 

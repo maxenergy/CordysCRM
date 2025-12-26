@@ -39,6 +39,7 @@
 3. WHEN Re_Search completes successfully THEN the system SHALL append external results after local results
 4. WHEN Re_Search completes THEN the system SHALL update the data source to "mixed"
 5. IF Re_Search fails THEN the system SHALL display an error message without clearing local results
+6. IF Re_Search completes successfully but finds no new external results THEN the system SHALL display a temporary notification (e.g., a SnackBar) informing the user that no new results were found, and the result list SHALL remain unchanged
 
 ### Requirement 3: Mixed Results Display
 
@@ -49,6 +50,7 @@
 1. WHEN displaying mixed results THEN the Enterprise_Search_Page SHALL show local results first, followed by external results
 2. WHEN displaying mixed results THEN the Data_Source_Banner SHALL indicate "本地 + 企查查" or "本地 + 爱企查"
 3. WHEN displaying mixed results THEN each Enterprise_Search_Result_Item SHALL show its source (本地/企查查/爱企查) via the source chip
+4. WHEN merging results THEN the system SHALL remove external results that are duplicates of local results. Duplicates are identified by their unique `creditCode`. The local version of the record SHALL always be preserved
 
 ### Requirement 4: State Preservation
 
@@ -59,3 +61,13 @@
 1. WHEN Re_Search is triggered THEN the system SHALL preserve existing local results
 2. WHEN Re_Search fails THEN the system SHALL keep the original local results unchanged
 3. WHEN user clears the search THEN the system SHALL clear all results (both local and external)
+
+### Requirement 5: Granular Error Handling
+
+**User Story:** As a sales representative, when a re-search fails, I want to know why it failed and what I can do next, so I can resolve the issue myself.
+
+#### Acceptance Criteria
+
+1. WHEN re-search fails due to the external source requiring login THEN the system SHALL display a message explaining this and provide a shortcut to navigate to the login page
+2. WHEN re-search fails due to network issues or timeouts THEN the system SHALL display a corresponding error message
+3. WHEN re-search fails because the search engine is not ready THEN the system SHALL instruct the user to initialize it first

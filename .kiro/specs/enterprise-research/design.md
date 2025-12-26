@@ -73,43 +73,98 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
   // 现有方法...
   
   /// 重新搜索外部数据源
-  /// 保留本地结果，追加外部结果
-  Future<void> reSearchExternal() async {
+  /// 
+  /// 保留本地结果，追加外部结果。
+  /// [keyword] 可选参数，允许调用方传入当前输入框的值，解决输入框与 state.keyword 不同步的问题。
+  Future<void> reSearchExternal({String? keyword}) async {
     if (!state.canReSearch) return;
     
-    final keyword = state.keyword;
+    // 优先使用传入的 keyword，否则使用 state 中保存的 keyword
+    final resolvedKeyword = (keyword ?? state.keyword).trim();
+    if (resolvedKeyword.length < 2) {
+      state = state.copyWith(
+        reSearchError: ReSearchError(
+          type: ReSearchErrorType.unknown,
+          message: '请输入至少2个字符的企业名称',
+        ),
+      );
+      return;
+    }
+    
     final localResults = state.results;
     
     state = state.copyWith(
       isReSearching: true,
       clearReSearchError: true,
+      keyword: resolvedKeyword, // 同步更新 keyword
     );
     
     try {
       // 根据当前数据源类型搜索
-      final externalResult = await _searchExternalSource(keyword);
+      final externalResult = await _searchExternalSource(resolvedKeyword);
       
       if (externalResult.success) {
+        // 去重：移除与本地结果重复的外部结果
+        final localCreditCodes = localResults.map((e) => e.creditCode).toSet();
+        final uniqueExternalResults = externalResult.items.where(
+          (ext) => !localCreditCodes.contains(ext.creditCode)
+        ).toList();
+        
         // 追加外部结果到本地结果之后
-        final mergedResults = [...localResults, ...externalResult.items];
+        final mergedResults = [...localResults, ...uniqueExternalResults];
+        
         state = state.copyWith(
           isReSearching: false,
           results: mergedResults,
           total: mergedResults.length,
           dataSource: EnterpriseSearchDataSource.mixed,
         );
+        
+        // 如果没有找到新结果，触发通知
+        if (uniqueExternalResults.isEmpty) {
+          _notifyNoNewResults();
+        }
       } else {
+        // 根据错误类型创建结构化错误
+        final errorType = _classifyError(externalResult.message);
         state = state.copyWith(
           isReSearching: false,
-          reSearchError: externalResult.message,
+          reSearchError: ReSearchError(
+            type: errorType,
+            message: externalResult.message ?? '重新搜索失败',
+          ),
         );
       }
     } catch (e) {
       state = state.copyWith(
         isReSearching: false,
-        reSearchError: '重新搜索失败: $e',
+        reSearchError: ReSearchError(
+          type: ReSearchErrorType.unknown,
+          message: '重新搜索失败: $e',
+        ),
       );
     }
+  }
+  
+  /// 根据错误消息分类错误类型
+  ReSearchErrorType _classifyError(String? message) {
+    if (message == null) return ReSearchErrorType.unknown;
+    
+    final lowerMessage = message.toLowerCase();
+    if (lowerMessage.contains('webview') || lowerMessage.contains('未打开')) {
+      return ReSearchErrorType.webViewNotReady;
+    } else if (lowerMessage.contains('登录') || lowerMessage.contains('验证码')) {
+      return ReSearchErrorType.authenticationRequired;
+    } else if (lowerMessage.contains('网络') || lowerMessage.contains('超时')) {
+      return ReSearchErrorType.networkOrTimeout;
+    }
+    return ReSearchErrorType.unknown;
+  }
+  
+  /// 通知用户未找到新结果（由 UI 层实现）
+  void _notifyNoNewResults() {
+    // 这个方法会在 UI 层通过监听状态变化来实现
+    // 可以通过添加一个临时标志位来触发 SnackBar
   }
 }
 ```
@@ -197,6 +252,40 @@ String _getMixedLabel() {
 ### EnterpriseSearchState 更新
 
 ```dart
+/// 重新搜索错误类型
+enum ReSearchErrorType {
+  /// WebView 未准备好，无法执行JS调用
+  webViewNotReady,
+  /// 需要登录或验证码
+  authenticationRequired,
+  /// 网络问题或API调用超时
+  networkOrTimeout,
+  /// 未知错误
+  unknown,
+}
+
+/// 结构化的重新搜索错误
+class ReSearchError {
+  const ReSearchError({
+    required this.type,
+    this.message = '',
+  });
+
+  final ReSearchErrorType type;
+  final String message; // 原始错误信息，用于调试
+
+  String getUserMessage() {
+    return switch (type) {
+      ReSearchErrorType.webViewNotReady => '搜索组件未就绪，请先加载企查查页面。',
+      ReSearchErrorType.authenticationRequired => '需要登录或验证，请先在企查查页面完成操作。',
+      ReSearchErrorType.networkOrTimeout => '网络连接失败或搜索超时，请稍后重试。',
+      ReSearchErrorType.unknown => '发生未知错误，请重试或联系支持。',
+    };
+  }
+
+  bool get canNavigateToWebView => type == ReSearchErrorType.authenticationRequired;
+}
+
 class EnterpriseSearchState {
   const EnterpriseSearchState({
     this.isSearching = false,
@@ -206,7 +295,7 @@ class EnterpriseSearchState {
     this.keyword = '',
     this.dataSource,
     this.isReSearching = false,  // 新增
-    this.reSearchError,  // 新增
+    this.reSearchError,  // 新增：使用结构化错误
   });
 
   final bool isSearching;
@@ -216,7 +305,7 @@ class EnterpriseSearchState {
   final String keyword;
   final EnterpriseSearchDataSource? dataSource;
   final bool isReSearching;  // 新增
-  final String? reSearchError;  // 新增
+  final ReSearchError? reSearchError;  // 新增：使用结构化错误
 
   bool get hasError => error != null;
   bool get hasResults => results.isNotEmpty;
@@ -237,7 +326,7 @@ class EnterpriseSearchState {
     String? keyword,
     EnterpriseSearchDataSource? dataSource,
     bool? isReSearching,
-    String? reSearchError,
+    ReSearchError? reSearchError,
     bool clearError = false,
     bool clearDataSource = false,
     bool clearReSearchError = false,
@@ -304,14 +393,93 @@ class EnterpriseSearchState {
 
 ### 重新搜索错误处理
 
-1. **WebView 未就绪**：显示错误提示，引导用户先打开企查查/爱企查页面
-2. **网络错误**：显示错误提示，保留本地结果
-3. **搜索超时**：显示超时提示，保留本地结果
-4. **验证码/登录要求**：显示提示，引导用户去 WebView 页面处理
+使用结构化错误代替简单字符串，提供更丰富的错误信息和用户指导：
+
+#### 错误类型定义
+
+```dart
+enum ReSearchErrorType {
+  /// WebView 未准备好，无法执行JS调用
+  webViewNotReady,
+  /// 需要登录或验证码
+  authenticationRequired,
+  /// 网络问题或API调用超时
+  networkOrTimeout,
+  /// 未知错误
+  unknown,
+}
+
+class ReSearchError {
+  const ReSearchError({
+    required this.type,
+    this.message = '',
+  });
+
+  final ReSearchErrorType type;
+  final String message; // 原始错误信息，用于调试
+
+  String getUserMessage() {
+    return switch (type) {
+      ReSearchErrorType.webViewNotReady => '搜索组件未就绪，请先加载企查查页面。',
+      ReSearchErrorType.authenticationRequired => '需要登录或验证，请先在企查查页面完成操作。',
+      ReSearchErrorType.networkOrTimeout => '网络连接失败或搜索超时，请稍后重试。',
+      ReSearchErrorType.unknown => '发生未知错误，请重试或联系支持。',
+    };
+  }
+
+  bool get canNavigateToWebView => type == ReSearchErrorType.authenticationRequired;
+}
+```
+
+#### UI 层错误处理
+
+```dart
+void _showErrorFeedback(BuildContext context, ReSearchError error) {
+  String errorMessage = error.getUserMessage();
+  String? actionLabel;
+  VoidCallback? onAction;
+
+  if (error.canNavigateToWebView) {
+    actionLabel = '去处理';
+    onAction = () {
+      context.push(AppRoutes.enterpriseWebView);
+    };
+  }
+  
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(errorMessage),
+      action: actionLabel != null 
+        ? SnackBarAction(label: actionLabel, onPressed: onAction!)
+        : null,
+    ),
+  );
+}
+```
+
+### 错误分类逻辑
+
+在 `EnterpriseSearchNotifier` 中根据错误消息分类：
+
+```dart
+ReSearchErrorType _classifyError(String? message) {
+  if (message == null) return ReSearchErrorType.unknown;
+  
+  final lowerMessage = message.toLowerCase();
+  if (lowerMessage.contains('webview') || lowerMessage.contains('未打开')) {
+    return ReSearchErrorType.webViewNotReady;
+  } else if (lowerMessage.contains('登录') || lowerMessage.contains('验证码')) {
+    return ReSearchErrorType.authenticationRequired;
+  } else if (lowerMessage.contains('网络') || lowerMessage.contains('超时')) {
+    return ReSearchErrorType.networkOrTimeout;
+  }
+  return ReSearchErrorType.unknown;
+}
+```
 
 ### 错误显示
 
-重新搜索错误通过 `reSearchError` 字段存储，在 UI 中通过 SnackBar 或 Toast 显示，不影响已有的本地结果展示。
+重新搜索错误通过 `ReSearchError` 对象存储，在 UI 中通过 SnackBar 显示，根据错误类型提供不同的操作建议，不影响已有的本地结果展示。
 
 ## Testing Strategy
 
@@ -320,21 +488,62 @@ class EnterpriseSearchState {
 1. **EnterpriseSearchState 测试**
    - 测试 `canReSearch` 在各种状态下的返回值
    - 测试 `copyWith` 方法正确处理新字段
+   - 测试 `ReSearchError` 的 `getUserMessage()` 方法
 
 2. **EnterpriseSearchNotifier 测试**
    - 测试 `reSearchExternal` 方法的状态转换
-   - 测试错误处理逻辑
+   - 测试去重逻辑正确性
+   - 测试错误分类逻辑
+   - 测试"未找到新结果"场景
 
-### 属性测试
+### 属性测试（高优先级）
 
-使用 Dart 的 `glados` 或 `test_random` 库进行属性测试：
+使用 Dart 的 `glados` 库进行属性测试，优先实现以下 3 个关键属性：
 
-1. **Property 1**: 生成随机 EnterpriseSearchState，验证 `canReSearch` 逻辑
-2. **Property 3**: 生成随机本地结果和外部结果，验证合并顺序
-3. **Property 5**: 模拟失败场景，验证本地结果不变
+#### 1. Property 5: Error handling preserves local results（最高优先级）
+
+*For any* failed re-search operation, the local results in the state should remain unchanged from before the operation.
+
+**验证方法：**
+- 生成随机的本地结果列表
+- 模拟各种失败场景（网络错误、WebView 未就绪等）
+- 验证失败后本地结果列表完全不变
+
+**重要性：** 数据丢失是严重 Bug，此属性保证了用户已有的本地搜索结果不会丢失。
+
+**Validates: Requirements 2.5, 4.2**
+
+#### 2. Property 3: Result ordering and merging after re-search（高优先级）
+
+*For any* successful re-search operation with local results `L` and external results `E`, the merged results list should be `L ++ uniqueExternal(E)` where `uniqueExternal(E)` excludes duplicates based on `creditCode`.
+
+**验证方法：**
+- 生成随机本地结果和外部结果
+- 确保部分外部结果与本地结果重复（相同 creditCode）
+- 验证合并后：本地结果在前、去重后的外部结果在后
+- 验证重复的外部结果被正确移除
+
+**重要性：** 这是功能的核心逻辑，直接关系到功能是否按预期工作。
+
+**Validates: Requirements 2.3, 3.1, 3.4, 4.1**
+
+#### 3. Property 6: Clear action clears all results（中等优先级）
+
+*For any* clear operation on a state with mixed results, the resulting state should have empty results and no data source.
+
+**验证方法：**
+- 生成随机的混合结果状态
+- 调用 `clear()` 方法
+- 验证所有字段被正确重置
+
+**重要性：** 保证状态可以被正确重置，避免旧数据污染新搜索。
+
+**Validates: Requirements 4.3**
 
 ### Widget 测试
 
 1. 测试"重新搜索"按钮在正确条件下显示/隐藏
 2. 测试按钮点击触发正确的 Provider 方法
 3. 测试加载状态正确显示
+4. 测试错误 SnackBar 根据错误类型显示不同内容
+5. 测试"未找到新结果"的 SnackBar 显示

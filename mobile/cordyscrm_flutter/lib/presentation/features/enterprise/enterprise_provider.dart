@@ -473,8 +473,22 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
       }
 
       if (externalResult.success) {
-        // 追加外部结果到本地结果之后
-        final mergedResults = [...localResults, ...externalResult.items];
+        // 去重：移除与本地结果重复的外部结果（基于 creditCode）
+        // 空 creditCode 不参与去重，因为空值不能作为唯一标识
+        final localCreditCodes = localResults
+            .map((e) => e.creditCode)
+            .where((code) => code.isNotEmpty)
+            .toSet();
+        
+        final uniqueExternalResults = externalResult.items
+            .where(
+              (e) => e.creditCode.isEmpty || !localCreditCodes.contains(e.creditCode),
+            )
+            .toList();
+        
+        // 追加去重后的外部结果到本地结果之后
+        final mergedResults = [...localResults, ...uniqueExternalResults];
+        
         state = state.copyWith(
           isReSearching: false,
           results: mergedResults,

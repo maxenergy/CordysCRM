@@ -148,6 +148,21 @@ class BatchImportError {
   final String error;
 }
 
+/// 选择操作错误类型
+enum SelectionToggleError {
+  localEnterpriseNotSelectable,
+  selectionLimitReached,
+}
+
+extension SelectionToggleErrorMessage on SelectionToggleError {
+  String get message {
+    return switch (this) {
+      SelectionToggleError.localEnterpriseNotSelectable => '该企业已在本地库中',
+      SelectionToggleError.selectionLimitReached => '最多选择50个企业',
+    };
+  }
+}
+
 /// 企业搜索状态
 class EnterpriseSearchState {
   const EnterpriseSearchState({
@@ -197,9 +212,31 @@ class EnterpriseSearchState {
   int get selectedCount => selectedIds.length;
   bool get hasSelection => selectedIds.isNotEmpty;
   bool get canBatchImport => isSelectionMode && hasSelection && !isBatchImporting;
-  bool get isAllSelected => results
-      .where((e) => !e.isLocal)
-      .every((e) => selectedIds.contains(e.creditCode));
+  
+  /// 是否全选状态
+  /// 
+  /// 当满足以下条件之一时返回 true：
+  /// 1. 所有可选企业都被选中（可选企业数 <= 50）
+  /// 2. 选中数量达到上限 50 个（可选企业数 > 50）
+  bool get isAllSelected {
+    final selectableEnterprises = results.where((e) => !e.isLocal).toList();
+    
+    if (selectableEnterprises.isEmpty) {
+      return false;
+    }
+    
+    final selectableCount = selectableEnterprises.length;
+    final maxSelectable = selectableCount < 50 ? selectableCount : 50;
+    
+    // 选中数量达到最大可选数量，且所有选中的都是有效的可选企业
+    if (selectedIds.length >= maxSelectable) {
+      final selectableIds = selectableEnterprises.map((e) => e.creditCode).toSet();
+      return selectedIds.every(selectableIds.contains);
+    }
+    
+    return false;
+  }
+  
   List<Enterprise> get selectedEnterprises =>
       results.where((e) => selectedIds.contains(e.creditCode)).toList();
 
@@ -663,7 +700,11 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
   }
 
   /// 切换选择状态
-  void toggleSelection(String creditCode) {
+  /// 
+  /// 返回值：
+  /// - null: 操作成功
+  /// - SelectionToggleError: 操作失败，包含错误类型
+  SelectionToggleError? toggleSelection(String creditCode) {
     final enterprise = state.results.firstWhere(
       (e) => e.creditCode == creditCode,
       orElse: () => throw StateError('Enterprise not found'),
@@ -671,23 +712,23 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
 
     // 本地企业不可选
     if (enterprise.isLocal) {
-      // 触发 toast 提示将在 UI 层处理
-      return;
+      return SelectionToggleError.localEnterpriseNotSelectable;
     }
 
     final newSelectedIds = Set<String>.from(state.selectedIds);
     if (newSelectedIds.contains(creditCode)) {
+      // 取消选择
       newSelectedIds.remove(creditCode);
     } else {
-      // 检查是否达到上限
+      // 添加选择：检查是否达到上限
       if (newSelectedIds.length >= 50) {
-        // 触发 toast 提示将在 UI 层处理
-        return;
+        return SelectionToggleError.selectionLimitReached;
       }
       newSelectedIds.add(creditCode);
     }
 
     state = state.copyWith(selectedIds: newSelectedIds);
+    return null;
   }
 
   /// 全选/取消全选

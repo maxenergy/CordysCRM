@@ -25,12 +25,25 @@ class EnterpriseSearchResultItem extends ConsumerWidget {
     final isSelectionMode = searchState.isSelectionMode;
     final isSelected = searchState.selectedIds.contains(enterprise.creditCode);
 
+    void handleSelectionWithFeedback() {
+      final error = ref
+          .read(enterpriseSearchProvider.notifier)
+          .toggleSelection(enterprise.creditCode);
+      
+      if (error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.message),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+
     void handleTap() {
       // 如果在选择模式下，单击是切换选择
       if (isSelectionMode) {
-        ref
-            .read(enterpriseSearchProvider.notifier)
-            .toggleSelection(enterprise.creditCode);
+        handleSelectionWithFeedback();
       } else {
         // 否则，执行传入的onTap回调（例如，导航到详情页）
         onTap();
@@ -64,13 +77,11 @@ class EnterpriseSearchResultItem extends ConsumerWidget {
                   padding: const EdgeInsets.only(right: 12),
                   child: Checkbox(
                     value: isSelected,
-                    // 本地企业不允许取消选择（如果需要此逻辑）
+                    // 本地企业不允许选择
                     onChanged: enterprise.isLocal
                         ? null
                         : (selected) {
-                            ref
-                                .read(enterpriseSearchProvider.notifier)
-                                .toggleSelection(enterprise.creditCode);
+                            handleSelectionWithFeedback();
                           },
                   ),
                 ),

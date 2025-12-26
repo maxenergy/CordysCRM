@@ -98,6 +98,42 @@ const List<Enterprise> _mockEnterprises = [];
 
 // ==================== Search State ====================
 
+/// 重新搜索错误类型
+enum ReSearchErrorType {
+  /// WebView 未准备好，无法执行JS调用
+  webViewNotReady,
+  /// 需要登录或验证码
+  authenticationRequired,
+  /// 网络问题或API调用超时
+  networkOrTimeout,
+  /// 未知错误
+  unknown,
+}
+
+/// 结构化的重新搜索错误
+class ReSearchError {
+  const ReSearchError({
+    required this.type,
+    this.message = '',
+  });
+
+  final ReSearchErrorType type;
+  final String message; // 原始错误信息，用于调试
+
+  /// 获取用户友好的错误消息
+  String getUserMessage() {
+    return switch (type) {
+      ReSearchErrorType.webViewNotReady => '搜索组件未就绪，请先加载企查查页面。',
+      ReSearchErrorType.authenticationRequired => '需要登录或验证，请先在企查查页面完成操作。',
+      ReSearchErrorType.networkOrTimeout => '网络连接失败或搜索超时，请稍后重试。',
+      ReSearchErrorType.unknown => '发生未知错误，请重试或联系支持。',
+    };
+  }
+
+  /// 是否可以导航到 WebView 页面处理
+  bool get canNavigateToWebView => type == ReSearchErrorType.authenticationRequired;
+}
+
 /// 企业搜索数据来源
 enum EnterpriseSearchDataSource { local, iqicha, qcc, mixed }
 
@@ -138,7 +174,7 @@ class EnterpriseSearchState {
   final List<Enterprise> results;
   final int total;
   final String? error;
-  final String? reSearchError;
+  final ReSearchError? reSearchError;
   final String? reSearchNotice;
   final String keyword;
   final EnterpriseSearchDataSource? dataSource;
@@ -200,7 +236,7 @@ class EnterpriseSearchState {
     List<Enterprise>? results,
     int? total,
     String? error,
-    String? reSearchError,
+    ReSearchError? reSearchError,
     String? reSearchNotice,
     String? keyword,
     EnterpriseSearchDataSource? dataSource,
@@ -441,6 +477,56 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
     );
   }
 
+  /// 根据错误消息分类错误类型
+  ReSearchError _classifyError(String? message) {
+    if (message == null || message.isEmpty) {
+      return const ReSearchError(type: ReSearchErrorType.unknown);
+    }
+
+    final lowerMessage = message.toLowerCase();
+
+    // WebView 未就绪
+    if (lowerMessage.contains('未打开') ||
+        lowerMessage.contains('未加载') ||
+        lowerMessage.contains('请先打开') ||
+        lowerMessage.contains('webview') ||
+        lowerMessage.contains('已关闭') ||
+        lowerMessage.contains('未就绪')) {
+      return ReSearchError(
+        type: ReSearchErrorType.webViewNotReady,
+        message: message,
+      );
+    }
+
+    // 需要登录/验证
+    if (lowerMessage.contains('登录') ||
+        lowerMessage.contains('验证') ||
+        lowerMessage.contains('验证码') ||
+        lowerMessage.contains('授权') ||
+        lowerMessage.contains('cookie')) {
+      return ReSearchError(
+        type: ReSearchErrorType.authenticationRequired,
+        message: message,
+      );
+    }
+
+    // 网络/超时
+    if (lowerMessage.contains('网络') ||
+        lowerMessage.contains('超时') ||
+        lowerMessage.contains('timeout') ||
+        lowerMessage.contains('timed out') ||
+        lowerMessage.contains('connection') ||
+        lowerMessage.contains('failed host lookup')) {
+      return ReSearchError(
+        type: ReSearchErrorType.networkOrTimeout,
+        message: message,
+      );
+    }
+
+    // 未知错误
+    return ReSearchError(type: ReSearchErrorType.unknown, message: message);
+  }
+
   /// 重新搜索外部数据源
   ///
   /// 仅在当前结果来自本地库时触发外部搜索，并将外部结果追加到本地结果后。
@@ -454,7 +540,10 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
     final resolvedKeyword = (keyword ?? state.keyword).trim();
     if (resolvedKeyword.length < 2) {
       state = state.copyWith(
-        reSearchError: '请输入至少2个字符的企业名称',
+        reSearchError: const ReSearchError(
+          type: ReSearchErrorType.unknown,
+          message: '请输入至少2个字符的企业名称',
+        ),
       );
       return;
     }
@@ -523,7 +612,7 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
         // 失败时保留本地结果，设置错误信息
         state = state.copyWith(
           isReSearching: false,
-          reSearchError: externalResult.message ?? '重新搜索失败',
+          reSearchError: _classifyError(externalResult.message ?? '重新搜索失败'),
         );
       }
     } catch (e) {
@@ -532,7 +621,10 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
         return;
       }
 
-      state = state.copyWith(isReSearching: false, reSearchError: '重新搜索失败: $e');
+      state = state.copyWith(
+        isReSearching: false,
+        reSearchError: _classifyError('重新搜索失败: $e'),
+      );
     }
   }
 

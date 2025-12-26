@@ -66,24 +66,30 @@
     5. 确认横幅显示"本地 + 企查查"
   - 如有问题，请告知用户
 
-- [ ] 9. 实现结果去重逻辑
+- [x] 9. 实现结果去重逻辑 ✅
   - 在 `reSearchExternal` 方法中，合并结果前，根据 `creditCode` 移除与本地结果重复的外部结果
   - 使用 `Set<String>` 存储本地结果的 `creditCode` 以提升查找效率
   - 保留本地版本的记录，丢弃外部重复记录
+  - 空 creditCode 不参与去重，避免误删
   - _Requirements: 3.4_
+  - _Completed: 2025-12-26, Commit: 1d3ce8fba_
 
-- [ ] 10. 实现"未找到新结果"的 UI 反馈
+- [ ] 10. 实现"未找到新结果"的 UI 反馈 ✅
   - 当 `reSearchExternal` 成功但去重后的外部结果为空时，触发一个 SnackBar 通知
   - 提示文案：`"已从[数据源名称]搜索，未发现新结果。"`
   - 这属于成功场景，不应触发 `reSearchError`
+  - 添加 `reSearchNotice` 字段和相应的清理逻辑
+  - 使用中性色背景和合适的文本色
   - _Requirements: 2.6_
+  - _Completed: 2025-12-26, Commit: 0ef386539_
 
-- [ ] 11. 重构错误处理为结构化错误
+- [x] 11. 重构错误处理为结构化错误 ✅
   - 定义 `ReSearchError` 类和 `ReSearchErrorType` 枚举
   - 修改 `EnterpriseSearchState` 的 `reSearchError` 字段类型从 `String?` 改为 `ReSearchError?`
   - 在 `reSearchExternal` 方法中根据错误消息分类错误类型
   - 在 UI 层根据错误类型显示不同的 SnackBar 消息和操作建议
   - _Requirements: 5.1, 5.2, 5.3_
+  - _Completed: 2025-12-26, Commit: [pending]_
 
 - [ ] 12. 编写属性测试（高优先级）
   - [ ] 12.1 Property 5: 错误处理保留本地结果测试

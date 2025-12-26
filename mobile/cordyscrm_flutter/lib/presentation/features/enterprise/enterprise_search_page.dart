@@ -192,18 +192,34 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
       
       // 当 reSearchError 从 null 变为非 null 时显示错误提示
       if (previous?.reSearchError == null && next.reSearchError != null) {
+        final error = next.reSearchError!;
+        final userMessage = error.getUserMessage();
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(next.reSearchError!),
+            content: Text(userMessage),
             backgroundColor: theme.colorScheme.error,
             behavior: SnackBarBehavior.floating,
-            action: SnackBarAction(
-              label: '关闭',
-              textColor: theme.colorScheme.onError,
-              onPressed: () {
-                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-              },
-            ),
+            action: error.canNavigateToWebView
+                ? SnackBarAction(
+                    label: '去处理',
+                    textColor: theme.colorScheme.onError,
+                    onPressed: () async {
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      await context.push(AppRoutes.enterprise);
+                      // 用户返回后，如果页面仍然可用且搜索框有内容，自动重新搜索
+                      if (mounted && _searchController.text.trim().length >= 2) {
+                        _performSearch(_searchController.text.trim());
+                      }
+                    },
+                  )
+                : SnackBarAction(
+                    label: '关闭',
+                    textColor: theme.colorScheme.onError,
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    },
+                  ),
           ),
         );
       }

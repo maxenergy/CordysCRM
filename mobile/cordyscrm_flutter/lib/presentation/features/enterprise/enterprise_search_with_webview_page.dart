@@ -434,9 +434,12 @@ class _EnterpriseSearchWithWebViewPageState
     ) {
       // 当 reSearchError 从 null 变为非 null 时显示错误提示
       if (previous?.reSearchError == null && next.reSearchError != null) {
+        final error = next.reSearchError!;
+        final userMessage = error.getUserMessage();
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(next.reSearchError!),
+            content: Text(userMessage),
             backgroundColor: theme.colorScheme.error,
             behavior: SnackBarBehavior.floating,
             action: SnackBarAction(

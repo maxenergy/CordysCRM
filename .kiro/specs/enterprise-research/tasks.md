@@ -89,7 +89,7 @@
   - 在 `reSearchExternal` 方法中根据错误消息分类错误类型
   - 在 UI 层根据错误类型显示不同的 SnackBar 消息和操作建议
   - _Requirements: 5.1, 5.2, 5.3_
-  - _Completed: 2025-12-26, Commit: [pending]_
+  - _Completed: 2025-12-26, Commit: 3c0b7329f_
 
 - [ ] 12. 编写属性测试（高优先级）
   - [ ] 12.1 Property 5: 错误处理保留本地结果测试

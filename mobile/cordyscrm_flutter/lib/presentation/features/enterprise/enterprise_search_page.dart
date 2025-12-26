@@ -232,8 +232,11 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
 
       // 导入完成时关闭进度对话框并显示结果
       if (previous?.isBatchImporting == true && !next.isBatchImporting) {
-        Navigator.of(context).pop(); // 关闭进度对话框
-        _showBatchImportSummaryDialog(next);
+        // 确保当前路由仍是该页面，避免误关闭其他路由
+        if (ModalRoute.of(context)?.isCurrent == true) {
+          Navigator.of(context).pop(); // 关闭进度对话框
+          _showBatchImportSummaryDialog(next);
+        }
       }
     });
 

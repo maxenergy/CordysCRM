@@ -65,11 +65,11 @@ This implementation plan addresses the P1 issue where AI cost calculation uses a
   - Test deleteById removes record
   - _Requirements: 8.1, 8.2, 8.3, 8.4_
 
-- [ ] 3. Phase 3: Pricing Service with Caching
+- [x] 3. Phase 3: Pricing Service with Caching
   - Implement service layer with in-memory caching
   - _Requirements: 2.1, 2.3, 4.1, 4.2, 4.3, 4.4, 6.1, 6.2, 6.3_
 
-- [ ] 3.1 Create AiModelPricingService class
+- [x] 3.1 Create AiModelPricingService class
   - Implement `@PostConstruct initialize()` method to load cache
   - Implement `@Scheduled refreshCache()` method (every 1 hour)
   - Implement `getPricing(provider, model)` method with fallback
@@ -79,7 +79,7 @@ This implementation plan addresses the P1 issue where AI cost calculation uses a
   - Use ConcurrentHashMap for thread-safe cache
   - _Requirements: 4.1, 4.2, 4.3, 6.1, 6.2, 6.3_
 
-- [ ] 3.2 Add fallback pricing configuration
+- [x] 3.2 Add fallback pricing configuration
   - Add `ai.pricing.fallback.input` property to application.yml
   - Add `ai.pricing.fallback.output` property to application.yml
   - Implement `createFallbackPricing()` method
@@ -95,7 +95,7 @@ This implementation plan addresses the P1 issue where AI cost calculation uses a
   - Test updatePricing() persists and refreshes cache
   - _Requirements: 4.1, 4.2, 4.3, 6.1_
 
-- [ ] 4. Checkpoint - Verify Pricing Service
+- [x] 4. Checkpoint - Verify Pricing Service
   - Ensure all tests pass
   - Manually test cache initialization
   - Manually test fallback pricing

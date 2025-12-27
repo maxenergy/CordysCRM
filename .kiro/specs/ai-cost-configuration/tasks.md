@@ -6,19 +6,19 @@ This implementation plan addresses the P1 issue where AI cost calculation uses a
 
 ## Tasks
 
-- [ ] 1. Phase 1: Database Schema - Create Pricing Table
+- [x] 1. Phase 1: Database Schema - Create Pricing Table
   - Create ai_model_pricing table with proper indexes
   - Insert default pricing for existing models
   - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-- [ ] 1.1 Create database migration script
+- [x] 1.1 Create database migration script
   - Create SQL migration file `V1.6.0_1__ai_model_pricing.sql`
   - Define table schema with all required fields
   - Add unique constraint on (provider_code, model_code)
   - Add indexes for performance
   - _Requirements: 1.1_
 
-- [ ] 1.2 Insert default pricing data
+- [x] 1.2 Insert default pricing data
   - Add pricing for OpenAI models (gpt-4, gpt-3.5-turbo)
   - Add pricing for Aliyun models (qwen-max, qwen-plus)
   - Add pricing for any other configured providers
@@ -31,17 +31,17 @@ This implementation plan addresses the P1 issue where AI cost calculation uses a
   - Test default data insertion
   - _Requirements: 1.1_
 
-- [ ] 2. Phase 2: Domain and Mapper Layer
+- [x] 2. Phase 2: Domain and Mapper Layer
   - Create domain entity and mapper for pricing configuration
   - _Requirements: 1.1, 2.1, 2.4, 8.1, 8.2, 8.3, 8.4_
 
-- [ ] 2.1 Create AiModelPricing domain entity
+- [x] 2.1 Create AiModelPricing domain entity
   - Define all fields (id, provider_code, model_code, prices, etc.)
   - Implement `getCacheKey()` method
   - Implement `calculateCost(inputTokens, outputTokens)` method using BigDecimal
   - _Requirements: 1.4, 2.2, 2.4_
 
-- [ ] 2.2 Create AiModelPricingMapper interface
+- [x] 2.2 Create AiModelPricingMapper interface
   - Define `selectAllActive()` method
   - Define `selectByProviderAndModel(provider, model)` method
   - Define `insert(pricing)` method
@@ -49,7 +49,7 @@ This implementation plan addresses the P1 issue where AI cost calculation uses a
   - Define `deleteById(id)` method
   - _Requirements: 8.1, 8.2, 8.3, 8.4_
 
-- [ ] 2.3 Create AiModelPricingMapper.xml
+- [x] 2.3 Create AiModelPricingMapper.xml
   - Implement SQL for selectAllActive
   - Implement SQL for selectByProviderAndModel
   - Implement SQL for insert

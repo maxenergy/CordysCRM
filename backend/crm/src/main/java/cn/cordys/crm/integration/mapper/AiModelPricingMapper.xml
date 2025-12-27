@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.cordys.crm.integration.mapper.AiModelPricingMapper">
+
+    <!-- Result Map -->
+    <resultMap id="BaseResultMap" type="cn.cordys.crm.integration.domain.AiModelPricing">
+        <id column="id" property="id" jdbcType="VARCHAR"/>
+        <result column="provider_code" property="providerCode" jdbcType="VARCHAR"/>
+        <result column="model_code" property="modelCode" jdbcType="VARCHAR"/>
+        <result column="model_name" property="modelName" jdbcType="VARCHAR"/>
+        <result column="input_price" property="inputPrice" jdbcType="DECIMAL"/>
+        <result column="output_price" property="outputPrice" jdbcType="DECIMAL"/>
+        <result column="unit" property="unit" jdbcType="INTEGER"/>
+        <result column="currency" property="currency" jdbcType="VARCHAR"/>
+        <result column="enabled" property="enabled" jdbcType="BIT"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="BIGINT"/>
+        <result column="update_time" property="updateTime" jdbcType="BIGINT"/>
+        <result column="create_user" property="createUser" jdbcType="VARCHAR"/>
+        <result column="update_user" property="updateUser" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- Base Column List -->
+    <sql id="Base_Column_List">
+        id, provider_code, model_code, model_name, input_price, output_price, unit, currency,
+        enabled, description, create_time, update_time, create_user, update_user
+    </sql>
+
+    <!-- 查询所有启用的定价配置 -->
+    <select id="selectAllActive" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM ai_model_pricing
+        WHERE enabled = 1
+        ORDER BY provider_code, model_code
+    </select>
+
+    <!-- 根据提供商和模型查询定价配置 -->
+    <select id="selectByProviderAndModel" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM ai_model_pricing
+        WHERE provider_code = #{providerCode}
+        AND model_code = #{modelCode}
+        LIMIT 1
+    </select>
+
+    <!-- 插入定价配置 -->
+    <insert id="insert" parameterType="cn.cordys.crm.integration.domain.AiModelPricing">
+        INSERT INTO ai_model_pricing (
+            id, provider_code, model_code, model_name, input_price, output_price, unit, currency,
+            enabled, description, create_time, update_time, create_user, update_user
+        ) VALUES (
+            #{id}, #{providerCode}, #{modelCode}, #{modelName}, #{inputPrice}, #{outputPrice},
+            #{unit}, #{currency}, #{enabled}, #{description}, #{createTime}, #{updateTime},
+            #{createUser}, #{updateUser}
+        )
+    </insert>
+
+    <!-- 更新定价配置 -->
+    <update id="update" parameterType="cn.cordys.crm.integration.domain.AiModelPricing">
+        UPDATE ai_model_pricing
+        SET provider_code = #{providerCode},
+            model_code = #{modelCode},
+            model_name = #{modelName},
+            input_price = #{inputPrice},
+            output_price = #{outputPrice},
+            unit = #{unit},
+            currency = #{currency},
+            enabled = #{enabled},
+            description = #{description},
+            update_time = #{updateTime},
+            update_user = #{updateUser}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID删除定价配置 -->
+    <delete id="deleteById">
+        DELETE FROM ai_model_pricing
+        WHERE id = #{id}
+    </delete>
+
+</mapper>

@@ -101,40 +101,35 @@ This implementation plan addresses the P1 issue where AI cost calculation uses a
   - Manually test fallback pricing
   - Ask the user if questions arise
 
-- [ ] 5. Phase 4: Update AIService
+- [x] 5. Phase 4: Update AIService
   - Integrate pricing service into AI generation flow
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 3.2, 3.3, 5.1, 5.2, 5.3_
 
-- [ ] 5.1 Inject AiModelPricingService into AIService
+- [x] 5.1 Inject AiModelPricingService into AIService
   - Add `@Resource private AiModelPricingService pricingService;`
   - _Requirements: 2.1_
 
-- [ ] 5.2 Implement calculateCost() method
+- [x] 5.2 Implement calculateCost() method
   - Replace hardcoded calculation with pricing lookup
   - Call `pricingService.getPricing(provider, model)`
   - Call `pricing.calculateCost(inputTokens, outputTokens)`
   - Use BigDecimal for all calculations
   - _Requirements: 2.1, 2.2, 2.4_
 
-- [ ] 5.3 Update generate() method
+- [x] 5.3 Update generate() method
   - Extract provider code and model code from response
   - Call new `calculateCost()` method
   - Pass accurate cost to `logGeneration()`
   - _Requirements: 2.1, 2.2, 5.1_
 
-- [ ] 5.4 Update AIGenerationLog entity
-  - Add `providerCode` field
-  - Add `modelCode` field
-  - Add `inputTokens` field
-  - Add `outputTokens` field
-  - Add `inputPricePer1k` field
-  - Add `outputPricePer1k` field
+- [x] 5.4 Update AIGenerationLog entity
+  - Add `inputPrice` field
+  - Add `outputPrice` field
   - Add `currency` field
   - _Requirements: 5.1, 5.2, 5.3_
 
-- [ ] 5.5 Update logGeneration() method
-  - Store provider code and model code
-  - Store input and output token counts
+- [x] 5.5 Update logGeneration() method
+  - Store input and output pricing
   - Store pricing used for calculation
   - Store currency
   - _Requirements: 5.1, 5.2, 5.3_
@@ -146,7 +141,7 @@ This implementation plan addresses the P1 issue where AI cost calculation uses a
   - Mock AiModelPricingService for isolation
   - _Requirements: 2.1, 2.2, 2.3, 5.1_
 
-- [ ] 6. Checkpoint - Verify AI Cost Calculation
+- [x] 6. Checkpoint - Verify AI Cost Calculation
   - Ensure all tests pass
   - Manually test AI generation with different models
   - Verify cost logs contain accurate pricing details

@@ -1,0 +1,28 @@
+{
+  "name": "Claude-Mem: Tool Execution Capture",
+  "description": "Captures tool usage as observations for memory compression",
+  "enabled": true,
+  "trigger": {
+    "type": "on-tool-use",
+    "filter": {
+      "tools": ["*"]
+    }
+  },
+  "action": {
+    "type": "command",
+    "command": "node",
+    "args": [
+      "${WORKSPACE}/.kiro/scripts/kiro-tool-hook.cjs"
+    ],
+    "timeout": 30000,
+    "env": {
+      "KIRO_WORKSPACE": "${WORKSPACE}",
+      "KIRO_SESSION_ID": "${SESSION_ID}"
+    }
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "author": "claude-mem",
+    "category": "memory"
+  }
+}

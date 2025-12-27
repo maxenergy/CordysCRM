@@ -1,0 +1,25 @@
+{
+  "name": "Claude-Mem: Session Start Context Injection",
+  "description": "Injects memory context from previous sessions at session start",
+  "enabled": true,
+  "trigger": {
+    "type": "on-session-start"
+  },
+  "action": {
+    "type": "command",
+    "command": "node",
+    "args": [
+      "${WORKSPACE}/.kiro/scripts/kiro-context-hook.cjs"
+    ],
+    "timeout": 30000,
+    "env": {
+      "KIRO_WORKSPACE": "${WORKSPACE}",
+      "KIRO_SESSION_ID": "${SESSION_ID}"
+    }
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "author": "claude-mem",
+    "category": "memory"
+  }
+}

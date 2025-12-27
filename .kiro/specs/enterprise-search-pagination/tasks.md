@@ -6,17 +6,17 @@ This implementation plan addresses the P0 data accessibility bug where users can
 
 ## Tasks
 
-- [ ] 1. Phase 1: Mapper Layer - Add SQL Pagination Support
+- [x] 1. Phase 1: Mapper Layer - Add SQL Pagination Support
   - Update ExtEnterpriseProfileMapper interface and XML to support pagination
   - Add count query for accurate total counts
   - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3_
 
-- [ ] 1.1 Update ExtEnterpriseProfileMapper.java interface
+- [x] 1.1 Update ExtEnterpriseProfileMapper.java interface
   - Modify `searchByCompanyName` method signature to add `offset` and `limit` parameters
   - Add new `countByCompanyName` method
   - _Requirements: 2.1, 3.1_
 
-- [ ] 1.2 Update ExtEnterpriseProfileMapper.xml SQL queries
+- [x] 1.2 Update ExtEnterpriseProfileMapper.xml SQL queries
   - Modify `searchByCompanyName` query to use `LIMIT #{offset}, #{limit}` instead of `LIMIT 50`
   - Add `countByCompanyName` query with same WHERE clause as search query
   - _Requirements: 2.1, 3.1, 3.3_
@@ -27,12 +27,12 @@ This implementation plan addresses the P0 data accessibility bug where users can
   - Test edge cases (offset beyond total, limit 0, etc.)
   - _Requirements: 2.1, 3.1_
 
-- [ ] 2. Phase 2: Service Layer - Update Pagination Logic
+- [x] 2. Phase 2: Service Layer - Update Pagination Logic
   - Update EnterpriseService to use SQL pagination instead of memory pagination
   - Update hybrid search logic to fetch both local and remote for all pages
   - _Requirements: 1.1, 1.2, 1.3, 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 2.1 Update searchLocalEnterprise method
+- [x] 2.1 Update searchLocalEnterprise method
   - Calculate `offset = (page - 1) * pageSize`
   - Call `countByCompanyName` to get total count
   - Call `searchByCompanyName` with offset and limit
@@ -40,7 +40,7 @@ This implementation plan addresses the P0 data accessibility bug where users can
   - Return `SearchResult.success(items, totalCount)`
   - _Requirements: 1.1, 1.2, 1.3, 2.2, 3.2_
 
-- [ ] 2.2 Update searchEnterprise method (hybrid search)
+- [x] 2.2 Update searchEnterprise method (hybrid search)
   - Remove `if (safePage > 1) return remote` logic
   - Fetch local results for page N using SQL pagination
   - Fetch remote results for page N
@@ -55,7 +55,7 @@ This implementation plan addresses the P0 data accessibility bug where users can
   - Test error handling (remote failure, invalid parameters)
   - _Requirements: 1.1, 4.3, 8.1, 8.2_
 
-- [ ] 3. Checkpoint - Verify Core Functionality
+- [x] 3. Checkpoint - Verify Core Functionality
   - Ensure all tests pass
   - Manually test with > 50 records in database
   - Verify page 6 returns records 51-60

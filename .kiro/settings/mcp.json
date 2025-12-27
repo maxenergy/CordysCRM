@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "claude-mem": {
+      "command": "node",
+      "args": [
+        "/home/rogers/source/custom/CordysCRM/.kiro/scripts/mcp-server.cjs"
+      ],
+      "env": {
+        "CLAUDE_MEM_WORKER_PORT": "37777",
+        "KIRO_WORKSPACE": "/home/rogers/source/custom/CordysCRM"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "help",
+        "search",
+        "timeline",
+        "get_recent_context"
+      ]
+    }
+  }
+}

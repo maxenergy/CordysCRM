@@ -1,0 +1,25 @@
+{
+  "name": "Claude-Mem: Session Summary Generation",
+  "description": "Generates session summary when session ends",
+  "enabled": true,
+  "trigger": {
+    "type": "on-session-end"
+  },
+  "action": {
+    "type": "command",
+    "command": "node",
+    "args": [
+      "${WORKSPACE}/.kiro/scripts/kiro-summary-hook.cjs"
+    ],
+    "timeout": 30000,
+    "env": {
+      "KIRO_WORKSPACE": "${WORKSPACE}",
+      "KIRO_SESSION_ID": "${SESSION_ID}"
+    }
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "author": "claude-mem",
+    "category": "memory"
+  }
+}

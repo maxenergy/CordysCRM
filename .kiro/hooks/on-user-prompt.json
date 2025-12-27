@@ -1,0 +1,25 @@
+{
+  "name": "Claude-Mem: User Prompt Capture",
+  "description": "Captures user prompts and creates/updates session records",
+  "enabled": true,
+  "trigger": {
+    "type": "on-user-prompt"
+  },
+  "action": {
+    "type": "command",
+    "command": "node",
+    "args": [
+      "${WORKSPACE}/.kiro/scripts/kiro-prompt-hook.cjs"
+    ],
+    "timeout": 30000,
+    "env": {
+      "KIRO_WORKSPACE": "${WORKSPACE}",
+      "KIRO_SESSION_ID": "${SESSION_ID}"
+    }
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "author": "claude-mem",
+    "category": "memory"
+  }
+}

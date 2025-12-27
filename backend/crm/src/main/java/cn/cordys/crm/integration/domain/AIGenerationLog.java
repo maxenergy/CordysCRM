@@ -57,6 +57,15 @@ public class AIGenerationLog implements Serializable {
     @Schema(description = "费用")
     private BigDecimal cost;
 
+    @Schema(description = "Input Token Price")
+    private BigDecimal inputPrice;
+
+    @Schema(description = "Output Token Price")
+    private BigDecimal outputPrice;
+
+    @Schema(description = "Currency")
+    private String currency;
+
     @Schema(description = "组织ID")
     private String organizationId;
 

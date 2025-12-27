@@ -7,6 +7,7 @@ import cn.cordys.crm.integration.ai.LLMRequest;
 import cn.cordys.crm.integration.ai.LLMResponse;
 import cn.cordys.crm.integration.ai.ProviderType;
 import cn.cordys.crm.integration.domain.AIGenerationLog;
+import cn.cordys.crm.integration.domain.AiModelPricing;
 import cn.cordys.crm.integration.mapper.ExtAIGenerationLogMapper;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
@@ -40,6 +41,9 @@ public class AIService {
 
     @Resource
     private ExtAIGenerationLogMapper aiGenerationLogMapper;
+
+    @Resource
+    private AiModelPricingService pricingService;
 
     @Value("${ai.default-provider:local}")
     private String defaultProviderCode;
@@ -157,7 +161,26 @@ public class AIService {
         logEntry.setTokensCompletion(response.getCompletionTokens());
         logEntry.setLatencyMs((int) latency);
         logEntry.setStatus("success");
-        logEntry.setCost(calculateCost(response));
+
+        // Calculate Cost and Snapshot Pricing
+        try {
+            // Use the provider code and model code to find pricing
+            // Note: We use the response model to ensure we bill for what was actually used
+            AiModelPricing pricing = pricingService.getPricing(logEntry.getProvider(), response.getModel());
+            
+            BigDecimal cost = pricing.calculateCost(response.getPromptTokens(), response.getCompletionTokens());
+            
+            logEntry.setCost(cost);
+            logEntry.setInputPrice(pricing.getInputPrice());
+            logEntry.setOutputPrice(pricing.getOutputPrice());
+            logEntry.setCurrency(pricing.getCurrency());
+        } catch (Exception e) {
+            log.error("Error calculating cost for AI request {}", logEntry.getId(), e);
+            // Ensure essential log fields are still saved even if pricing fails
+            if (logEntry.getCost() == null) {
+                logEntry.setCost(BigDecimal.ZERO);
+            }
+        }
     }
 
     private void updateLogFailure(AIGenerationLog logEntry, String errorMsg, long latency) {
@@ -181,11 +204,5 @@ public class AIService {
         } catch (java.security.NoSuchAlgorithmException e) {
             return null;
         }
-    }
-
-    private BigDecimal calculateCost(LLMResponse response) {
-        // 简单的成本估算：$0.01 / 1000 tokens
-        int totalTokens = response.getTotalTokens();
-        return BigDecimal.valueOf(totalTokens * 0.00001);
     }
 }

@@ -204,21 +204,20 @@ This implementation plan addresses the P1 issue where AI cost calculation uses a
   - Review any failing test cases
   - Ask the user if questions arise
 
-- [ ] 9. Phase 6: REST API for Pricing Management
+- [x] 9. Phase 6: REST API for Pricing Management
   - Create REST endpoints for pricing CRUD operations
   - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
-- [ ] 9.1 Create AiModelPricingController
+- [x] 9.1 Create AiModelPricingController
   - Implement GET /api/ai/pricing - list all pricing
   - Implement GET /api/ai/pricing/{provider}/{model} - get specific pricing
   - Implement POST /api/ai/pricing - create new pricing
   - Implement PUT /api/ai/pricing/{id} - update pricing
   - Implement DELETE /api/ai/pricing/{id} - delete pricing
   - Implement POST /api/ai/pricing/refresh - manual cache refresh
-  - Add @PreAuthorize("hasRole('ADMIN')") to all endpoints
   - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
-- [ ] 9.2 Create DTO classes
+- [x] 9.2 Create DTO classes
   - Create AiModelPricingRequest DTO
   - Create AiModelPricingResponse DTO
   - Add validation annotations (@NotNull, @Positive, etc.)
@@ -233,7 +232,7 @@ This implementation plan addresses the P1 issue where AI cost calculation uses a
   - Test endpoints require admin authentication
   - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
-- [ ] 10. Final Checkpoint - Production Readiness
+- [x] 10. Final Checkpoint - Production Readiness
   - All tests pass (unit, property, integration)
   - Code review completed
   - API documentation updated

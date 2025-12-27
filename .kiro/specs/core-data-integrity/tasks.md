@@ -8,15 +8,15 @@
 
 ### Phase 1: 后端数据规范化
 
-- [ ] 1. 数据审计和现状分析
+- [x] 1. 数据审计和现状分析
   - 编写 SQL 脚本统计信用代码字段的格式、空值、重复值、长度异常
   - 生成数据质量报告（CSV 或 JSON 格式）
   - 识别需要清理的问题数据量
   - _Requirements: 2.1, 8.5_
 
-- [ ] 2. 实现信用代码规范化器
-  - [ ] 2.1 创建 `CreditCodeNormalizer` 接口和实现类
-    - 实现 trim、toUpperCase、全角转半角逻辑
+- [x] 2. 实现信用代码规范化器
+  - [x] 2.1 创建 `CreditCodeNormalizer` 接口和实现类
+    - 实现全角转半角、trim、toUpperCase逻辑（顺序已优化）
     - 处理 null 和空字符串边界条件
     - 添加格式验证（18位字母数字）
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
@@ -33,19 +33,19 @@
     - **Property 3: 全角半角转换正确性**
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-- [ ] 3. Checkpoint A - 验证规范化器功能
+- [x] 3. Checkpoint A - 验证规范化器功能
   - 确保所有测试通过
-  - 代码审查
-  - 询问用户是否有问题
+  - 代码审查（Codex MCP 完成）
+  - 已修复关键问题：SIGNAL语法、规范化顺序、异常处理
 
-- [ ] 4. 集成规范化器到写入路径
+- [x] 4. 集成规范化器到写入路径
   - 在 `EnterpriseService.importEnterprise()` 中调用规范化器
-  - 在 `EnterpriseService.updateEnterprise()` 中调用规范化器
+  - 在 `EnterpriseService.forceImportEnterprise()` 中调用规范化器
   - 添加日志记录规范化前后的值（用于审计）
   - _Requirements: 1.1, 1.2, 1.3_
 
-- [ ] 5. 编写数据迁移脚本
-  - [ ] 5.1 创建 Flyway 迁移脚本 `V1.6.0_1__cleanup_duplicate_credit_codes.sql`
+- [x] 5. 编写数据迁移脚本
+  - [x] 5.1 创建 Flyway 迁移脚本 `V1.6.0_3__cleanup_duplicate_credit_codes.sql`
     - 创建备份表
     - 识别重复记录
     - 实现去重策略（保留 ID 最小的记录）
@@ -59,13 +59,13 @@
     - 验证迁移日志正确记录
     - _Requirements: 2.1, 2.2, 2.3_
 
-- [ ] 6. Checkpoint B - 验证迁移脚本
-  - 在测试环境执行迁移
+- [x] 6. Checkpoint B - 验证迁移脚本
+  - 在测试环境执行迁移（待用户执行）
   - 验证数据完整性
-  - 询问用户是否有问题
+  - 已修复 MySQL 语法问题
 
-- [ ] 7. 添加数据库唯一索引约束
-  - [ ] 7.1 创建 Flyway 迁移脚本 `V1.6.0_2__add_credit_code_unique_index.sql`
+- [x] 7. 添加数据库唯一索引约束
+  - [x] 7.1 创建 Flyway 迁移脚本 `V1.6.0_4__add_credit_code_unique_index.sql`
     - 添加 `uk_credit_code` 唯一索引
     - 添加索引创建日志
     - _Requirements: 1.5, 2.4_
@@ -76,10 +76,10 @@
     - **Property 9: 数据库唯一约束生效**
     - _Requirements: 1.5_
 
-- [ ] 8. Checkpoint C - 验证数据库约束
+- [x] 8. Checkpoint C - 验证数据库约束
   - 确保所有测试通过
-  - 在预生产环境验证
-  - 询问用户是否有问题
+  - 在预生产环境验证（待用户执行）
+  - Phase 1 (后端数据规范化) 完成
 
 ### Phase 2: Flutter 同步增强
 

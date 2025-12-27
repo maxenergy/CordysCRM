@@ -10,6 +10,7 @@ import cn.cordys.crm.integration.dto.response.EnterpriseImportResponse.FieldConf
 import cn.cordys.crm.integration.mapper.ExtEnterpriseProfileMapper;
 import cn.cordys.crm.integration.service.IqichaSearchService.EnterpriseItem;
 import cn.cordys.crm.integration.service.IqichaSearchService.SearchResult;
+import cn.cordys.crm.integration.util.CreditCodeNormalizer;
 import cn.cordys.mybatis.BaseMapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +50,9 @@ public class EnterpriseService {
     @Resource
     private IqichaSearchService iqichaSearchService;
 
+    @Resource
+    private CreditCodeNormalizer creditCodeNormalizer;
+
     /**
      * 导入企业信息
      * 
@@ -58,6 +62,15 @@ public class EnterpriseService {
      */
     @Transactional(rollbackFor = Exception.class)
     public EnterpriseImportResponse importEnterprise(EnterpriseImportRequest request, String organizationId) {
+        // 0. 规范化信用代码
+        String originalCreditCode = request.getCreditCode();
+        String normalizedCreditCode = creditCodeNormalizer.normalize(originalCreditCode);
+        request.setCreditCode(normalizedCreditCode);
+        
+        if (!Objects.equals(originalCreditCode, normalizedCreditCode)) {
+            log.info("Credit code normalized: '{}' -> '{}'", originalCreditCode, normalizedCreditCode);
+        }
+        
         // 1. 检查是否存在重复记录（基于统一社会信用代码）
         EnterpriseProfile existing = findByCreditCode(request.getCreditCode(), organizationId);
         
@@ -89,6 +102,15 @@ public class EnterpriseService {
      */
     @Transactional(rollbackFor = Exception.class)
     public EnterpriseImportResponse forceImportEnterprise(EnterpriseImportRequest request, String organizationId) {
+        // 规范化信用代码
+        String originalCreditCode = request.getCreditCode();
+        String normalizedCreditCode = creditCodeNormalizer.normalize(originalCreditCode);
+        request.setCreditCode(normalizedCreditCode);
+        
+        if (!Objects.equals(originalCreditCode, normalizedCreditCode)) {
+            log.info("Credit code normalized (force import): '{}' -> '{}'", originalCreditCode, normalizedCreditCode);
+        }
+        
         EnterpriseProfile existing = findByCreditCode(request.getCreditCode(), organizationId);
         
         if (existing != null) {

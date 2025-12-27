@@ -35,7 +35,21 @@ public interface ExtEnterpriseProfileMapper {
      *
      * @param companyName    企业名称
      * @param organizationId 组织ID
+     * @param offset         偏移量
+     * @param limit          每页数量
      * @return 企业工商信息列表
      */
-    List<EnterpriseProfile> searchByCompanyName(@Param("companyName") String companyName, @Param("orgId") String organizationId);
+    List<EnterpriseProfile> searchByCompanyName(@Param("companyName") String companyName,
+                                                @Param("orgId") String organizationId,
+                                                @Param("offset") int offset,
+                                                @Param("limit") int limit);
+
+    /**
+     * 根据企业名称模糊查询总数
+     *
+     * @param companyName    企业名称
+     * @param organizationId 组织ID
+     * @return 企业工商信息总数
+     */
+    long countByCompanyName(@Param("companyName") String companyName, @Param("orgId") String organizationId);
 }

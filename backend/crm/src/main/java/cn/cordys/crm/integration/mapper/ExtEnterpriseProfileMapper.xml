@@ -33,7 +33,14 @@
         WHERE company_name LIKE CONCAT('%', #{companyName}, '%')
           AND organization_id = #{orgId}
         ORDER BY create_time DESC
-        LIMIT 50
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="countByCompanyName" resultType="long">
+        SELECT COUNT(1)
+        FROM enterprise_profile
+        WHERE company_name LIKE CONCAT('%', #{companyName}, '%')
+          AND organization_id = #{orgId}
     </select>
 
 </mapper>

@@ -37,7 +37,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration {
@@ -48,7 +48,13 @@ class AppDatabase extends _$AppDatabase {
         await _createIndexes();
       },
       onUpgrade: (Migrator m, int from, int to) async {
-        // 未来版本升级时在此处理迁移逻辑
+        // 版本 1 -> 2: 添加 SyncQueue 新字段
+        if (from == 1) {
+          await m.addColumn(syncQueue, syncQueue.attemptCount);
+          await m.addColumn(syncQueue, syncQueue.errorType);
+          await m.addColumn(syncQueue, syncQueue.errorMessage);
+          await m.addColumn(syncQueue, syncQueue.updatedAt);
+        }
       },
       beforeOpen: (details) async {
         // 启用外键约束
@@ -86,6 +92,8 @@ class AppDatabase extends _$AppDatabase {
         'CREATE INDEX IF NOT EXISTS idx_sync_queue_entity ON sync_queue(entity_type, entity_id)');
     await customStatement(
         'CREATE INDEX IF NOT EXISTS idx_sync_queue_created_at ON sync_queue(created_at)');
+    await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_sync_queue_updated_at ON sync_queue(updated_at)');
   }
 
   /// 清空所有数据（用于登出或测试）

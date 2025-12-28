@@ -42,6 +42,16 @@ class SyncQueueDao extends DatabaseAccessor<AppDatabase>
         .get();
   }
 
+  /// 获取过期的处理中同步项
+  Future<List<SyncQueueItemData>> findInProgressBefore(DateTime cutoff) {
+    return (select(syncQueue)
+          ..where((q) =>
+              q.status.equalsValue(SyncQueueItemStatus.inProgress) &
+              q.updatedAt.isSmallerThanValue(cutoff))
+          ..orderBy([(q) => OrderingTerm.asc(q.updatedAt)]))
+        .get();
+  }
+
   /// 添加同步项（防重复）
   ///
   /// 如果已存在相同实体和操作类型的待同步项，则更新 payload；否则插入新项
@@ -82,13 +92,21 @@ class SyncQueueDao extends DatabaseAccessor<AppDatabase>
   /// 更新同步项状态
   Future<int> updateItemStatus(int id, SyncQueueItemStatus status) {
     return (update(syncQueue)..where((q) => q.id.equals(id))).write(
-      SyncQueueCompanion(status: Value(status)),
+      SyncQueueCompanion(
+        status: Value(status),
+        updatedAt: Value(DateTime.now()),
+      ),
     );
   }
 
   /// 标记为处理中
   Future<int> markAsInProgress(int id) {
-    return updateItemStatus(id, SyncQueueItemStatus.inProgress);
+    return (update(syncQueue)..where((q) => q.id.equals(id))).write(
+      SyncQueueCompanion(
+        status: const Value(SyncQueueItemStatus.inProgress),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   /// 标记为失败并增加重试次数
@@ -101,6 +119,37 @@ class SyncQueueDao extends DatabaseAccessor<AppDatabase>
       SyncQueueCompanion(
         status: const Value(SyncQueueItemStatus.failed),
         attemptCount: Value(item.attemptCount + 1),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  /// 更新重试次数
+  Future<int> updateAttemptCount(int id, int count) {
+    return (update(syncQueue)..where((q) => q.id.equals(id))).write(
+      SyncQueueCompanion(
+        attemptCount: Value(count),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  /// 更新错误类型
+  Future<int> updateErrorType(int id, String type) {
+    return (update(syncQueue)..where((q) => q.id.equals(id))).write(
+      SyncQueueCompanion(
+        errorType: Value(type),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  /// 更新错误消息
+  Future<int> updateErrorMessage(int id, String message) {
+    return (update(syncQueue)..where((q) => q.id.equals(id))).write(
+      SyncQueueCompanion(
+        errorMessage: Value(message),
+        updatedAt: Value(DateTime.now()),
       ),
     );
   }

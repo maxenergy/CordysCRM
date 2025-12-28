@@ -3,11 +3,11 @@
     "claude-mem": {
       "command": "node",
       "args": [
-        "/home/rogers/source/custom/CordysCRM/.kiro/scripts/mcp-server.cjs"
+        "/home/rogers/source/develop/kiro-mem/.kiro/scripts/auto-init-mcp-server.cjs"
       ],
       "env": {
         "CLAUDE_MEM_WORKER_PORT": "37777",
-        "KIRO_WORKSPACE": "/home/rogers/source/custom/CordysCRM"
+        "CLAUDE_MEM_SOURCE_PROJECT": "/home/rogers/source/custom/CordysCRM"
       },
       "disabled": false,
       "autoApprove": [

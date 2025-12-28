@@ -1768,12 +1768,46 @@ class $SyncQueueTable extends SyncQueue
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _errorTypeMeta = const VerificationMeta(
+    'errorType',
+  );
+  @override
+  late final GeneratedColumn<String> errorType = GeneratedColumn<String>(
+    'error_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _errorMessageMeta = const VerificationMeta(
+    'errorMessage',
+  );
+  @override
+  late final GeneratedColumn<String> errorMessage = GeneratedColumn<String>(
+    'error_message',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
   @override
   late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
     'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
     aliasedName,
     false,
     type: DriftSqlType.dateTime,
@@ -1789,7 +1823,10 @@ class $SyncQueueTable extends SyncQueue
     payload,
     status,
     attemptCount,
+    errorType,
+    errorMessage,
     createdAt,
+    updatedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1839,10 +1876,31 @@ class $SyncQueueTable extends SyncQueue
         ),
       );
     }
+    if (data.containsKey('error_type')) {
+      context.handle(
+        _errorTypeMeta,
+        errorType.isAcceptableOrUnknown(data['error_type']!, _errorTypeMeta),
+      );
+    }
+    if (data.containsKey('error_message')) {
+      context.handle(
+        _errorMessageMeta,
+        errorMessage.isAcceptableOrUnknown(
+          data['error_message']!,
+          _errorMessageMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
       );
     }
     return context;
@@ -1886,9 +1944,21 @@ class $SyncQueueTable extends SyncQueue
         DriftSqlType.int,
         data['${effectivePrefix}attempt_count'],
       )!,
+      errorType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}error_type'],
+      ),
+      errorMessage: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}error_message'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
       )!,
     );
   }
@@ -1927,8 +1997,17 @@ class SyncQueueItemData extends DataClass
   /// 重试次数
   final int attemptCount;
 
+  /// 错误类型（retryable/nonRetryable/fatal）
+  final String? errorType;
+
+  /// 错误消息
+  final String? errorMessage;
+
   /// 创建时间
   final DateTime createdAt;
+
+  /// 更新时间
+  final DateTime updatedAt;
   const SyncQueueItemData({
     required this.id,
     required this.entityType,
@@ -1937,7 +2016,10 @@ class SyncQueueItemData extends DataClass
     required this.payload,
     required this.status,
     required this.attemptCount,
+    this.errorType,
+    this.errorMessage,
     required this.createdAt,
+    required this.updatedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1957,7 +2039,14 @@ class SyncQueueItemData extends DataClass
       );
     }
     map['attempt_count'] = Variable<int>(attemptCount);
+    if (!nullToAbsent || errorType != null) {
+      map['error_type'] = Variable<String>(errorType);
+    }
+    if (!nullToAbsent || errorMessage != null) {
+      map['error_message'] = Variable<String>(errorMessage);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
 
@@ -1970,7 +2059,14 @@ class SyncQueueItemData extends DataClass
       payload: Value(payload),
       status: Value(status),
       attemptCount: Value(attemptCount),
+      errorType: errorType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(errorType),
+      errorMessage: errorMessage == null && nullToAbsent
+          ? const Value.absent()
+          : Value(errorMessage),
       createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
     );
   }
 
@@ -1991,7 +2087,10 @@ class SyncQueueItemData extends DataClass
         serializer.fromJson<int>(json['status']),
       ),
       attemptCount: serializer.fromJson<int>(json['attemptCount']),
+      errorType: serializer.fromJson<String?>(json['errorType']),
+      errorMessage: serializer.fromJson<String?>(json['errorMessage']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
   @override
@@ -2009,7 +2108,10 @@ class SyncQueueItemData extends DataClass
         $SyncQueueTable.$converterstatus.toJson(status),
       ),
       'attemptCount': serializer.toJson<int>(attemptCount),
+      'errorType': serializer.toJson<String?>(errorType),
+      'errorMessage': serializer.toJson<String?>(errorMessage),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
 
@@ -2021,7 +2123,10 @@ class SyncQueueItemData extends DataClass
     String? payload,
     SyncQueueItemStatus? status,
     int? attemptCount,
+    Value<String?> errorType = const Value.absent(),
+    Value<String?> errorMessage = const Value.absent(),
     DateTime? createdAt,
+    DateTime? updatedAt,
   }) => SyncQueueItemData(
     id: id ?? this.id,
     entityType: entityType ?? this.entityType,
@@ -2030,7 +2135,10 @@ class SyncQueueItemData extends DataClass
     payload: payload ?? this.payload,
     status: status ?? this.status,
     attemptCount: attemptCount ?? this.attemptCount,
+    errorType: errorType.present ? errorType.value : this.errorType,
+    errorMessage: errorMessage.present ? errorMessage.value : this.errorMessage,
     createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
   );
   SyncQueueItemData copyWithCompanion(SyncQueueCompanion data) {
     return SyncQueueItemData(
@@ -2045,7 +2153,12 @@ class SyncQueueItemData extends DataClass
       attemptCount: data.attemptCount.present
           ? data.attemptCount.value
           : this.attemptCount,
+      errorType: data.errorType.present ? data.errorType.value : this.errorType,
+      errorMessage: data.errorMessage.present
+          ? data.errorMessage.value
+          : this.errorMessage,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
 
@@ -2059,7 +2172,10 @@ class SyncQueueItemData extends DataClass
           ..write('payload: $payload, ')
           ..write('status: $status, ')
           ..write('attemptCount: $attemptCount, ')
-          ..write('createdAt: $createdAt')
+          ..write('errorType: $errorType, ')
+          ..write('errorMessage: $errorMessage, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
   }
@@ -2073,7 +2189,10 @@ class SyncQueueItemData extends DataClass
     payload,
     status,
     attemptCount,
+    errorType,
+    errorMessage,
     createdAt,
+    updatedAt,
   );
   @override
   bool operator ==(Object other) =>
@@ -2086,7 +2205,10 @@ class SyncQueueItemData extends DataClass
           other.payload == this.payload &&
           other.status == this.status &&
           other.attemptCount == this.attemptCount &&
-          other.createdAt == this.createdAt);
+          other.errorType == this.errorType &&
+          other.errorMessage == this.errorMessage &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
 }
 
 class SyncQueueCompanion extends UpdateCompanion<SyncQueueItemData> {
@@ -2097,7 +2219,10 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueItemData> {
   final Value<String> payload;
   final Value<SyncQueueItemStatus> status;
   final Value<int> attemptCount;
+  final Value<String?> errorType;
+  final Value<String?> errorMessage;
   final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
   const SyncQueueCompanion({
     this.id = const Value.absent(),
     this.entityType = const Value.absent(),
@@ -2106,7 +2231,10 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueItemData> {
     this.payload = const Value.absent(),
     this.status = const Value.absent(),
     this.attemptCount = const Value.absent(),
+    this.errorType = const Value.absent(),
+    this.errorMessage = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
   });
   SyncQueueCompanion.insert({
     this.id = const Value.absent(),
@@ -2116,7 +2244,10 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueItemData> {
     required String payload,
     this.status = const Value.absent(),
     this.attemptCount = const Value.absent(),
+    this.errorType = const Value.absent(),
+    this.errorMessage = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
   }) : entityType = Value(entityType),
        entityId = Value(entityId),
        operation = Value(operation),
@@ -2129,7 +2260,10 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueItemData> {
     Expression<String>? payload,
     Expression<int>? status,
     Expression<int>? attemptCount,
+    Expression<String>? errorType,
+    Expression<String>? errorMessage,
     Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -2139,7 +2273,10 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueItemData> {
       if (payload != null) 'payload': payload,
       if (status != null) 'status': status,
       if (attemptCount != null) 'attempt_count': attemptCount,
+      if (errorType != null) 'error_type': errorType,
+      if (errorMessage != null) 'error_message': errorMessage,
       if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
     });
   }
 
@@ -2151,7 +2288,10 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueItemData> {
     Value<String>? payload,
     Value<SyncQueueItemStatus>? status,
     Value<int>? attemptCount,
+    Value<String?>? errorType,
+    Value<String?>? errorMessage,
     Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
   }) {
     return SyncQueueCompanion(
       id: id ?? this.id,
@@ -2161,7 +2301,10 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueItemData> {
       payload: payload ?? this.payload,
       status: status ?? this.status,
       attemptCount: attemptCount ?? this.attemptCount,
+      errorType: errorType ?? this.errorType,
+      errorMessage: errorMessage ?? this.errorMessage,
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
@@ -2193,8 +2336,17 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueItemData> {
     if (attemptCount.present) {
       map['attempt_count'] = Variable<int>(attemptCount.value);
     }
+    if (errorType.present) {
+      map['error_type'] = Variable<String>(errorType.value);
+    }
+    if (errorMessage.present) {
+      map['error_message'] = Variable<String>(errorMessage.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
     return map;
   }
@@ -2209,7 +2361,10 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueItemData> {
           ..write('payload: $payload, ')
           ..write('status: $status, ')
           ..write('attemptCount: $attemptCount, ')
-          ..write('createdAt: $createdAt')
+          ..write('errorType: $errorType, ')
+          ..write('errorMessage: $errorMessage, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
   }
@@ -3505,7 +3660,10 @@ typedef $$SyncQueueTableCreateCompanionBuilder =
       required String payload,
       Value<SyncQueueItemStatus> status,
       Value<int> attemptCount,
+      Value<String?> errorType,
+      Value<String?> errorMessage,
       Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
     });
 typedef $$SyncQueueTableUpdateCompanionBuilder =
     SyncQueueCompanion Function({
@@ -3516,7 +3674,10 @@ typedef $$SyncQueueTableUpdateCompanionBuilder =
       Value<String> payload,
       Value<SyncQueueItemStatus> status,
       Value<int> attemptCount,
+      Value<String?> errorType,
+      Value<String?> errorMessage,
       Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
     });
 
 class $$SyncQueueTableFilterComposer
@@ -3565,8 +3726,23 @@ class $$SyncQueueTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get errorType => $composableBuilder(
+    column: $table.errorType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get errorMessage => $composableBuilder(
+    column: $table.errorMessage,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -3615,8 +3791,23 @@ class $$SyncQueueTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get errorType => $composableBuilder(
+    column: $table.errorType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get errorMessage => $composableBuilder(
+    column: $table.errorMessage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -3655,8 +3846,19 @@ class $$SyncQueueTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get errorType =>
+      $composableBuilder(column: $table.errorType, builder: (column) => column);
+
+  GeneratedColumn<String> get errorMessage => $composableBuilder(
+    column: $table.errorMessage,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 }
 
 class $$SyncQueueTableTableManager
@@ -3697,7 +3899,10 @@ class $$SyncQueueTableTableManager
                 Value<String> payload = const Value.absent(),
                 Value<SyncQueueItemStatus> status = const Value.absent(),
                 Value<int> attemptCount = const Value.absent(),
+                Value<String?> errorType = const Value.absent(),
+                Value<String?> errorMessage = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
               }) => SyncQueueCompanion(
                 id: id,
                 entityType: entityType,
@@ -3706,7 +3911,10 @@ class $$SyncQueueTableTableManager
                 payload: payload,
                 status: status,
                 attemptCount: attemptCount,
+                errorType: errorType,
+                errorMessage: errorMessage,
                 createdAt: createdAt,
+                updatedAt: updatedAt,
               ),
           createCompanionCallback:
               ({
@@ -3717,7 +3925,10 @@ class $$SyncQueueTableTableManager
                 required String payload,
                 Value<SyncQueueItemStatus> status = const Value.absent(),
                 Value<int> attemptCount = const Value.absent(),
+                Value<String?> errorType = const Value.absent(),
+                Value<String?> errorMessage = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
               }) => SyncQueueCompanion.insert(
                 id: id,
                 entityType: entityType,
@@ -3726,7 +3937,10 @@ class $$SyncQueueTableTableManager
                 payload: payload,
                 status: status,
                 attemptCount: attemptCount,
+                errorType: errorType,
+                errorMessage: errorMessage,
                 createdAt: createdAt,
+                updatedAt: updatedAt,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

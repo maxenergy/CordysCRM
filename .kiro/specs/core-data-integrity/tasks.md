@@ -83,7 +83,7 @@
 
 ### Phase 2: Flutter 同步增强
 
-- [ ] 9. 扩展 SyncQueue 数据模型
+- [x] 9. 扩展 SyncQueue 数据模型
   - [ ] 9.1 更新 Drift 表定义
     - 添加 `attemptCount` 字段（默认 0）
     - 添加 `errorType` 字段（nullable）

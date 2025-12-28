@@ -168,6 +168,15 @@ class SyncQueue extends Table {
   /// 重试次数
   IntColumn get attemptCount => integer().withDefault(const Constant(0))();
 
+  /// 错误类型（retryable/nonRetryable/fatal）
+  TextColumn get errorType => text().nullable()();
+
+  /// 错误消息
+  TextColumn get errorMessage => text().nullable()();
+
   /// 创建时间
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  /// 更新时间
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }

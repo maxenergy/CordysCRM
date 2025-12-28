@@ -97,7 +97,7 @@
     - _Requirements: 3.1, 7.2_
 
 - [ ] 10. 实现错误分类器
-  - [ ] 10.1 创建 `ErrorClassifier` 类
+  - [x] 10.1 创建 `ErrorClassifier` 类
     - 定义 `ErrorType` 枚举（retryable, nonRetryable, fatal）
     - 实现 `classify(dynamic error)` 方法
     - 实现 `shouldRetry(ErrorType, int attemptCount)` 方法

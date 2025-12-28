@@ -12,6 +12,7 @@ import '../../../domain/entities/enterprise.dart';
 import 'enterprise_provider.dart';
 import 'widgets/enterprise_preview_sheet.dart';
 import 'widgets/enterprise_search_result_item.dart';
+import 'widgets/selection_bar.dart';
 
 /// 企业搜索页面（集成 WebView）
 ///
@@ -426,6 +427,7 @@ class _EnterpriseSearchWithWebViewPageState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dataSource = ref.watch(enterpriseDataSourceProvider);
+    final searchState = ref.watch(enterpriseSearchProvider);
 
     // 监听重新搜索错误，显示 SnackBar
     ref.listen<EnterpriseSearchState>(enterpriseSearchProvider, (
@@ -454,16 +456,48 @@ class _EnterpriseSearchWithWebViewPageState
       }
     });
 
+    // 监听批量导入状态变化
+    ref.listen<EnterpriseSearchState>(enterpriseSearchProvider, (
+      previous,
+      next,
+    ) {
+      // 开始导入时显示进度对话框
+      if (previous?.isBatchImporting == false && next.isBatchImporting) {
+        _showBatchImportProgressDialog();
+      }
+
+      // 导入完成时关闭进度对话框并显示结果
+      if (previous?.isBatchImporting == true && !next.isBatchImporting) {
+        if (ModalRoute.of(context)?.isCurrent == true) {
+          Navigator.of(context).pop(); // 关闭进度对话框
+          _showBatchImportSummaryDialog(next);
+        }
+      }
+    });
+
     return PopScope(
-      canPop: _currentViewIndex == 0,
+      canPop: _currentViewIndex == 0 && !searchState.isSelectionMode,
       onPopInvokedWithResult: (didPop, result) {
-        if (!didPop && _currentViewIndex == 1) {
+        if (didPop) return;
+        
+        // 优先处理选择模式的返回
+        if (searchState.isSelectionMode) {
+          ref.read(enterpriseSearchProvider.notifier).exitSelectionMode();
+          return;
+        }
+        
+        // 处理 WebView 视图的返回
+        if (_currentViewIndex == 1) {
           _showSearchView();
         }
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(_currentViewIndex == 0 ? '企业搜索' : dataSource.displayName),
+          title: Text(
+            searchState.isSelectionMode
+                ? '选择企业'
+                : (_currentViewIndex == 0 ? '企业搜索' : dataSource.displayName),
+          ),
           leading: _currentViewIndex == 1
               ? IconButton(
                   icon: const Icon(Icons.arrow_back),
@@ -471,7 +505,19 @@ class _EnterpriseSearchWithWebViewPageState
                 )
               : null,
           actions: [
-            if (_currentViewIndex == 0)
+            // 非选择模式下，显示"选择"按钮
+            if (!searchState.isSelectionMode &&
+                searchState.hasResults &&
+                searchState.results.any((e) => !e.isLocal))
+              TextButton(
+                onPressed: () {
+                  FocusScope.of(context).unfocus(); // 关闭键盘
+                  ref.read(enterpriseSearchProvider.notifier).enterSelectionMode();
+                },
+                child: const Text('选择'),
+              ),
+            
+            if (_currentViewIndex == 0 && !searchState.isSelectionMode)
               IconButton(
                 icon: const Icon(Icons.web),
                 onPressed: _showWebView,
@@ -522,16 +568,154 @@ class _EnterpriseSearchWithWebViewPageState
               Positioned.fill(child: _buildSearchView(theme)),
           ],
         ),
+        // 底部选择栏
+        bottomNavigationBar: searchState.isSelectionMode
+            ? SelectionBar(
+                selectedCount: searchState.selectedCount,
+                isAllSelected: searchState.isAllSelected,
+                onCancel: () {
+                  ref.read(enterpriseSearchProvider.notifier).exitSelectionMode();
+                },
+                onSelectAll: () {
+                  ref.read(enterpriseSearchProvider.notifier).toggleSelectAll();
+                },
+                onBatchImport: () => _showBatchImportConfirmation(),
+              )
+            : null,
+      ),
+    );
+  }
+
+  /// 显示批量导入确认对话框
+  Future<void> _showBatchImportConfirmation() async {
+    final searchState = ref.read(enterpriseSearchProvider);
+    final selectedCount = searchState.selectedCount;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('确认批量导入'),
+        content: Text('确定要导入选中的 $selectedCount 个企业吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('确认'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await ref.read(enterpriseSearchProvider.notifier).batchImport();
+    }
+  }
+
+  /// 显示批量导入进度对话框
+  void _showBatchImportProgressDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          title: const Text('正在导入'),
+          content: Consumer(
+            builder: (context, ref, _) {
+              final searchState = ref.watch(enterpriseSearchProvider);
+              final progress = searchState.importTotal > 0
+                  ? searchState.importProgress / searchState.importTotal
+                  : 0.0;
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  LinearProgressIndicator(value: progress),
+                  const SizedBox(height: 16),
+                  Text(
+                    '${searchState.importProgress} / ${searchState.importTotal}',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 显示批量导入结果摘要对话框
+  void _showBatchImportSummaryDialog(EnterpriseSearchState state) {
+    final successCount = state.importTotal - state.importErrors.length;
+    final failCount = state.importErrors.length;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('导入完成'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '成功: $successCount / ${state.importTotal}',
+                style: TextStyle(
+                  color: successCount > 0 ? Colors.green : null,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (failCount > 0) ...[
+                const SizedBox(height: 8),
+                Text(
+                  '失败: $failCount',
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  '失败企业:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                ...state.importErrors.map((e) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        '• ${e.enterprise.name}: ${e.error}',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    )),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('确定'),
+          ),
+        ],
       ),
     );
   }
 
   /// 构建搜索视图
   Widget _buildSearchView(ThemeData theme) {
+    final searchState = ref.watch(enterpriseSearchProvider);
+    
     return Column(
       children: [
-        if (_showClipboardHint) _buildClipboardHint(),
-        Padding(
+        if (_showClipboardHint && !searchState.isSelectionMode) _buildClipboardHint(),
+        
+        // 搜索框（非选择模式下显示）
+        if (!searchState.isSelectionMode)
+          Padding(
           padding: const EdgeInsets.all(16),
           child: TextField(
             controller: _searchController,

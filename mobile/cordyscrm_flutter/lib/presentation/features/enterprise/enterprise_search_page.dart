@@ -189,6 +189,10 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
       debugPrint('[企业搜索] 选择模式: ${searchState.isSelectionMode}');
       debugPrint('[企业搜索] 是否显示"选择"按钮: ${!searchState.isSelectionMode && searchState.hasResults && searchState.results.any((e) => !e.isLocal)}');
     }
+    
+    // CRITICAL DEBUG: Log bottomNavigationBar state
+    debugPrint('[企业搜索] bottomNavigationBar 是否为 null: ${!searchState.isSelectionMode}');
+    debugPrint('[企业搜索] isSelectionMode=${searchState.isSelectionMode}, selectedCount=${searchState.selectedCount}');
 
     // 监听重新搜索错误，显示 SnackBar
     ref.listen<EnterpriseSearchState>(enterpriseSearchProvider, (

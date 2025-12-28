@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/sources/local/app_database.dart';
+import 'api_client_monitor.dart';
 import 'sync_service.dart';
 import 'sync_state.dart';
 
@@ -15,6 +16,15 @@ final appDatabaseProvider = Provider<AppDatabase>((ref) {
   return AppDatabase.instance;
 });
 
+// ==================== API Client Monitor Provider ====================
+
+/// API Client 监控器 Provider
+///
+/// 提供 ApiClientMonitor 单例实例，用于监控 API Client 可用性
+final apiClientMonitorProvider = Provider<ApiClientMonitor>((ref) {
+  return ApiClientMonitor();
+});
+
 // ==================== Sync Service Provider ====================
 
 /// 同步服务 Provider
@@ -22,7 +32,11 @@ final appDatabaseProvider = Provider<AppDatabase>((ref) {
 /// 提供 SyncService 单例实例，自动管理生命周期
 final syncServiceProvider = Provider<SyncService>((ref) {
   final db = ref.watch(appDatabaseProvider);
-  final service = SyncService(db: db);
+  final clientMonitor = ref.watch(apiClientMonitorProvider);
+  final service = SyncService(
+    db: db,
+    clientMonitor: clientMonitor,
+  );
 
   ref.onDispose(() {
     service.dispose();

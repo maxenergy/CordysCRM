@@ -140,14 +140,14 @@
     - 根据统计决定是否全局重试
     - _Requirements: 5.3, 5.4, 5.5_
 
-- [ ] 14. 实现 API Client 监控
-  - [ ] 14.1 创建 `ApiClientMonitor` 类
+- [x] 14. 实现 API Client 监控
+  - [x] 14.1 创建 `ApiClientMonitor` 类
     - 实现 `isClientAvailable()` 方法
     - 实现监听器注册/移除机制
     - 添加状态变化通知
     - _Requirements: 6.4_
 
-  - [ ] 14.2 集成监控到 SyncService
+  - [x] 14.2 集成监控到 SyncService
     - 在初始化时检查 API Client
     - 在同步前检查 API Client 可用性
     - API Client 不可用时暂停同步并保留队列项

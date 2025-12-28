@@ -9,7 +9,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/error/error_classifier.dart';
 import '../../data/sources/local/app_database.dart';
 import '../../data/sources/local/dao/sync_queue_dao.dart';
-import '../../data/sources/local/tables/tables.dart' show SyncOperation;
+import '../../data/sources/local/tables/tables.dart'
+    show SyncOperation, SyncQueueItemStatus;
+import 'api_client_monitor.dart';
 import 'sync_api_client.dart';
 import 'sync_state.dart';
 import 'sync_state_recovery.dart';
@@ -26,14 +28,14 @@ import 'sync_statistics.dart';
 class SyncService {
   SyncService({
     required AppDatabase db,
-    SyncApiClient? apiClient,
+    required ApiClientMonitor clientMonitor,
     Connectivity? connectivity,
     Duration debounce = const Duration(seconds: 3),
     Duration maxBackoff = const Duration(minutes: 5),
     int maxRetryAttempts = 5,
   })  : _db = db,
         _dao = db.syncQueueDao,
-        _apiClient = apiClient,
+        _clientMonitor = clientMonitor,
         _connectivity = connectivity ?? Connectivity(),
         _debounce = debounce,
         _maxBackoff = maxBackoff,
@@ -43,7 +45,7 @@ class SyncService {
 
   final AppDatabase _db;
   final SyncQueueDao _dao;
-  final SyncApiClient? _apiClient;
+  final ApiClientMonitor _clientMonitor;
   final Connectivity _connectivity;
   final Duration _debounce;
   final Duration _maxBackoff;
@@ -88,6 +90,9 @@ class SyncService {
       _emit(_currentState.copyWith(pendingCount: count));
     });
 
+    // 监听 API Client 状态变化 (Requirement 6.3: 自动恢复)
+    _clientMonitor.addListener(_onClientAvailabilityChanged);
+
     // 加载上次同步时间
     _loadLastSyncTime();
 
@@ -96,6 +101,20 @@ class SyncService {
 
     // 启动状态恢复机制
     _recoverState();
+  }
+
+  /// API Client 可用性变化处理
+  ///
+  /// Requirements: 6.2, 6.3
+  void _onClientAvailabilityChanged() {
+    if (_clientMonitor.isClientAvailable) {
+      _logger.i('API Client 已恢复，触发同步');
+      triggerSync(reason: 'API Client 恢复');
+    } else {
+      _logger.w('API Client 已移除，暂停同步');
+      // 取消待处理的同步操作
+      _cancelPendingOperations();
+    }
   }
 
   /// 加载上次同步时间
@@ -257,6 +276,16 @@ class SyncService {
 
   /// 处理同步错误
   void _handleSyncError(Object error) {
+    // 特殊处理：Client 不可用不需要重试（由 Monitor 监听器负责恢复）
+    if (error is ClientUnavailableException) {
+      _logger.w('API Client 不可用，等待恢复');
+      _emit(_currentState.copyWith(
+        status: SyncServiceStatus.offline,
+        error: error.message,
+      ));
+      return;
+    }
+
     _retryAttempt++;
 
     final errorMessage = _getErrorMessage(error);
@@ -345,6 +374,13 @@ class SyncService {
         _emit(_currentState.copyWith(
           progress: processed / allItems.length * 0.5, // 推送占 50% 进度
         ));
+      } on ClientUnavailableException catch (e) {
+        // API Client 不可用，保留队列项并中断同步
+        _logger.w('API Client 不可用，保留队列项 ${item.id} 并暂停同步: $e');
+        // 将状态重置为 Pending，等待 Client 恢复
+        await _dao.updateItemStatus(item.id, SyncQueueItemStatus.pending);
+        // 中断循环，不继续处理后续项
+        throw ClientUnavailableException('API Client 不可用，已暂停同步');
       } catch (e) {
         _logger.e('同步项 ${item.id} 失败: $e');
 
@@ -384,14 +420,16 @@ class SyncService {
   /// 处理单个同步项
   ///
   /// 将本地变更推送到服务器，处理冲突（服务器优先）
+  ///
+  /// Requirements: 6.2
   Future<void> _processSyncItem(SyncQueueItemData item) async {
     _logger.d('处理同步项: ${item.entityType}/${item.entityId} (${item.operation})');
 
-    // 如果没有配置 API 客户端，模拟成功
-    if (_apiClient == null) {
-      _logger.d('未配置 API 客户端，模拟同步成功');
-      await Future.delayed(const Duration(milliseconds: 100));
-      return;
+    // 检查 API Client 可用性 (Requirement 6.2)
+    final apiClient = _clientMonitor.client;
+    if (apiClient == null) {
+      // 抛出异常，让上层保留队列项
+      throw ClientUnavailableException();
     }
 
     // 解析 payload
@@ -412,7 +450,7 @@ class SyncService {
     );
 
     // 调用 API 推送
-    final results = await _apiClient.pushChanges([pushItem]);
+    final results = await apiClient.pushChanges([pushItem]);
     
     if (results.isEmpty) {
       throw Exception('服务器未返回推送结果');
@@ -490,19 +528,22 @@ class SyncService {
   /// 1. 调用 API 获取 lastSyncedAt 之后的变更数据
   /// 2. 先删除服务器标记为删除的数据
   /// 3. 再 upsert 更新/新增的数据（服务器优先）
+  ///
+  /// Requirements: 6.2
   Future<void> _pullServerChanges() async {
     _logger.d('开始拉取服务器数据...');
 
-    // 如果没有配置 API 客户端，跳过拉取
-    if (_apiClient == null) {
-      _logger.d('未配置 API 客户端，跳过服务器数据拉取');
+    // 检查 API Client 可用性
+    final apiClient = _clientMonitor.client;
+    if (apiClient == null) {
+      _logger.d('API Client 不可用，跳过服务器数据拉取');
       _emit(_currentState.copyWith(progress: 1.0));
       return;
     }
 
     try {
       // 1. 调用 API 获取增量数据
-      final delta = await _apiClient.pullChanges(_lastSyncedAt);
+      final delta = await apiClient.pullChanges(_lastSyncedAt);
 
       // 如果没有变更，直接更新时间戳并持久化
       if (delta.isEmpty) {
@@ -561,6 +602,7 @@ class SyncService {
   /// 释放资源
   Future<void> dispose() async {
     _cancelPendingOperations();
+    _clientMonitor.removeListener(_onClientAvailabilityChanged);
     await _connectivitySub?.cancel();
     await _pendingCountSub?.cancel();
     await _stateController.close();

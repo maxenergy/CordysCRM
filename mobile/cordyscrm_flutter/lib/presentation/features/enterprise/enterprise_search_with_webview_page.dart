@@ -50,6 +50,9 @@ class _EnterpriseSearchWithWebViewPageState
   // 自动提取标志：从搜索结果跳转到详情页后自动提取数据
   bool _pendingAutoExtract = false;
   Timer? _autoExtractTimeoutTimer;
+  
+  // 抑制自动进入选择模式的标志（用于批量导入后的刷新）
+  bool _suppressAutoEnterSelection = false;
 
   // 桌面版 User-Agent，避免被重定向到移动版 m.qcc.com
   static const _desktopUserAgent =
@@ -234,7 +237,8 @@ class _EnterpriseSearchWithWebViewPageState
     await ref.read(enterpriseSearchProvider.notifier).search(keyword);
     
     // 搜索完成后，如果有可选企业，自动进入选择模式
-    if (mounted) {
+    // 但如果设置了抑制标志（如批量导入后的刷新），则跳过
+    if (mounted && !_suppressAutoEnterSelection) {
       final newState = ref.read(enterpriseSearchProvider);
       if (!newState.isSelectionMode &&
           newState.hasResults &&
@@ -242,6 +246,9 @@ class _EnterpriseSearchWithWebViewPageState
         ref.read(enterpriseSearchProvider.notifier).enterSelectionMode();
       }
     }
+    
+    // 重置抑制标志
+    _suppressAutoEnterSelection = false;
   }
 
   /// 搜索前记录 WebView URL 状态
@@ -446,11 +453,14 @@ class _EnterpriseSearchWithWebViewPageState
     final dataSource = ref.watch(enterpriseDataSourceProvider);
     final searchState = ref.watch(enterpriseSearchProvider);
 
-    // 监听重新搜索错误，显示 SnackBar
+    // 监听搜索状态变化
     ref.listen<EnterpriseSearchState>(enterpriseSearchProvider, (
       previous,
       next,
     ) {
+      // 只在当前页面处理状态变化
+      if (ModalRoute.of(context)?.isCurrent != true) return;
+      
       // 当 reSearchError 从 null 变为非 null 时显示错误提示
       if (previous?.reSearchError == null && next.reSearchError != null) {
         final error = next.reSearchError!;
@@ -489,6 +499,9 @@ class _EnterpriseSearchWithWebViewPageState
       previous,
       next,
     ) {
+      // 只在当前页面处理状态变化
+      if (ModalRoute.of(context)?.isCurrent != true) return;
+      
       // 开始导入时显示进度对话框
       if (previous?.isBatchImporting == false && next.isBatchImporting) {
         _showBatchImportProgressDialog();
@@ -496,9 +509,12 @@ class _EnterpriseSearchWithWebViewPageState
 
       // 导入完成时关闭进度对话框并显示结果
       if (previous?.isBatchImporting == true && !next.isBatchImporting) {
-        if (ModalRoute.of(context)?.isCurrent == true) {
-          Navigator.of(context).pop(); // 关闭进度对话框
-          _showBatchImportSummaryDialog(next);
+        Navigator.of(context).pop(); // 关闭进度对话框
+        _showBatchImportSummaryDialog(next);
+        
+        // 如果导入成功，设置抑制标志，避免刷新后再次自动进入选择模式
+        if (next.importErrors.isEmpty) {
+          _suppressAutoEnterSelection = true;
         }
       }
     });

@@ -21,12 +21,40 @@
 | **企业重新搜索** | ✅ 完成 | 100% | 本地+外部混合搜索 |
 | **企查查数据源** | ✅ 完成 | 100% | 多数据源抽象层 |
 | **Flutter 桌面适配** | ✅ 完成 | 95% | Windows/macOS/Linux 支持 |
+| **核心数据完整性** | 🚧 进行中 | 95% | Task 17 完成，Task 19 待验证 |
 
 ---
 
 ## 🎯 最近完成的功能
 
-### 1. Flutter 桌面平台适配 (flutter-desktop-adaptation)
+### 1. 核心数据完整性 - 用户界面增强 (core-data-integrity Task 17)
+**完成时间**: 2024-12-28  
+**状态**: ✅ 完成
+
+实现了用户界面增强功能，提升离线同步的用户体验：
+
+**Task 17.1: API Client 配置检查**
+- ✅ 创建 `DioSyncApiClient` 桥接 DioClient 和 SyncService
+- ✅ 在 `AuthProvider` 中集成 `ApiClientMonitor`
+- ✅ 登录时设置 API Client，登出时清除
+- ✅ 在 `CustomerEditPage` 和 `ClueEditPage` 添加 API Client 可用性检查
+- ✅ 未配置服务器时显示明确错误提示
+
+**Task 17.2: Fatal Error 手动重试界面**
+- ✅ 创建 `SyncIssuesPage` 显示致命错误同步项
+- ✅ 在 `SyncQueueDao` 添加 `resetFatalItem()` 方法
+- ✅ 在 `SyncService` 添加 `retryFatalItem()` 方法
+- ✅ 在 `ProfilePage` 显示致命错误数量
+- ✅ 提供跳转入口和手动重试功能
+
+**技术亮点**:
+- 防止在未配置服务器时静默丢弃离线数据
+- 用户可以手动重试达到最大重试次数的同步项
+- 清晰的错误提示和状态反馈
+
+**Requirements**: 6.5, 7.5
+
+### 2. Flutter 桌面平台适配 (flutter-desktop-adaptation)
 **完成时间**: 2024-12-24  
 **状态**: ✅ 核心功能完成 (95%)
 

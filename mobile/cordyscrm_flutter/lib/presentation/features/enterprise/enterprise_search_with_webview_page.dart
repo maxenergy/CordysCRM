@@ -502,7 +502,9 @@ class _EnterpriseSearchWithWebViewPageState
       // 导入完成时关闭进度对话框并显示结果
       if (previous?.isBatchImporting == true && !next.isBatchImporting) {
         // 确保当前路由仍是本页面，且可以 pop（有对话框）
-        if (Navigator.of(context).canPop()) {
+        // 双重保护：既检查当前路由，又检查是否可以 pop
+        if (ModalRoute.of(context)?.isCurrent == true && 
+            Navigator.of(context).canPop()) {
           Navigator.of(context).pop(); // 关闭进度对话框
         }
         _showBatchImportSummaryDialog(next);

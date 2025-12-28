@@ -27,34 +27,44 @@
 
 ## 🎯 最近完成的功能
 
-### 1. 批量导入日期格式错误修复
+### 1. 批量导入日期格式错误修复 V2
 **完成时间**: 2024-12-28  
 **状态**: 🧪 等待测试
 
-修复了批量导入企业信息时的日期格式错误：
+修复了批量导入企业信息时的日期格式错误（第二次修复）：
 
 **问题描述**:
-- 批量导入时出现 `Incorrect date value: '976464000000' for column 'reg_date'` 错误
-- 数据库 `reg_date` 列定义为 DATE 类型，但 Java 字段为 Long 类型
-- MyBatis 将 Long 时间戳直接插入 DATE 列导致错误
+- 批量导入时出现 `Incorrect date value: '1110470400000' for column 'reg_date'` 错误
+- 数据库 `reg_date` 列定义为 DATE 类型
+- Java 实体类 `EnterpriseProfile.regDate` 已改为 LocalDate 类型
+- 但 MyBatis 的 `LocalDateTypeHandler` 未被正确加载
 
 **修复方案**:
-- ✅ 将 `EnterpriseProfile.regDate` 字段类型从 `Long` 改为 `LocalDate`
-- ✅ 添加 `convertTimestampToLocalDate()` 转换方法
-- ✅ 修改 `copyRequestToProfile()` 使用转换方法
-- ✅ 更新 `toLocalEnterpriseItem()` 使用 LocalDate 格式化
+- ✅ 第一次尝试：在 `commons.properties` 中配置 `mybatis.type-handlers-package`（未生效）
+- ✅ 第二次修复：在 `MybatisConfig.java` 中显式注册 TypeHandler Bean
 - ✅ 编译验证通过
-- ✅ 后端服务已重启（Process 9，运行在 8081 端口）
+- ✅ 后端服务已重启（Process 14，运行在 8081 端口）
+- ✅ Flutter 应用已重新编译并安装
 - 🧪 等待用户测试验证
 
-**技术亮点**:
-- 使用 Java 8+ 推荐的 LocalDate 类型
-- MyBatis 原生支持 LocalDate 与 DATE 的自动转换
-- 保持 API 兼容性（EnterpriseImportRequest 仍使用 Long）
-- 添加异常处理和日志记录
+**技术细节**:
+```java
+// MybatisConfig.java 中添加
+@Bean
+public cn.cordys.crm.common.mybatis.typehandler.LocalDateTypeHandler localDateTypeHandler() {
+    return new cn.cordys.crm.common.mybatis.typehandler.LocalDateTypeHandler();
+}
+```
 
-**测试指南**: `mobile/cordyscrm_flutter/BATCH_IMPORT_FINAL_TEST.md`  
-**技术文档**: `mobile/cordyscrm_flutter/BATCH_IMPORT_DATE_FIX.md`
+**为什么第一次修复失败**:
+- Spring Boot 的 MyBatis 自动配置没有正确读取 `mybatis.type-handlers-package` 配置
+- 需要显式注册 TypeHandler 为 Spring Bean
+
+**测试指南**: 
+- `mobile/cordyscrm_flutter/BATCH_IMPORT_TEST_FINAL_V2.md`
+- `mobile/cordyscrm_flutter/BATCH_IMPORT_DATE_FIX_V2.md`
+
+**Git 提交**: `fix(backend): 在 MybatisConfig 中显式注册 LocalDateTypeHandler`
 
 ### 2. 核心数据完整性 - 用户界面增强 (core-data-integrity Task 17)
 **完成时间**: 2024-12-28  

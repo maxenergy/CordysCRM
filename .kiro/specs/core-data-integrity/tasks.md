@@ -84,13 +84,13 @@
 ### Phase 2: Flutter 同步增强
 
 - [x] 9. 扩展 SyncQueue 数据模型
-  - [ ] 9.1 更新 Drift 表定义
+  - [x] 9.1 更新 Drift 表定义
     - 添加 `attemptCount` 字段（默认 0）
     - 添加 `errorType` 字段（nullable）
     - 生成数据库迁移代码
     - _Requirements: 7.1_
 
-  - [ ] 9.2 更新 DAO 方法
+  - [x] 9.2 更新 DAO 方法
     - 添加 `findInProgressBefore(DateTime)` 查询方法
     - 添加 `updateAttemptCount(int id, int count)` 方法
     - 添加 `updateErrorType(int id, String type)` 方法

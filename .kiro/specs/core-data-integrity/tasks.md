@@ -185,12 +185,12 @@
   - _Requirements: 3.1, 4.1, 4.2, 4.3, 4.4, 4.5, 6.1, 6.2, 6.3, 7.2, 7.3, 7.4_
 
 - [x] 17. 实现用户界面增强
-  - [ ] 17.1 添加 API Client 配置检查
+  - [x] 17.1 添加 API Client 配置检查
     - 在创建离线数据前检查 API Client
     - 显示明确的错误提示
     - _Requirements: 6.5_
 
-  - [ ] 17.2 添加手动重试 Fatal Error 的界面
+  - [x] 17.2 添加手动重试 Fatal Error 的界面
     - 在同步设置页面显示 Fatal Error 项
     - 提供手动重试按钮
     - _Requirements: 7.5_

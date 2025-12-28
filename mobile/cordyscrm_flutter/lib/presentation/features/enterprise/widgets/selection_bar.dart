@@ -21,6 +21,10 @@ class SelectionBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    // Debug logging
+    debugPrint('[SelectionBar] build() 被调用');
+    debugPrint('[SelectionBar] selectedCount=$selectedCount, isAllSelected=$isAllSelected');
+
     // 计算 Checkbox 的状态
     // true = 全选, false = 未选, null = 部分选择
     final bool? checkboxState;
@@ -44,6 +48,7 @@ class SelectionBar extends StatelessWidget {
         ],
       ),
       child: SafeArea(
+        top: false, // 禁用顶部内边距，防止状态栏高度影响底部栏布局
         child: SizedBox(
           height: 60,
           child: Padding(

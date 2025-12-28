@@ -359,7 +359,7 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
                 },
                 onBatchImport: () => _showBatchImportConfirmation(),
               )
-            : null,
+            : null, // 非选择模式下返回 null，而不是 SizedBox.shrink()
       ),
     );
   }

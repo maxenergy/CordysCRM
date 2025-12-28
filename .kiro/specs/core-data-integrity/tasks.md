@@ -154,19 +154,19 @@
     - _Requirements: 6.1, 6.2, 6.3_
 
 - [ ] 15. 重构 SyncService 主流程
-  - [ ] 15.1 集成状态恢复到初始化流程
+  - [x] 15.1 集成状态恢复到初始化流程
     - 在 `initialize()` 中调用 `resetStaleInProgressItems()`
     - 初始化失败时抛出异常
     - _Requirements: 3.4, 3.5_
 
-  - [ ] 15.2 集成错误分类和重试策略
+  - [x] 15.2 集成错误分类和重试策略
     - 使用 `ErrorClassifier` 分类错误
     - 根据错误类型决定是否重试
     - 实现指数退避重试
     - 更新 `attemptCount` 和 `errorType` 字段
     - _Requirements: 4.4, 4.5, 7.2_
 
-  - [ ] 15.3 实现重试次数限制
+  - [x] 15.3 实现重试次数限制
     - 检查 `attemptCount` 是否超过 5 次
     - 超限时标记为 `fatalError`
     - 发送用户通知

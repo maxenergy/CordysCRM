@@ -61,10 +61,20 @@ class SyncService {
   /// 同步状态流
   Stream<SyncState> get stateStream => _stateController.stream;
 
+  // 通知流控制器（用于一次性事件通知，如 Toast/SnackBar）
+  final _notificationController = StreamController<String>.broadcast();
+
+  /// 通知流
+  ///
+  /// 用于发送一次性事件通知，如致命错误提示
+  /// Requirements: 7.4
+  Stream<String> get notificationStream => _notificationController.stream;
+
   // 内部状态
   SyncState _currentState = const SyncState();
   StreamSubscription<ConnectivityResult>? _connectivitySub;
   StreamSubscription<int>? _pendingCountSub;
+  StreamSubscription<int>? _fatalCountSub;
   Timer? _debounceTimer;
   Timer? _retryTimer;
   int _retryAttempt = 0;
@@ -88,6 +98,12 @@ class SyncService {
     // 监听待同步数量变化
     _pendingCountSub = _dao.watchPendingCount().listen((count) {
       _emit(_currentState.copyWith(pendingCount: count));
+    });
+
+    // 监听致命错误数量变化 (Requirement 7.5)
+    _fatalCountSub = _dao.watchFatalErrorCount(maxAttempts: _maxRetryAttempts)
+        .listen((count) {
+      _emit(_currentState.copyWith(fatalErrorCount: count));
     });
 
     // 监听 API Client 状态变化 (Requirement 6.3: 自动恢复)
@@ -341,7 +357,29 @@ class SyncService {
     return '同步失败: ${error.toString()}';
   }
 
+  /// 计算单个项的退避时间是否满足
+  ///
+  /// 实现指数退避策略：第 n 次重试需要等待 2^n 秒
+  /// Requirements: 4.5, Property 8
+  bool _shouldRetryItem(SyncQueueItemData item) {
+    if (item.attemptCount == 0) return true;
+
+    // 2^n 秒 (例: 2^1=2s, 2^2=4s, 2^3=8s, 2^4=16s, 2^5=32s)
+    final waitSeconds = pow(2, item.attemptCount);
+    final nextRetryTime = item.updatedAt.add(Duration(seconds: waitSeconds.toInt()));
+    
+    final shouldRetry = DateTime.now().isAfter(nextRetryTime);
+    if (!shouldRetry) {
+      final remainingSeconds = nextRetryTime.difference(DateTime.now()).inSeconds;
+      _logger.d('同步项 ${item.id} 处于退避期，还需等待 $remainingSeconds 秒');
+    }
+    
+    return shouldRetry;
+  }
+
   /// 推送本地修改到服务器
+  ///
+  /// Requirements: 4.4, 4.5, 7.2, 7.3, 7.4
   Future<void> _pushLocalChanges() async {
     _logger.d('开始推送本地修改...');
 
@@ -358,7 +396,25 @@ class SyncService {
     _logger.i('发现 ${allItems.length} 个待同步项 (pending: ${pendingItems.length}, failed: ${failedItems.length})');
 
     int processed = 0;
+    DateTime? minNextRetryTime; // 追踪最早的重试时间
+    
     for (final item in allItems) {
+      // 检查单项退避策略 (Per-Item Backoff)
+      // Requirements: 4.5, Property 8
+      if (item.status == SyncQueueItemStatus.failed) {
+        if (!_shouldRetryItem(item)) {
+          // 计算该项的下一次重试时间
+          final waitSeconds = pow(2, item.attemptCount);
+          final nextRetry = item.updatedAt.add(Duration(seconds: waitSeconds.toInt()));
+          
+          // 更新最早唤醒时间
+          if (minNextRetryTime == null || nextRetry.isBefore(minNextRetryTime)) {
+            minNextRetryTime = nextRetry;
+          }
+          continue; // 跳过处于退避期的项
+        }
+      }
+
       try {
         // 标记为处理中
         await _dao.markAsInProgress(item.id);
@@ -389,20 +445,74 @@ class SyncService {
         _statistics.recordFailure(errorType);
 
         // 标记为失败（会增加 attemptCount）
+        // Requirements: 7.2, Property 7
         await _dao.markAsFailed(item.id);
+        
+        // 计算新的重试次数 (markAsFailed 已经 +1)
+        final newAttemptCount = item.attemptCount + 1;
+
+        // 检查是否超过最大重试次数
+        // Requirements: 7.3, 7.4
+        if (newAttemptCount >= _maxRetryAttempts) {
+          _logger.e('同步项 ${item.id} 达到最大重试次数 ($newAttemptCount)，标记为致命错误');
+          await _dao.updateErrorType(item.id, 'fatal');
+          await _dao.updateErrorMessage(
+            item.id,
+            '超过最大重试次数 ($_maxRetryAttempts): ${e.toString()}',
+          );
+          
+          // 发送用户通知 (Requirement 7.4)
+          _notificationController.add(
+            '同步失败：${item.entityType} 数据已停止重试（ID: ${item.entityId}）',
+          );
+          
+          continue; // 跳过此项后续处理
+        }
 
         // 根据错误类型决定处理策略
         if (errorType == ErrorType.nonRetryable) {
-          _logger.w('同步项 ${item.id} 遇到不可重试错误 (${errorType.name})，跳过');
+          _logger.w('同步项 ${item.id} 遇到不可重试错误 (${errorType.name})');
+          await _dao.updateErrorType(item.id, 'nonRetryable');
+          await _dao.updateErrorMessage(item.id, e.toString());
+          
+          // 不可重试错误直接标记为 Fatal，避免无效重试
+          await _dao.updateAttemptCount(item.id, _maxRetryAttempts);
+          
+          _notificationController.add(
+            '同步失败：数据格式错误，已停止重试（${item.entityType} ID: ${item.entityId}）',
+          );
+          
           continue;
         }
         
-        // 可重试错误，继续处理其他项
-        _logger.d('同步项 ${item.id} 遇到可重试错误 (${errorType.name})，稍后重试');
+        // 可重试错误，记录并继续处理其他项
+        await _dao.updateErrorType(item.id, 'retryable');
+        await _dao.updateErrorMessage(item.id, e.toString());
+        _logger.d('同步项 ${item.id} 遇到可重试错误 (${errorType.name})，将在 ${pow(2, newAttemptCount)} 秒后重试');
       }
     }
 
     _logger.i('本地修改推送完成: $_statistics');
+    
+    // 如果有因退避而被跳过的项，安排唤醒定时器
+    // 防止"静默失败"：所有项都在退避期时，服务会误判为成功
+    if (minNextRetryTime != null) {
+      final now = DateTime.now();
+      if (minNextRetryTime.isAfter(now)) {
+        final delay = minNextRetryTime.difference(now);
+        _logger.d('存在处于退避期的项，将在 ${delay.inSeconds} 秒后唤醒服务');
+        
+        // 取消旧的 timer，设置新的唤醒 timer
+        _retryTimer?.cancel();
+        _retryTimer = Timer(delay, () {
+          triggerSync(reason: '退避期结束唤醒', immediate: true);
+        });
+      } else {
+        // 理论上不会走到这里，除非计算期间时间流逝，保险起见立即触发
+        _logger.d('退避期已结束，立即触发同步');
+        triggerSync(reason: '退避期结束唤醒', immediate: true);
+      }
+    }
     
     // 根据统计决定是否触发全局重试
     if (_statistics.shouldTriggerGlobalRetry()) {
@@ -605,6 +715,8 @@ class SyncService {
     _clientMonitor.removeListener(_onClientAvailabilityChanged);
     await _connectivitySub?.cancel();
     await _pendingCountSub?.cancel();
+    await _fatalCountSub?.cancel();
     await _stateController.close();
+    await _notificationController.close();
   }
 }

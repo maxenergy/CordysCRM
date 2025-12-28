@@ -68,8 +68,10 @@ class ErrorClassifier {
   /// 1. AppException 直接分类
   /// 2. DioException.error 若为 AppException 优先处理
   /// 3. DioException 自身分类
-  /// 4. SocketException/TimeoutException/FormatException
+  /// 4. SocketException/TimeoutException/FormatException/TypeError/ArgumentError
   /// 5. 默认 retryable
+  ///
+  /// Requirements: 4.1, 4.2, 4.3, Property 5, Property 6
   ErrorType classify(dynamic error) {
     // 1) AppException 优先
     if (error is AppException) {
@@ -92,12 +94,22 @@ class ErrorClassifier {
     if (error is TimeoutException) {
       return ErrorType.retryable;
     }
+    
+    // 4) 逻辑/格式错误不可重试
     if (error is FormatException) {
       // JSON 解析错误等，通常是数据格式问题，不应重试
       return ErrorType.nonRetryable;
     }
+    if (error is TypeError) {
+      // 类型错误，通常是代码逻辑问题，不应重试
+      return ErrorType.nonRetryable;
+    }
+    if (error is ArgumentError) {
+      // 参数错误，通常是代码逻辑问题，不应重试
+      return ErrorType.nonRetryable;
+    }
 
-    // 4) 默认可重试
+    // 5) 默认可重试
     return ErrorType.retryable;
   }
 
@@ -134,6 +146,8 @@ class ErrorClassifier {
   }
 
   /// 分类 DioException
+  ///
+  /// Requirements: 4.1, 4.2, Property 5, Property 6
   ErrorType _classifyDioException(DioException error) {
     switch (error.type) {
       case DioExceptionType.connectionTimeout:
@@ -148,6 +162,12 @@ class ErrorClassifier {
       case DioExceptionType.badCertificate:
         return ErrorType.nonRetryable;
       case DioExceptionType.unknown:
+        // 检查内部错误类型
+        if (error.error is TypeError || 
+            error.error is FormatException ||
+            error.error is ArgumentError) {
+          return ErrorType.nonRetryable;
+        }
         // 可能是 SocketException 等，交给外层类型判断
         // 若无法识别，默认可重试
         return ErrorType.retryable;

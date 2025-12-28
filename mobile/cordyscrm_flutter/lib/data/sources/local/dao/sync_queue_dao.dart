@@ -200,4 +200,50 @@ class SyncQueueDao extends DatabaseAccessor<AppDatabase>
     final items = await getPendingItemsByEntity(entityType, entityId);
     return items.isNotEmpty;
   }
+
+  /// 获取致命错误项列表（超过最大重试次数）
+  ///
+  /// Requirements: 7.5
+  Future<List<SyncQueueItemData>> getFatalItems({int maxAttempts = 5}) {
+    return (select(syncQueue)
+          ..where((q) =>
+              q.status.equalsValue(SyncQueueItemStatus.failed) &
+              q.attemptCount.isBiggerOrEqualValue(maxAttempts))
+          ..orderBy([(q) => OrderingTerm.desc(q.updatedAt)]))
+        .get();
+  }
+
+  /// 获取致命错误数量
+  ///
+  /// Requirements: 7.5
+  Future<int> getFatalErrorCount({int maxAttempts = 5}) async {
+    final count = syncQueue.id.count();
+    final query = selectOnly(syncQueue)
+      ..addColumns([count])
+      ..where(syncQueue.status.equalsValue(SyncQueueItemStatus.failed) &
+              syncQueue.attemptCount.isBiggerOrEqualValue(maxAttempts));
+    final result = await query.getSingle();
+    return result.read(count) ?? 0;
+  }
+
+  /// 监听致命错误数量变化
+  ///
+  /// Requirements: 7.5
+  Stream<int> watchFatalErrorCount({int maxAttempts = 5}) {
+    final count = syncQueue.id.count();
+    final query = selectOnly(syncQueue)
+      ..addColumns([count])
+      ..where(syncQueue.status.equalsValue(SyncQueueItemStatus.failed) &
+              syncQueue.attemptCount.isBiggerOrEqualValue(maxAttempts));
+    
+    return query.watchSingle().map((row) => row.read(count) ?? 0);
+  }
+
+  /// 根据 ID 查找同步项
+  ///
+  /// Requirements: 7.2
+  Future<SyncQueueItemData?> findById(int id) {
+    return (select(syncQueue)..where((q) => q.id.equals(id)))
+        .getSingleOrNull();
+  }
 }

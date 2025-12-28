@@ -31,6 +31,7 @@ class SyncState {
   const SyncState({
     this.status = SyncServiceStatus.idle,
     this.pendingCount = 0,
+    this.fatalErrorCount = 0,
     this.error,
     this.lastSyncedAt,
     this.progress,
@@ -41,6 +42,9 @@ class SyncState {
 
   /// 待同步项数量
   final int pendingCount;
+
+  /// 致命错误数量（超过最大重试次数的项）
+  final int fatalErrorCount;
 
   /// 错误信息（仅在 failed 状态时有值）
   final String? error;
@@ -69,6 +73,7 @@ class SyncState {
   SyncState copyWith({
     SyncServiceStatus? status,
     int? pendingCount,
+    int? fatalErrorCount,
     String? error,
     DateTime? lastSyncedAt,
     double? progress,
@@ -78,6 +83,7 @@ class SyncState {
     return SyncState(
       status: status ?? this.status,
       pendingCount: pendingCount ?? this.pendingCount,
+      fatalErrorCount: fatalErrorCount ?? this.fatalErrorCount,
       error: clearError ? null : (error ?? this.error),
       lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
       progress: clearProgress ? null : (progress ?? this.progress),
@@ -87,7 +93,8 @@ class SyncState {
   @override
   String toString() {
     return 'SyncState(status: $status, pendingCount: $pendingCount, '
-        'error: $error, lastSyncedAt: $lastSyncedAt, progress: $progress)';
+        'fatalErrorCount: $fatalErrorCount, error: $error, '
+        'lastSyncedAt: $lastSyncedAt, progress: $progress)';
   }
 
   @override
@@ -96,6 +103,7 @@ class SyncState {
     return other is SyncState &&
         other.status == status &&
         other.pendingCount == pendingCount &&
+        other.fatalErrorCount == fatalErrorCount &&
         other.error == error &&
         other.lastSyncedAt == lastSyncedAt &&
         other.progress == progress;
@@ -103,6 +111,13 @@ class SyncState {
 
   @override
   int get hashCode {
-    return Object.hash(status, pendingCount, error, lastSyncedAt, progress);
+    return Object.hash(
+      status,
+      pendingCount,
+      fatalErrorCount,
+      error,
+      lastSyncedAt,
+      progress,
+    );
   }
 }

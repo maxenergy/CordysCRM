@@ -15,6 +15,7 @@ import cn.cordys.mybatis.BaseMapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ibatis.session.SqlSession;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,14 +40,19 @@ import java.util.Objects;
 @Service
 public class EnterpriseService {
 
-    @Resource
-    private BaseMapper<EnterpriseProfile> enterpriseProfileMapper;
+    // 注意：不再使用 BaseMapper<EnterpriseProfile>，统一使用 ExtEnterpriseProfileMapper
+    // 以确保日期类型正确转换（LocalDate -> DATE）
+    // @Resource
+    // private BaseMapper<EnterpriseProfile> enterpriseProfileMapper;
 
     @Resource
     private BaseMapper<Customer> customerMapper;
 
     @Resource
     private ExtEnterpriseProfileMapper extEnterpriseProfileMapper;
+
+    @Resource
+    private SqlSession sqlSession;
 
     @Resource
     private IqichaSearchService iqichaSearchService;
@@ -475,8 +481,31 @@ public class EnterpriseService {
         
         // 先插入客户记录，再插入企业档案（因为企业档案引用客户ID）
         customerMapper.insert(customer);
+        
         // 使用显式的 insert 方法，确保 LocalDate 正确转换为 DATE
-        extEnterpriseProfileMapper.insertWithDateConversion(profile);
+        log.info("准备插入企业档案: id={}, regDate={}, regDateClass={}", 
+                profile.getId(), profile.getRegDate(), 
+                profile.getRegDate() != null ? profile.getRegDate().getClass().getName() : "null");
+        
+        // 调试模式：检查 Mapper 配置（仅在首次调用或出错时记录）
+        if (log.isDebugEnabled()) {
+            log.debug("Mapper class: {}", extEnterpriseProfileMapper.getClass().getName());
+            if (sqlSession != null) {
+                boolean hasStatement = sqlSession.getConfiguration().hasStatement(
+                        "cn.cordys.crm.integration.mapper.ExtEnterpriseProfileMapper.insertWithDateConversion");
+                if (!hasStatement) {
+                    log.error("MyBatis 未识别 insertWithDateConversion 方法！hasStatement={}", hasStatement);
+                    log.debug("Call stack trace", new RuntimeException("trace"));
+                } else {
+                    log.debug("MyBatis hasStatement(insertWithDateConversion)={}", hasStatement);
+                }
+            } else {
+                log.warn("SqlSession is null; cannot verify mapped statement availability.");
+            }
+        }
+        
+        int result = extEnterpriseProfileMapper.insertWithDateConversion(profile);
+        log.info("插入企业档案成功: id={}, 影响行数={}", profile.getId(), result);
         
         log.info("创建新客户和企业档案: customerId={}, profileId={}, companyName={}", 
                 customerId, profile.getId(), request.getCompanyName());
@@ -513,7 +542,9 @@ public class EnterpriseService {
         }
         if (request.getEstablishmentDate() != null) {
             // 将时间戳（毫秒）转换为 LocalDate
-            profile.setRegDate(convertTimestampToLocalDate(request.getEstablishmentDate()));
+            LocalDate localDate = convertTimestampToLocalDate(request.getEstablishmentDate());
+            profile.setRegDate(localDate);
+            log.debug("设置 regDate: timestamp={}, LocalDate={}", request.getEstablishmentDate(), localDate);
         }
         if (StringUtils.isNotBlank(request.getAddress())) {
             profile.setAddress(request.getAddress());

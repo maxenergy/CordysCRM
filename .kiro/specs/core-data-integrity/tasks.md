@@ -153,7 +153,7 @@
     - API Client 不可用时暂停同步并保留队列项
     - _Requirements: 6.1, 6.2, 6.3_
 
-- [ ] 15. 重构 SyncService 主流程
+- [x] 15. 重构 SyncService 主流程
   - [x] 15.1 集成状态恢复到初始化流程
     - 在 `initialize()` 中调用 `resetStaleInProgressItems()`
     - 初始化失败时抛出异常

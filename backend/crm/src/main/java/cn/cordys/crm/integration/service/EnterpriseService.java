@@ -475,7 +475,8 @@ public class EnterpriseService {
         
         // 先插入客户记录，再插入企业档案（因为企业档案引用客户ID）
         customerMapper.insert(customer);
-        enterpriseProfileMapper.insert(profile);
+        // 使用显式的 insert 方法，确保 LocalDate 正确转换为 DATE
+        extEnterpriseProfileMapper.insertWithDateConversion(profile);
         
         log.info("创建新客户和企业档案: customerId={}, profileId={}, companyName={}", 
                 customerId, profile.getId(), request.getCompanyName());
@@ -492,7 +493,8 @@ public class EnterpriseService {
         existing.setUpdateUser(SessionUtils.getUserId());
         existing.setLastSyncAt(System.currentTimeMillis());
         
-        enterpriseProfileMapper.update(existing);
+        // 使用显式的 update 方法，确保 LocalDate 正确转换为 DATE
+        extEnterpriseProfileMapper.updateWithDateConversion(existing);
     }
 
     /**

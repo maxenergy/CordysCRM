@@ -178,4 +178,15 @@ public class MybatisConfig {
         return new ListTypeHandler();
     }
 
+    /**
+     * 注册 LocalDate 类型处理器
+     * 用于将 Java LocalDate 正确映射到 SQL DATE 类型
+     *
+     * @return LocalDateTypeHandler 实例
+     */
+    @Bean
+    public cn.cordys.crm.common.mybatis.typehandler.LocalDateTypeHandler localDateTypeHandler() {
+        return new cn.cordys.crm.common.mybatis.typehandler.LocalDateTypeHandler();
+    }
+
 }

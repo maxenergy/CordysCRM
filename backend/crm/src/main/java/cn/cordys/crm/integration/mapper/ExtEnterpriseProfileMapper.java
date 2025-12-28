@@ -52,4 +52,20 @@ public interface ExtEnterpriseProfileMapper {
      * @return 企业工商信息总数
      */
     long countByCompanyName(@Param("companyName") String companyName, @Param("orgId") String organizationId);
+
+    /**
+     * 插入企业档案（显式指定日期类型转换）
+     *
+     * @param profile 企业档案
+     * @return 影响行数
+     */
+    int insertWithDateConversion(EnterpriseProfile profile);
+
+    /**
+     * 更新企业档案（显式指定日期类型转换）
+     *
+     * @param profile 企业档案
+     * @return 影响行数
+     */
+    int updateWithDateConversion(EnterpriseProfile profile);
 }

@@ -220,11 +220,28 @@ class _EnterpriseSearchWithWebViewPageState
 
   Future<void> _performSearch(String keyword) async {
     if (keyword.length < 2) return;
+    
+    // 新搜索前退出选择模式，避免旧选择污染新结果
+    final searchState = ref.read(enterpriseSearchProvider);
+    if (searchState.isSelectionMode) {
+      ref.read(enterpriseSearchProvider.notifier).exitSelectionMode();
+    }
+    
     // 搜索前记录 WebView URL 状态，便于调试
     await _logQccUrlBeforeSearch(
       keyword,
     ).timeout(const Duration(milliseconds: 500), onTimeout: () {});
     await ref.read(enterpriseSearchProvider.notifier).search(keyword);
+    
+    // 搜索完成后，如果有可选企业，自动进入选择模式
+    if (mounted) {
+      final newState = ref.read(enterpriseSearchProvider);
+      if (!newState.isSelectionMode &&
+          newState.hasResults &&
+          newState.results.any((e) => !e.isLocal)) {
+        ref.read(enterpriseSearchProvider.notifier).enterSelectionMode();
+      }
+    }
   }
 
   /// 搜索前记录 WebView URL 状态
@@ -453,6 +470,17 @@ class _EnterpriseSearchWithWebViewPageState
             ),
           ),
         );
+      }
+      
+      // 重新搜索完成时自动进入选择模式
+      final reSearchCompleted =
+          previous?.isReSearching == true && next.isReSearching == false;
+
+      if (reSearchCompleted &&
+          !next.isSelectionMode &&
+          next.hasResults &&
+          next.results.any((e) => !e.isLocal)) {
+        ref.read(enterpriseSearchProvider.notifier).enterSelectionMode();
       }
     });
 

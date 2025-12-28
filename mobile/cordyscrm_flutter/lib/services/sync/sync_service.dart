@@ -6,12 +6,14 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/error/error_classifier.dart';
 import '../../data/sources/local/app_database.dart';
 import '../../data/sources/local/dao/sync_queue_dao.dart';
 import '../../data/sources/local/tables/tables.dart' show SyncOperation;
 import 'sync_api_client.dart';
 import 'sync_state.dart';
 import 'sync_state_recovery.dart';
+import 'sync_statistics.dart';
 
 /// 同步服务
 ///
@@ -48,6 +50,8 @@ class SyncService {
   final int _maxRetryAttempts;
 
   final _logger = Logger(printer: PrettyPrinter(methodCount: 0));
+  final _errorClassifier = ErrorClassifier();
+  final _statistics = SyncStatistics();
 
   // 状态流控制器
   final _stateController = StreamController<SyncState>.broadcast();
@@ -208,6 +212,7 @@ class SyncService {
     }
 
     _isSyncing = true;
+    _statistics.reset(); // 重置统计数据
     _logger.i('开始同步${reason != null ? " (原因: $reason)" : ""}');
     _emit(_currentState.copyWith(
       status: SyncServiceStatus.syncing,
@@ -260,8 +265,12 @@ class SyncService {
       error: errorMessage,
     ));
 
-    // 判断是否可重试
-    if (_isRetryableError(error) && _retryAttempt < _maxRetryAttempts) {
+    // 使用 ErrorClassifier 判断是否可重试
+    final errorType = _errorClassifier.classify(error);
+    final canRetry = errorType == ErrorType.retryable && 
+                     _retryAttempt < _maxRetryAttempts;
+
+    if (canRetry) {
       final backoff = _calculateBackoff();
       _logger.i('将在 ${backoff.inSeconds} 秒后重试 (第 $_retryAttempt 次)');
 
@@ -270,6 +279,8 @@ class SyncService {
       });
     } else if (_retryAttempt >= _maxRetryAttempts) {
       _logger.w('已达到最大重试次数 ($_maxRetryAttempts)，停止重试');
+    } else {
+      _logger.w('遇到不可重试错误 (${errorType.name})，停止重试');
     }
   }
 
@@ -280,21 +291,6 @@ class SyncService {
     // 添加随机抖动 (±20%)
     final jitter = (cappedMs * 0.2 * (Random().nextDouble() * 2 - 1)).toInt();
     return Duration(milliseconds: cappedMs + jitter);
-  }
-
-  /// 判断错误是否可重试
-  bool _isRetryableError(Object error) {
-    final errorStr = error.toString().toLowerCase();
-    // 网络错误、超时、服务器错误 (5xx) 可重试
-    // 客户端错误 (4xx) 不可重试
-    return errorStr.contains('timeout') ||
-        errorStr.contains('network') ||
-        errorStr.contains('connection') ||
-        errorStr.contains('socket') ||
-        errorStr.contains('500') ||
-        errorStr.contains('502') ||
-        errorStr.contains('503') ||
-        errorStr.contains('504');
   }
 
   /// 获取用户友好的错误信息
@@ -333,7 +329,6 @@ class SyncService {
     _logger.i('发现 ${allItems.length} 个待同步项 (pending: ${pendingItems.length}, failed: ${failedItems.length})');
 
     int processed = 0;
-    int failed = 0;
     for (final item in allItems) {
       try {
         // 标记为处理中
@@ -346,34 +341,43 @@ class SyncService {
         await _dao.deleteSyncItem(item.id);
 
         processed++;
+        _statistics.recordSuccess();
         _emit(_currentState.copyWith(
           progress: processed / allItems.length * 0.5, // 推送占 50% 进度
         ));
       } catch (e) {
         _logger.e('同步项 ${item.id} 失败: $e');
-        failed++;
+
+        // 使用 ErrorClassifier 分类错误
+        final errorType = _errorClassifier.classify(e);
+        _statistics.recordFailure(errorType);
 
         // 标记为失败（会增加 attemptCount）
         await _dao.markAsFailed(item.id);
 
-        // 如果是不可恢复错误，继续处理下一项
-        // 如果是可恢复错误且还有重试机会，也继续处理下一项
-        // 只有当所有项都是可恢复错误时才中断
-        if (!_isRetryableError(e)) {
-          _logger.w('同步项 ${item.id} 遇到不可恢复错误，跳过');
+        // 根据错误类型决定处理策略
+        if (errorType == ErrorType.nonRetryable) {
+          _logger.w('同步项 ${item.id} 遇到不可重试错误 (${errorType.name})，跳过');
           continue;
         }
         
-        // 可恢复错误，继续处理其他项，最后统一重试
-        _logger.d('同步项 ${item.id} 遇到可恢复错误，稍后重试');
+        // 可重试错误，继续处理其他项
+        _logger.d('同步项 ${item.id} 遇到可重试错误 (${errorType.name})，稍后重试');
       }
     }
 
-    _logger.d('本地修改推送完成: 成功 $processed, 失败 $failed');
+    _logger.i('本地修改推送完成: $_statistics');
     
-    // 如果有失败项且是可恢复错误，抛出异常触发重试
-    if (failed > 0) {
-      throw Exception('部分同步项失败 ($failed/${allItems.length})');
+    // 根据统计决定是否触发全局重试
+    if (_statistics.shouldTriggerGlobalRetry()) {
+      throw Exception(
+        '存在 ${_statistics.retryableFailedCount} 个可重试的失败项，触发全局重试'
+      );
+    } else if (_statistics.nonRetryableFailedCount > 0) {
+      _logger.w(
+        '同步完成，但存在 ${_statistics.nonRetryableFailedCount} 个不可重试的失败项'
+      );
+      // 不抛出异常，不触发重试
     }
   }
 

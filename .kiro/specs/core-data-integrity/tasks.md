@@ -122,19 +122,19 @@
     - 验证日志记录
     - _Requirements: 3.2, 3.3_
 
-- [ ] 12. Checkpoint D - 验证基础组件
+- [x] 12. Checkpoint D - 验证基础组件
   - 确保所有测试通过
   - 代码审查
   - 询问用户是否有问题
 
-- [ ] 13. 实现同步失败统计优化
-  - [ ] 13.1 创建 `SyncStatistics` 类
+- [x] 13. 实现同步失败统计优化
+  - [x] 13.1 创建 `SyncStatistics` 类
     - 维护 `retryableFailedCount` 计数器
     - 维护 `nonRetryableFailedCount` 计数器
     - 实现 `shouldTriggerGlobalRetry()` 逻辑
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
-  - [ ] 13.2 集成统计到 SyncService
+  - [x] 13.2 集成统计到 SyncService
     - 在同步失败时更新计数器
     - 在同步完成后重置计数器
     - 根据统计决定是否全局重试

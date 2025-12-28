@@ -453,7 +453,7 @@ class _EnterpriseSearchWithWebViewPageState
     final dataSource = ref.watch(enterpriseDataSourceProvider);
     final searchState = ref.watch(enterpriseSearchProvider);
 
-    // 监听搜索状态变化
+    // 监听搜索状态变化（合并所有状态监听）
     ref.listen<EnterpriseSearchState>(enterpriseSearchProvider, (
       previous,
       next,
@@ -461,7 +461,7 @@ class _EnterpriseSearchWithWebViewPageState
       // 只在当前页面处理状态变化
       if (ModalRoute.of(context)?.isCurrent != true) return;
       
-      // 当 reSearchError 从 null 变为非 null 时显示错误提示
+      // 1. 处理重新搜索错误
       if (previous?.reSearchError == null && next.reSearchError != null) {
         final error = next.reSearchError!;
         final userMessage = error.getUserMessage();
@@ -482,7 +482,7 @@ class _EnterpriseSearchWithWebViewPageState
         );
       }
       
-      // 重新搜索完成时自动进入选择模式
+      // 2. 重新搜索完成时自动进入选择模式
       final reSearchCompleted =
           previous?.isReSearching == true && next.isReSearching == false;
 
@@ -492,16 +492,8 @@ class _EnterpriseSearchWithWebViewPageState
           next.results.any((e) => !e.isLocal)) {
         ref.read(enterpriseSearchProvider.notifier).enterSelectionMode();
       }
-    });
-
-    // 监听批量导入状态变化
-    ref.listen<EnterpriseSearchState>(enterpriseSearchProvider, (
-      previous,
-      next,
-    ) {
-      // 只在当前页面处理状态变化
-      if (ModalRoute.of(context)?.isCurrent != true) return;
       
+      // 3. 处理批量导入状态变化
       // 开始导入时显示进度对话框
       if (previous?.isBatchImporting == false && next.isBatchImporting) {
         _showBatchImportProgressDialog();
@@ -509,7 +501,10 @@ class _EnterpriseSearchWithWebViewPageState
 
       // 导入完成时关闭进度对话框并显示结果
       if (previous?.isBatchImporting == true && !next.isBatchImporting) {
-        Navigator.of(context).pop(); // 关闭进度对话框
+        // 确保当前路由仍是本页面，且可以 pop（有对话框）
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop(); // 关闭进度对话框
+        }
         _showBatchImportSummaryDialog(next);
         
         // 如果导入成功，设置抑制标志，避免刷新后再次自动进入选择模式

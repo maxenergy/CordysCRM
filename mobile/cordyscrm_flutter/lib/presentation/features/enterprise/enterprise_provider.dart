@@ -440,6 +440,11 @@ class EnterpriseSearchNotifier extends StateNotifier<EnterpriseSearchState> {
         }
 
         if (qccResult.success) {
+          // Debug: 检查返回结果的 source 字段
+          for (final enterprise in qccResult.items) {
+            debugPrint('[企查查搜索] 企业: ${enterprise.name}, source=${enterprise.source}, isLocal=${enterprise.isLocal}');
+          }
+          
           state = state.copyWith(
             isSearching: false,
             results: qccResult.items,

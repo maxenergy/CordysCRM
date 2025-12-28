@@ -153,6 +153,20 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
     }
     
     await ref.read(enterpriseSearchProvider.notifier).search(keyword);
+    
+    // 搜索完成后，检查是否有可选企业，如果没有则显示提示
+    if (mounted) {
+      final newState = ref.read(enterpriseSearchProvider);
+      if (newState.hasResults && !newState.results.any((e) => !e.isLocal)) {
+        // 所有结果都是本地企业，显示提示
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('搜索结果中的企业都已在本地库中'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   /// 选择企业
@@ -166,6 +180,15 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final searchState = ref.watch(enterpriseSearchProvider);
+
+    // Debug logging to help identify the issue
+    if (searchState.hasResults) {
+      final localCount = searchState.results.where((e) => e.isLocal).length;
+      final remoteCount = searchState.results.where((e) => !e.isLocal).length;
+      debugPrint('[企业搜索] 结果统计: 总计=${searchState.results.length}, 本地=$localCount, 远程=$remoteCount');
+      debugPrint('[企业搜索] 选择模式: ${searchState.isSelectionMode}');
+      debugPrint('[企业搜索] 是否显示"选择"按钮: ${!searchState.isSelectionMode && searchState.hasResults && searchState.results.any((e) => !e.isLocal)}');
+    }
 
     // 监听重新搜索错误，显示 SnackBar
     ref.listen<EnterpriseSearchState>(enterpriseSearchProvider, (

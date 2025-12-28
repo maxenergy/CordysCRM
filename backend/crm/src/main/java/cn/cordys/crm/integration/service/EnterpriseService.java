@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -399,9 +400,26 @@ public class EnterpriseService {
             item.setRegisteredCapital(profile.getRegCapital().toPlainString());
         }
         if (profile.getRegDate() != null) {
-            item.setEstablishDate(formatEpochMilliToIsoDate(profile.getRegDate()));
+            item.setEstablishDate(profile.getRegDate().format(DateTimeFormatter.ISO_LOCAL_DATE));
         }
         return item;
+    }
+
+    /**
+     * 将时间戳（毫秒）转换为 LocalDate
+     */
+    private LocalDate convertTimestampToLocalDate(Long epochMilli) {
+        if (epochMilli == null) {
+            return null;
+        }
+        try {
+            return Instant.ofEpochMilli(epochMilli)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+        } catch (Exception e) {
+            log.warn("Failed to convert timestamp {} to LocalDate", epochMilli, e);
+            return null;
+        }
     }
 
     /**
@@ -492,7 +510,8 @@ public class EnterpriseService {
             profile.setRegCapital(request.getRegisteredCapital());
         }
         if (request.getEstablishmentDate() != null) {
-            profile.setRegDate(request.getEstablishmentDate());
+            // 将时间戳（毫秒）转换为 LocalDate
+            profile.setRegDate(convertTimestampToLocalDate(request.getEstablishmentDate()));
         }
         if (StringUtils.isNotBlank(request.getAddress())) {
             profile.setAddress(request.getAddress());

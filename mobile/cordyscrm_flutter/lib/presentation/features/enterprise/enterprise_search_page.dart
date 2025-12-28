@@ -412,16 +412,19 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
                   ? searchState.importProgress / searchState.importTotal
                   : 0.0;
 
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  LinearProgressIndicator(value: progress),
-                  const SizedBox(height: 16),
-                  Text(
-                    '${searchState.importProgress} / ${searchState.importTotal}',
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                ],
+              return SizedBox(
+                width: 280,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    LinearProgressIndicator(value: progress),
+                    const SizedBox(height: 16),
+                    Text(
+                      '${searchState.importProgress} / ${searchState.importTotal}',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ],
+                ),
               );
             },
           ),
@@ -439,42 +442,114 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('导入完成'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '成功: $successCount / ${state.importTotal}',
-                style: TextStyle(
-                  color: successCount > 0 ? Colors.green : null,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              if (failCount > 0) ...[
-                const SizedBox(height: 8),
-                Text(
-                  '失败: $failCount',
-                  style: const TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.w600,
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 320, maxHeight: 400),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 成功/失败统计
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Column(
+                        children: [
+                          Text(
+                            '$successCount',
+                            style: TextStyle(
+                              color: Colors.green[700],
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '成功',
+                            style: TextStyle(
+                              color: Colors.green[700],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        width: 1,
+                        height: 40,
+                        color: Theme.of(context).dividerColor,
+                      ),
+                      Column(
+                        children: [
+                          Text(
+                            '$failCount',
+                            style: TextStyle(
+                              color: failCount > 0 ? Colors.red[700] : Colors.grey,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '失败',
+                            style: TextStyle(
+                              color: failCount > 0 ? Colors.red[700] : Colors.grey,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 12),
-                const Text(
-                  '失败企业:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                ...state.importErrors.map((e) => Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Text(
-                        '• ${e.enterprise.name}: ${e.error}',
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                    )),
+                
+                // 失败详情
+                if (failCount > 0) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    '失败详情',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...state.importErrors.map((e) => Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.red[50],
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Colors.red[200]!),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              e.enterprise.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _formatErrorMessage(e.error),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.red[900],
+                              ),
+                            ),
+                          ],
+                        ),
+                      )),
+                ],
               ],
-            ],
+            ),
           ),
         ),
         actions: [
@@ -485,6 +560,31 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
         ],
       ),
     );
+  }
+
+  /// 格式化错误信息，使其更简洁
+  String _formatErrorMessage(String error) {
+    // 提取关键错误信息
+    if (error.contains('DioException')) {
+      if (error.contains('服务器繁忙')) {
+        return '服务器繁忙，请稍后重试';
+      }
+      if (error.contains('code: 100500')) {
+        return '服务器错误 (100500)';
+      }
+      return '网络请求失败';
+    }
+    if (error.contains('AppException')) {
+      final match = RegExp(r'AppException: (.+?)(?:\(|$)').firstMatch(error);
+      if (match != null) {
+        return match.group(1) ?? error;
+      }
+    }
+    // 如果错误信息太长，截取前100个字符
+    if (error.length > 100) {
+      return '${error.substring(0, 100)}...';
+    }
+    return error;
   }
 
   /// 构建剪贴板提示

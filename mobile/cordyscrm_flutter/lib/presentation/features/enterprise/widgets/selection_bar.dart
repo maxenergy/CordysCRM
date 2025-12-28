@@ -42,15 +42,15 @@ class SelectionBar extends StatelessWidget {
       child: SafeArea(
         top: false, // 禁用顶部内边距，防止状态栏高度影响底部栏布局
         child: Container(
-          height: 60,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          height: 64,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             color: theme.colorScheme.surface,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, -2),
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 12,
+                offset: const Offset(0, -4),
               ),
             ],
           ),
@@ -63,24 +63,41 @@ class SelectionBar extends StatelessWidget {
                   // 取消按钮
                   TextButton(
                     onPressed: onCancel,
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    ),
                     child: const Text('取消'),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 8),
                   // 全选 Checkbox 区域
                   InkWell(
                     onTap: onSelectAll,
                     borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: theme.colorScheme.outline.withValues(alpha: 0.3),
+                        ),
+                      ),
                       child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Checkbox(
-                            value: checkboxState,
-                            tristate: true, // 开启三态支持
-                            onChanged: (_) => onSelectAll(),
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: Checkbox(
+                              value: checkboxState,
+                              tristate: true, // 开启三态支持
+                              onChanged: (_) => onSelectAll(),
+                            ),
                           ),
-                          const SizedBox(width: 4),
-                          const Text('全选'),
+                          const SizedBox(width: 8),
+                          const Text(
+                            '全选',
+                            style: TextStyle(fontSize: 14),
+                          ),
                         ],
                       ),
                     ),
@@ -91,8 +108,14 @@ class SelectionBar extends StatelessWidget {
               // 右侧：批量导入按钮
               FilledButton.icon(
                 onPressed: selectedCount > 0 ? onBatchImport : null,
-                icon: const Icon(Icons.cloud_upload_outlined),
-                label: Text('批量导入 ($selectedCount)'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+                icon: const Icon(Icons.cloud_upload_outlined, size: 20),
+                label: Text(
+                  '批量导入 ($selectedCount)',
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
               ),
             ],
           ),

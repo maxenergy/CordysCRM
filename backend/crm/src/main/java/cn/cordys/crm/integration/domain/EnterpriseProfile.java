@@ -6,6 +6,7 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 /**
  * 企业工商信息
@@ -36,7 +37,7 @@ public class EnterpriseProfile extends BaseModel {
     private BigDecimal regCapital;
 
     @Schema(description = "成立日期")
-    private Long regDate;
+    private LocalDate regDate;
 
     @Schema(description = "人员规模")
     private String staffSize;

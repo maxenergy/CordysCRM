@@ -11,6 +11,7 @@ import '../../data/sources/local/dao/sync_queue_dao.dart';
 import '../../data/sources/local/tables/tables.dart' show SyncOperation;
 import 'sync_api_client.dart';
 import 'sync_state.dart';
+import 'sync_state_recovery.dart';
 
 /// 同步服务
 ///
@@ -88,6 +89,9 @@ class SyncService {
 
     // 检查初始网络状态
     _checkInitialConnectivity();
+
+    // 启动状态恢复机制
+    _recoverState();
   }
 
   /// 加载上次同步时间
@@ -122,6 +126,31 @@ class SyncService {
       _onConnectivityChangedSingle(result);
     } catch (e) {
       _logger.w('检查网络状态失败: $e');
+    }
+  }
+
+  /// 恢复同步状态
+  ///
+  /// 在服务初始化时调用，用于：
+  /// 1. 重置长时间处于 InProgress 状态的队列项（防止应用崩溃导致的状态卡死）
+  /// 2. 验证同步队列完整性
+  ///
+  /// 错误处理：记录日志但不抛出异常，避免阻塞服务启动
+  Future<void> _recoverState() async {
+    final recovery = SyncStateRecovery(_db, _logger);
+    try {
+      final resetCount = await recovery.resetStaleInProgressItems();
+      if (resetCount > 0) {
+        _logger.i('状态恢复: 重置了 $resetCount 个过期的同步项');
+      }
+
+      final isValid = await recovery.validateQueueIntegrity();
+      if (!isValid) {
+        _logger.w('状态恢复: 队列完整性验证发现问题，请检查日志');
+      }
+    } catch (e, stackTrace) {
+      _logger.e('状态恢复失败', error: e, stackTrace: stackTrace);
+      // 不抛出异常，避免阻塞服务启动
     }
   }
 

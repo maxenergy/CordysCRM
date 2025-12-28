@@ -29,7 +29,7 @@
 
 ### 1. 批量导入日期格式错误修复
 **完成时间**: 2024-12-28  
-**状态**: ✅ 完成
+**状态**: 🧪 等待测试
 
 修复了批量导入企业信息时的日期格式错误：
 
@@ -44,7 +44,8 @@
 - ✅ 修改 `copyRequestToProfile()` 使用转换方法
 - ✅ 更新 `toLocalEnterpriseItem()` 使用 LocalDate 格式化
 - ✅ 编译验证通过
-- ✅ 重新部署后端和 Flutter 应用
+- ✅ 后端服务已重启（Process 9，运行在 8081 端口）
+- 🧪 等待用户测试验证
 
 **技术亮点**:
 - 使用 Java 8+ 推荐的 LocalDate 类型
@@ -52,7 +53,8 @@
 - 保持 API 兼容性（EnterpriseImportRequest 仍使用 Long）
 - 添加异常处理和日志记录
 
-**文档**: `mobile/cordyscrm_flutter/BATCH_IMPORT_DATE_FIX.md`
+**测试指南**: `mobile/cordyscrm_flutter/BATCH_IMPORT_FINAL_TEST.md`  
+**技术文档**: `mobile/cordyscrm_flutter/BATCH_IMPORT_DATE_FIX.md`
 
 ### 2. 核心数据完整性 - 用户界面增强 (core-data-integrity Task 17)
 **完成时间**: 2024-12-28  

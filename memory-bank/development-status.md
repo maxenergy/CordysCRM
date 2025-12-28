@@ -1,6 +1,6 @@
 # CordysCRM 开发状态报告
 
-**更新时间**: 2024-12-27  
+**更新时间**: 2024-12-28  
 **项目阶段**: 核心功能完成，进入质量提升和问题修复阶段
 
 ---
@@ -27,7 +27,34 @@
 
 ## 🎯 最近完成的功能
 
-### 1. 核心数据完整性 - 用户界面增强 (core-data-integrity Task 17)
+### 1. 批量导入日期格式错误修复
+**完成时间**: 2024-12-28  
+**状态**: ✅ 完成
+
+修复了批量导入企业信息时的日期格式错误：
+
+**问题描述**:
+- 批量导入时出现 `Incorrect date value: '976464000000' for column 'reg_date'` 错误
+- 数据库 `reg_date` 列定义为 DATE 类型，但 Java 字段为 Long 类型
+- MyBatis 将 Long 时间戳直接插入 DATE 列导致错误
+
+**修复方案**:
+- ✅ 将 `EnterpriseProfile.regDate` 字段类型从 `Long` 改为 `LocalDate`
+- ✅ 添加 `convertTimestampToLocalDate()` 转换方法
+- ✅ 修改 `copyRequestToProfile()` 使用转换方法
+- ✅ 更新 `toLocalEnterpriseItem()` 使用 LocalDate 格式化
+- ✅ 编译验证通过
+- ✅ 重新部署后端和 Flutter 应用
+
+**技术亮点**:
+- 使用 Java 8+ 推荐的 LocalDate 类型
+- MyBatis 原生支持 LocalDate 与 DATE 的自动转换
+- 保持 API 兼容性（EnterpriseImportRequest 仍使用 Long）
+- 添加异常处理和日志记录
+
+**文档**: `mobile/cordyscrm_flutter/BATCH_IMPORT_DATE_FIX.md`
+
+### 2. 核心数据完整性 - 用户界面增强 (core-data-integrity Task 17)
 **完成时间**: 2024-12-28  
 **状态**: ✅ 完成
 

@@ -53,6 +53,7 @@ class EnterpriseSearchResultItem extends ConsumerWidget {
     void handleLongPress() {
       // 只有在非选择模式下，长按才进入选择模式
       if (!isSelectionMode) {
+        FocusScope.of(context).unfocus(); // 关闭键盘
         ref
             .read(enterpriseSearchProvider.notifier)
             .enterSelectionMode(initialSelectedId: enterprise.creditCode);

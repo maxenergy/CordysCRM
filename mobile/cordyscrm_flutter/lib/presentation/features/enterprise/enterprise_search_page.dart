@@ -257,6 +257,7 @@ class _EnterpriseSearchPageState extends ConsumerState<EnterpriseSearchPage>
                 searchState.results.any((e) => !e.isLocal))
               TextButton(
                 onPressed: () {
+                  FocusScope.of(context).unfocus(); // 关闭键盘
                   ref.read(enterpriseSearchProvider.notifier).enterSelectionMode();
                 },
                 child: const Text('选择'),

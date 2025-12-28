@@ -33,7 +33,6 @@ class SelectionBar extends StatelessWidget {
     }
 
     return Container(
-      height: 60,
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         boxShadow: [
@@ -44,49 +43,54 @@ class SelectionBar extends StatelessWidget {
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // 左侧：取消按钮和全选 Checkbox
-            Row(
+      child: SafeArea(
+        child: SizedBox(
+          height: 60,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // 取消按钮
-                TextButton(
-                  onPressed: onCancel,
-                  child: const Text('取消'),
-                ),
-                const SizedBox(width: 16),
-                // 全选 Checkbox 区域
-                InkWell(
-                  onTap: onSelectAll,
-                  borderRadius: BorderRadius.circular(8),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                    child: Row(
-                      children: [
-                        Checkbox(
-                          value: checkboxState,
-                          tristate: true, // 开启三态支持
-                          onChanged: (_) => onSelectAll(),
-                        ),
-                        const SizedBox(width: 4),
-                        const Text('全选'),
-                      ],
+                // 左侧：取消按钮和全选 Checkbox
+                Row(
+                  children: [
+                    // 取消按钮
+                    TextButton(
+                      onPressed: onCancel,
+                      child: const Text('取消'),
                     ),
-                  ),
+                    const SizedBox(width: 16),
+                    // 全选 Checkbox 区域
+                    InkWell(
+                      onTap: onSelectAll,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                        child: Row(
+                          children: [
+                            Checkbox(
+                              value: checkboxState,
+                              tristate: true, // 开启三态支持
+                              onChanged: (_) => onSelectAll(),
+                            ),
+                            const SizedBox(width: 4),
+                            const Text('全选'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                // 右侧：批量导入按钮
+                FilledButton.icon(
+                  onPressed: selectedCount > 0 ? onBatchImport : null,
+                  icon: const Icon(Icons.cloud_upload_outlined),
+                  label: Text('批量导入 ($selectedCount)'),
                 ),
               ],
             ),
-
-            // 右侧：批量导入按钮
-            FilledButton.icon(
-              onPressed: selectedCount > 0 ? onBatchImport : null,
-              icon: const Icon(Icons.cloud_upload_outlined),
-              label: Text('批量导入 ($selectedCount)'),
-            ),
-          ],
+          ),
         ),
       ),
     );

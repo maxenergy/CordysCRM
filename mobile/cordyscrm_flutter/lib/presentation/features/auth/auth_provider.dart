@@ -3,6 +3,10 @@ import '../../../core/providers/app_mode_provider.dart';
 import '../../../data/repositories/auth_repository_impl.dart';
 import '../../../domain/entities/user.dart';
 import '../../../domain/repositories/auth_repository.dart';
+import '../../../services/sync/api_client_monitor.dart';
+import '../../../services/sync/dio_sync_api_client.dart';
+import '../../../core/network/dio_client.dart';
+import '../../../services/sync/sync_provider.dart';
 
 /// 认证仓库 Provider
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
@@ -57,8 +61,11 @@ class AuthState {
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository _repository;
   final Ref _ref;
+  late final ApiClientMonitor _clientMonitor;
 
   AuthNotifier(this._repository, this._ref) : super(const AuthState()) {
+    // Import sync_provider to access apiClientMonitorProvider
+    _clientMonitor = _ref.read(apiClientMonitorProvider);
     _checkAuthStatus();
   }
 
@@ -116,6 +123,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // 真实模式登录
     try {
       final user = await _repository.login(username, password);
+      
+      // Update ApiClientMonitor (Requirement 6.5)
+      final syncClient = DioSyncApiClient(DioClient.instance);
+      _clientMonitor.setClient(syncClient);
+      
       state = AuthState(
         status: AuthStatus.authenticated,
         user: user,
@@ -132,6 +144,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// 登出
   Future<void> logout() async {
     await _repository.logout();
+    _clientMonitor.clearClient(); // Clear API client (Requirement 6.2)
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 

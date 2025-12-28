@@ -20,6 +20,7 @@ import '../features/home/profile_page.dart';
 import '../features/opportunity/opportunity_detail_page.dart';
 import '../features/opportunity/opportunity_edit_page.dart';
 import '../features/opportunity/opportunity_list_page.dart';
+import '../features/settings/sync_issues_page.dart';
 
 /// 企业 WebView 路由参数
 class EnterpriseRouteParams {
@@ -54,6 +55,7 @@ class AppRoutes {
   static const String enterprise = '/enterprise';
   static const String enterpriseSearch = '/enterprise/search';
   static const String profile = '/profile';
+  static const String syncIssues = 'sync_issues'; // Sub-route of profile
 }
 
 /// 路由刷新通知器
@@ -223,6 +225,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: AppRoutes.profile,
             name: 'profile',
             builder: (context, state) => const ProfilePage(),
+            routes: [
+              // 同步问题页面
+              GoRoute(
+                path: AppRoutes.syncIssues,
+                name: 'syncIssues',
+                parentNavigatorKey: _shellNavigatorKey,
+                builder: (context, state) => const SyncIssuesPage(),
+              ),
+            ],
           ),
         ],
       ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/clue.dart';
+import '../../../services/sync/sync_provider.dart';
 import '../../theme/app_theme.dart';
 import 'clue_provider.dart';
 
@@ -70,6 +71,19 @@ class _ClueEditPageState extends ConsumerState<ClueEditPage> {
 
   Future<void> _saveForm() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // Requirement 6.5: Check API Client availability
+    final clientMonitor = ref.read(apiClientMonitorProvider);
+    if (!clientMonitor.isClientAvailable) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('请先配置服务器地址（API 客户端不可用）'),
+          backgroundColor: AppTheme.errorColor,
+        ),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
 

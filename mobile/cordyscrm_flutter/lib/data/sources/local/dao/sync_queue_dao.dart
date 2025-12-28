@@ -246,4 +246,20 @@ class SyncQueueDao extends DatabaseAccessor<AppDatabase>
     return (select(syncQueue)..where((q) => q.id.equals(id)))
         .getSingleOrNull();
   }
+
+  /// 重置致命错误项为待处理状态
+  ///
+  /// 将 fatal error 项重置为 pending 状态，并清空重试次数和错误信息
+  /// Requirements: 7.5
+  Future<int> resetFatalItem(int id) {
+    return (update(syncQueue)..where((q) => q.id.equals(id))).write(
+      SyncQueueCompanion(
+        status: const Value(SyncQueueItemStatus.pending),
+        attemptCount: const Value(0),
+        errorType: const Value(null),
+        errorMessage: const Value(null),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
 }

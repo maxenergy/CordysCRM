@@ -216,21 +216,34 @@ class ProfilePage extends ConsumerWidget {
             Row(
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '待同步: ${syncState.pendingCount} 条',
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '最后同步: ${_formatLastSync(syncState.lastSyncedAt)}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                  child: InkWell(
+                    onTap: () {
+                      // 如果有致命错误，跳转到同步问题页面
+                      if (syncState.fatalErrorCount > 0) {
+                        context.goNamed('syncIssues');
+                      }
+                    },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '待同步: ${syncState.pendingCount} 条',
+                          style: theme.textTheme.bodyMedium,
                         ),
-                      ),
-                    ],
+                        if (syncState.fatalErrorCount > 0)
+                          Text(
+                            '同步失败: ${syncState.fatalErrorCount} 条',
+                            style: TextStyle(color: theme.colorScheme.error),
+                          ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '最后同步: ${_formatLastSync(syncState.lastSyncedAt)}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 FilledButton.tonal(

@@ -719,4 +719,15 @@ class SyncService {
     await _stateController.close();
     await _notificationController.close();
   }
+
+  /// 手动重试致命错误项
+  ///
+  /// 将 fatal error 项重置为 pending 状态并立即触发同步
+  /// Requirements: 7.5
+  Future<void> retryFatalItem(int id) async {
+    _logger.i('手动重试致命错误项: $id');
+    await _dao.resetFatalItem(id);
+    // 立即触发同步
+    triggerSync(reason: '手动重试致命错误项', immediate: true);
+  }
 }

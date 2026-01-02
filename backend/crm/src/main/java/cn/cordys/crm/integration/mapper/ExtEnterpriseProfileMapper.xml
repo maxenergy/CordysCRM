@@ -3,7 +3,7 @@
 
 <mapper namespace="cn.cordys.crm.integration.mapper.ExtEnterpriseProfileMapper">
 
-    <!-- 显式插入语句，指定 reg_date 的 jdbcType=DATE -->
+    <!-- 显式插入语句，指定 reg_date 的 jdbcType=BIGINT -->
     <insert id="insertWithDateConversion" parameterType="cn.cordys.crm.integration.domain.EnterpriseProfile">
         INSERT INTO enterprise_profile (
             id, customer_id, iqicha_id, credit_code, company_name, legal_person,
@@ -13,14 +13,14 @@
             organization_id, create_time, update_time, create_user, update_user
         ) VALUES (
             #{id}, #{customerId}, #{iqichaId}, #{creditCode}, #{companyName}, #{legalPerson},
-            #{regCapital}, #{regDate,jdbcType=DATE}, #{staffSize}, #{industryCode}, #{industryName},
+            #{regCapital}, #{regDate,jdbcType=BIGINT}, #{staffSize}, #{industryCode}, #{industryName},
             #{province}, #{city}, #{address}, #{status}, #{phone}, #{email}, #{website},
             #{shareholders}, #{executives}, #{risks}, #{source}, #{lastSyncAt},
             #{organizationId}, #{createTime}, #{updateTime}, #{createUser}, #{updateUser}
         )
     </insert>
 
-    <!-- 显式更新语句，指定 reg_date 的 jdbcType=DATE -->
+    <!-- 显式更新语句，指定 reg_date 的 jdbcType=BIGINT -->
     <update id="updateWithDateConversion" parameterType="cn.cordys.crm.integration.domain.EnterpriseProfile">
         UPDATE enterprise_profile
         SET customer_id = #{customerId},
@@ -29,7 +29,7 @@
             company_name = #{companyName},
             legal_person = #{legalPerson},
             reg_capital = #{regCapital},
-            reg_date = #{regDate,jdbcType=DATE},
+            reg_date = #{regDate,jdbcType=BIGINT},
             staff_size = #{staffSize},
             industry_code = #{industryCode},
             industry_name = #{industryName},

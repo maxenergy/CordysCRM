@@ -36,8 +36,8 @@ public class EnterpriseProfile extends BaseModel {
     @Schema(description = "注册资本(万元)")
     private BigDecimal regCapital;
 
-    @Schema(description = "成立日期")
-    private LocalDate regDate;
+    @Schema(description = "成立日期(时间戳)")
+    private Long regDate;
 
     @Schema(description = "人员规模")
     private String staffSize;

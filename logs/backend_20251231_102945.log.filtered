@@ -1,0 +1,18 @@
+  /api/enterprise/config/** -> apikey, authc
+  /api/enterprise/search -> apikey, authc
+  /api/enterprise/search/** -> apikey, authc
+  /api/enterprise/search-local -> apikey, authc
+  /api/enterprise/search-local/** -> apikey, authc
+  /api/enterprise/import -> apikey, authc
+  /api/enterprise/import/** -> apikey, authc
+  /api/enterprise/config/** -> apikey, authc
+  /api/enterprise/search -> apikey, authc
+  /api/enterprise/search/** -> apikey, authc
+  /api/enterprise/search-local -> apikey, authc
+  /api/enterprise/search-local/** -> apikey, authc
+  /api/enterprise/import -> apikey, authc
+  /api/enterprise/import/** -> apikey, authc
+2025-12-31 10:30:18,527  INFO         org.flywaydb.core.FlywayExecutor:  41 - Database: jdbc:mysql://127.0.0.1:3306/cordys_crm?autoReconnect=false&useUnicode=true&characterEncoding=UTF-8&characterSetResults=UTF-8&zeroDateTimeBehavior=convertToNull&allowPublicKeyRetrieval=true&useSSL=false&sessionVariables=sql_mode='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' (MySQL 8.0)
+2025-12-31 10:30:26,476  WARN ConfigServletWebServerApplicationContext: 635 - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Failed to start bean 'webServerStartStop'
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+[[1;31mERROR[m] [1m[Help 1][m http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

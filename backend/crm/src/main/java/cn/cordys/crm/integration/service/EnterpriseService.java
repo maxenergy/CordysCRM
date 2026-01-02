@@ -406,27 +406,16 @@ public class EnterpriseService {
             item.setRegisteredCapital(profile.getRegCapital().toPlainString());
         }
         if (profile.getRegDate() != null) {
-            item.setEstablishDate(profile.getRegDate().format(DateTimeFormatter.ISO_LOCAL_DATE));
+            // 将时间戳转换为日期字符串
+            LocalDate localDate = Instant.ofEpochMilli(profile.getRegDate())
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+            item.setEstablishDate(localDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
         }
         return item;
     }
 
-    /**
-     * 将时间戳（毫秒）转换为 LocalDate
-     */
-    private LocalDate convertTimestampToLocalDate(Long epochMilli) {
-        if (epochMilli == null) {
-            return null;
-        }
-        try {
-            return Instant.ofEpochMilli(epochMilli)
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDate();
-        } catch (Exception e) {
-            log.warn("Failed to convert timestamp {} to LocalDate", epochMilli, e);
-            return null;
-        }
-    }
+
 
     /**
      * 将时间戳转换为 ISO 日期格式
@@ -482,7 +471,7 @@ public class EnterpriseService {
         // 先插入客户记录，再插入企业档案（因为企业档案引用客户ID）
         customerMapper.insert(customer);
         
-        // 使用显式的 insert 方法，确保 LocalDate 正确转换为 DATE
+        // 使用显式的 insert 方法，确保时间戳正确存储
         log.info("准备插入企业档案: id={}, regDate={}, regDateClass={}", 
                 profile.getId(), profile.getRegDate(), 
                 profile.getRegDate() != null ? profile.getRegDate().getClass().getName() : "null");
@@ -504,8 +493,22 @@ public class EnterpriseService {
             }
         }
         
-        int result = extEnterpriseProfileMapper.insertWithDateConversion(profile);
-        log.info("插入企业档案成功: id={}, 影响行数={}", profile.getId(), result);
+        try {
+            int result = extEnterpriseProfileMapper.insertWithDateConversion(profile);
+            log.info("插入企业档案成功: id={}, 影响行数={}", profile.getId(), result);
+        } catch (Exception e) {
+            log.error("插入企业档案失败: id={}, companyName={}, creditCode={}, regDate={}", 
+                    profile.getId(), profile.getCompanyName(), profile.getCreditCode(), profile.getRegDate(), e);
+            // 记录完整的异常链
+            Throwable cause = e;
+            int depth = 0;
+            while (cause != null && depth < 10) {
+                log.error("  Cause[{}]: {} - {}", depth, cause.getClass().getName(), cause.getMessage());
+                cause = cause.getCause();
+                depth++;
+            }
+            throw e;
+        }
         
         log.info("创建新客户和企业档案: customerId={}, profileId={}, companyName={}", 
                 customerId, profile.getId(), request.getCompanyName());
@@ -541,10 +544,9 @@ public class EnterpriseService {
             profile.setRegCapital(request.getRegisteredCapital());
         }
         if (request.getEstablishmentDate() != null) {
-            // 将时间戳（毫秒）转换为 LocalDate
-            LocalDate localDate = convertTimestampToLocalDate(request.getEstablishmentDate());
-            profile.setRegDate(localDate);
-            log.debug("设置 regDate: timestamp={}, LocalDate={}", request.getEstablishmentDate(), localDate);
+            // 直接使用时间戳，不需要转换
+            profile.setRegDate(request.getEstablishmentDate());
+            log.debug("设置 regDate: timestamp={}", request.getEstablishmentDate());
         }
         if (StringUtils.isNotBlank(request.getAddress())) {
             profile.setAddress(request.getAddress());

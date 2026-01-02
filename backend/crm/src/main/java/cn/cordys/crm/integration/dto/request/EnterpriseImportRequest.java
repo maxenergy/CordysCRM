@@ -24,9 +24,8 @@ public class EnterpriseImportRequest {
     @Schema(description = "企业名称", requiredMode = Schema.RequiredMode.REQUIRED)
     private String companyName;
 
-    @NotBlank(message = "统一社会信用代码不能为空")
-    @Size(min = 18, max = 18, message = "统一社会信用代码必须为18位")
-    @Schema(description = "统一社会信用代码", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Size(max = 18, message = "统一社会信用代码长度不能超过18位")
+    @Schema(description = "统一社会信用代码")
     private String creditCode;
 
     @Size(max = 128, message = "法定代表人长度不能超过128个字符")

@@ -1,0 +1,57 @@
+=========================================
+企业导入错误诊断（增强版）
+=========================================
+
+[1;33m[1/6] 检查后端日志中的错误...[0m
+
+[0;32m✓ 找到日志文件: logs/enterprise-import-debug.log[0m
+
+[0;34m=== 最近的完整异常堆栈（包含 Caused by）===[0m
+[[1;31mERROR[m] 
+[[1;31mERROR[m] To see the full stack trace of the errors, re-run Maven with the [1m-e[m switch.
+[[1;31mERROR[m] Re-run Maven using the [1m-X[m switch to enable full debug logging.
+[[1;31mERROR[m] 
+[[1;31mERROR[m] For more information about the errors and possible solutions, please read the following articles:
+[[1;31mERROR[m] [1m[Help 1][m http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
+
+[0;34m=== 最近的 SQL 执行日志 ===[0m
+
+[0;34m=== 最近的 MyBatis 参数 ===[0m
+
+[0;34m=== Mapper 加载状态 ===[0m
+
+[1;33m[2/6] 检查 Mapper XML 文件...[0m
+
+[0;32m✓ ExtEnterpriseProfileMapper.xml 存在[0m
+[0;32m✓ insertWithDateConversion 方法已定义[0m
+[0;32m✓ jdbcType=DATE 已配置[0m
+
+[1;33m[3/6] 检查数据库连接和约束...[0m
+
+[0;31m✗ 数据库连接失败[0m
+请检查数据库是否启动，用户名密码是否正确
+
+[1;33m[4/6] 检查后端进程...[0m
+
+[0;32m✓ 后端进程正在运行[0m
+
+进程信息:
+rogers    287559  0.1  0.4 21327676 276644 pts/37 Sl+ 08:34   0:23 /usr/bin/java -Djansi.mode=force -classpath /usr/share/maven/boot/plexus-classworlds-2.x.jar -Dclassworlds.conf=/usr/share/maven/bin/m2.conf -Dmaven.home=/usr/share/maven -Dlibrary.jansi.path=/usr/share/maven/lib/jansi-native -Dmaven.multiModuleProjectDirectory=/home/rogers/source/custom/CordysCRM org.codehaus.plexus.classworlds.launcher.Launcher spring-boot:run -pl app -DskipTests -Dspring-boot.run.profiles=dev -Dlogging.level.cn.cordys.crm.integration=DEBUG -Dlogging.level.org.apache.ibatis=DEBUG
+
+[1;33m[5/6] 检查最近的导入记录...[0m
+
+
+[1;33m[6/6] 生成诊断报告...[0m
+
+[0;32m✓ 诊断报告已生成: logs/diagnostic_report_20251229_124220.txt[0m
+
+
+=========================================
+诊断完成
+=========================================
+
+[1;33m下一步：[0m
+1. 如果看到 'Caused by' 错误，请将完整错误信息发给我
+2. 如果没有看到错误，请运行测试脚本：
+   ./scripts/test_enterprise_import_single.sh
+3. 然后再次运行本诊断脚本查看新的错误

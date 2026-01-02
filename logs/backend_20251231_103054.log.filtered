@@ -1,0 +1,8 @@
+2025-12-31 10:31:38,944 DEBUG           cn.cordys.config.SessionConfig:  67 - [SessionIdResolver] /api/enterprise/search - No session ID found in headers
+2025-12-31 10:31:38,945  INFO   cn.cordys.common.security.ApiKeyFilter:  49 - [ApiKeyFilter] onPreHandle for: POST /api/enterprise/search
+2025-12-31 10:31:38,946  INFO     cn.cordys.common.security.AuthFilter:  41 - [AuthFilter] isAccessAllowed for: POST /api/enterprise/search, authenticated: false
+2025-12-31 10:31:38,946  INFO     cn.cordys.common.security.AuthFilter:  60 - [AuthFilter] onAccessDenied for: /api/enterprise/search
+2025-12-31 10:31:41,962 DEBUG           cn.cordys.config.SessionConfig:  67 - [SessionIdResolver] /api/enterprise/batch-import - No session ID found in headers
+2025-12-31 10:31:41,963  INFO   cn.cordys.common.security.ApiKeyFilter:  49 - [ApiKeyFilter] onPreHandle for: POST /api/enterprise/batch-import
+2025-12-31 10:31:41,964  INFO     cn.cordys.common.security.AuthFilter:  41 - [AuthFilter] isAccessAllowed for: POST /api/enterprise/batch-import, authenticated: false
+2025-12-31 10:31:41,964  INFO     cn.cordys.common.security.AuthFilter:  60 - [AuthFilter] onAccessDenied for: /api/enterprise/batch-import

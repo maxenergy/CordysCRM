@@ -501,13 +501,28 @@ class _EnterpriseSearchWithWebViewPageState
 
       // 导入完成时关闭进度对话框并显示结果
       if (previous?.isBatchImporting == true && !next.isBatchImporting) {
-        // 确保当前路由仍是本页面，且可以 pop（有对话框）
-        // 双重保护：既检查当前路由，又检查是否可以 pop
-        if (ModalRoute.of(context)?.isCurrent == true && 
-            Navigator.of(context).canPop()) {
-          Navigator.of(context).pop(); // 关闭进度对话框
-        }
-        _showBatchImportSummaryDialog(next);
+        // 强制关闭进度对话框 - 多重保护
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          if (!mounted) return;
+          
+          // 尝试多种方式关闭对话框
+          int attempts = 0;
+          while (attempts < 3 && Navigator.of(context).canPop()) {
+            try {
+              Navigator.of(context).pop();
+              attempts++;
+              await Future.delayed(const Duration(milliseconds: 100));
+            } catch (e) {
+              debugPrint('[批量导入] 关闭进度对话框失败 (尝试 $attempts): $e');
+              break;
+            }
+          }
+          
+          // 显示结果摘要
+          if (mounted) {
+            _showBatchImportSummaryDialog(next);
+          }
+        });
         
         // 如果导入成功，设置抑制标志，避免刷新后再次自动进入选择模式
         if (next.importErrors.isEmpty) {
@@ -684,6 +699,19 @@ class _EnterpriseSearchWithWebViewPageState
               );
             },
           ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                // 强制关闭对话框
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+                // 退出选择模式
+                ref.read(enterpriseSearchProvider.notifier).exitSelectionMode();
+              },
+              child: const Text('强制关闭'),
+            ),
+          ],
         ),
       ),
     );

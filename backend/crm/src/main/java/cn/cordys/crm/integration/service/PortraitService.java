@@ -18,6 +18,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+
 import java.util.*;
 
 /**
@@ -127,7 +132,7 @@ public class PortraitService {
         sb.append("统一社会信用代码: ").append(nvl(profile.getCreditCode())).append("\n");
         sb.append("法定代表人: ").append(nvl(profile.getLegalPerson())).append("\n");
         sb.append("注册资本: ").append(formatRegCapital(profile.getRegCapital())).append("\n");
-        sb.append("成立日期: ").append(nvl(profile.getRegDate())).append("\n");
+        sb.append("成立日期: ").append(formatRegDate(profile.getRegDate())).append("\n");
         sb.append("所属行业: ").append(nvl(profile.getIndustryName())).append("\n");
         sb.append("员工规模: ").append(nvl(profile.getStaffSize())).append("\n");
         sb.append("注册地址: ").append(nvl(profile.getAddress())).append("\n");
@@ -410,5 +415,19 @@ public class PortraitService {
             return "未知";
         }
         return capital.toString() + " 万元";
+    }
+
+    private String formatRegDate(Long timestamp) {
+        if (timestamp == null) {
+            return "未知";
+        }
+        try {
+            LocalDate localDate = Instant.ofEpochMilli(timestamp)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+            return localDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        } catch (Exception e) {
+            return "格式错误";
+        }
     }
 }

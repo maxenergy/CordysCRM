@@ -51,8 +51,24 @@ public class EnterpriseController {
     @PostMapping("/import")
     @Operation(summary = "导入企业信息", description = "从爱企查导入企业工商信息到CRM，支持Chrome Extension和WebView调用")
     public EnterpriseImportResponse importEnterprise(@Valid @RequestBody EnterpriseImportRequest request) {
-        String organizationId = OrganizationContext.getOrganizationId();
-        return enterpriseService.importEnterprise(request, organizationId);
+        try {
+            log.info("开始导入企业: companyName={}, creditCode={}", request.getCompanyName(), request.getCreditCode());
+            String organizationId = OrganizationContext.getOrganizationId();
+            EnterpriseImportResponse response = enterpriseService.importEnterprise(request, organizationId);
+            log.info("企业导入完成: companyName={}, success={}, message={}", request.getCompanyName(), response.getSuccess(), response.getMessage());
+            return response;
+        } catch (Exception e) {
+            log.error("企业导入失败: companyName={}, creditCode={}", request.getCompanyName(), request.getCreditCode(), e);
+            // 记录完整的异常链
+            Throwable cause = e;
+            int depth = 0;
+            while (cause != null && depth < 10) {
+                log.error("  Controller Cause[{}]: {} - {}", depth, cause.getClass().getName(), cause.getMessage());
+                cause = cause.getCause();
+                depth++;
+            }
+            throw e;
+        }
     }
 
     /**

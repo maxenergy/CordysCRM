@@ -1,0 +1,484 @@
+2025-12-29 13:52:08,652  INFO   cn.cordys.common.security.ApiKeyFilter:  92 - [ApiKeyFilter] trySessionIdAuth - Authorization header: null
+2025-12-29 13:52:08,652  INFO   cn.cordys.common.security.ApiKeyFilter:  96 - [ApiKeyFilter] trySessionIdAuth - No Authorization header
+2025-12-29 13:52:08,652  INFO     cn.cordys.common.security.AuthFilter:  41 - [AuthFilter] isAccessAllowed for: GET /actuator/health, authenticated: false
+2025-12-29 13:52:08,652  INFO     cn.cordys.common.security.AuthFilter:  60 - [AuthFilter] onAccessDenied for: /actuator/health
+2025-12-29 13:52:50,563  INFO k.scheduling.quartz.SchedulerFactoryBean: 749 - Starting Quartz Scheduler now, after delay of 60 seconds
+2025-12-29 13:52:50,581  INFO        cn.cordys.quartz.SchedulerStarter: 168 - reschedule all jobs...
+2025-12-29 13:52:50,597  INFO cheduling.quartz.LocalDataSourceJobStore:3517 - ClusterManager: detected 1 failed or restarted instances.
+2025-12-29 13:52:50,597  INFO cheduling.quartz.LocalDataSourceJobStore:3382 - ClusterManager: Scanning for instance "rogers-V1x0PNPx1766986959870"'s failed in-progress jobs.
+2025-12-29 13:52:50,610  INFO          org.quartz.core.QuartzScheduler: 541 - Scheduler cordys-crm-quartz_$_rogers-V1x0PNPx1766987505040 started.
+2025-12-29 13:52:50,817  INFO          org.quartz.core.QuartzScheduler: 541 - Scheduler cordys-crm-quartz_$_rogers-V1x0PNPx1766987505040 started.
+2025-12-29 13:55:00,024 DEBUG tz.config.ClusterQuartzFixedDelayJobBean:  32 - The scheduled task starts：targetObject=notifyOnJob, targetMethod=onEvent
+2025-12-29 13:55:00,026 DEBUG cementMapper.selectInEffectUnConvertData: 135 - ==>  Preparing: SELECT * FROM sys_announcement WHERE end_time >= ? and start_time < ? and notice = false
+2025-12-29 13:55:00,026 DEBUG cementMapper.selectInEffectUnConvertData: 135 - ==> Parameters: 1766987700024(Long), 1766987700024(Long)
+2025-12-29 13:55:00,038 DEBUG cementMapper.selectInEffectUnConvertData: 135 - <==      Total: 0
+2025-12-29 13:55:00,041 DEBUG tz.config.ClusterQuartzFixedDelayJobBean:  36 - The scheduled task ends normally：targetObject=notifyOnJob, targetMethod=onEvent
+2025-12-29 13:55:00,041 DEBUG rdys.quartz.config.FixedDelayJobListener:  63 - Not a fixed delay job : DEFAULT.6da64b5bd2ee-9d6f9ca7-bd24-4c94-bdf8-0766619f4d64
+2025-12-29 13:55:44,621 DEBUG           cn.cordys.config.SessionConfig:  67 - [SessionIdResolver] /login - No session ID found in headers
+2025-12-29 13:55:44,622  INFO    cn.cordys.config.RequestLoggingFilter:  34 - ========== 收到HTTP请求 ==========
+2025-12-29 13:55:44,622  INFO    cn.cordys.config.RequestLoggingFilter:  35 - Method: POST
+2025-12-29 13:55:44,622  INFO    cn.cordys.config.RequestLoggingFilter:  36 - URI: /login
+2025-12-29 13:55:44,622  INFO    cn.cordys.config.RequestLoggingFilter:  37 - QueryString: null
+2025-12-29 13:55:44,622  INFO    cn.cordys.config.RequestLoggingFilter:  38 - ContentType: application/json
+2025-12-29 13:55:44,622  INFO    cn.cordys.config.RequestLoggingFilter:  39 - RemoteAddr: 192.168.1.139
+2025-12-29 13:55:44,623  INFO    cn.cordys.config.RequestLoggingFilter:  49 - Headers: user-agent: Dart/3.10 (dart:io); content-type: application/json; accept: application/json; accept-encoding: gzip; content-length: 63; host: 192.168.1.226:8081; 
+2025-12-29 13:55:44,623  INFO    cn.cordys.config.RequestLoggingFilter:  56 - ==================================
+2025-12-29 13:55:44,676  WARN                  jakarta.persistence.spi: 173 - jakarta.persistence.spi::No valid providers found.
+2025-12-29 13:55:44,692 DEBUG apper.ExtUserMapper.selectByPhoneOrEmail: 135 - ==>  Preparing: SELECT sys_user.*, sys_user_extend.avatar, sys_user_extend.platform_info FROM sys_user LEFT JOIN sys_user_extend ON sys_user.id = sys_user_extend.id WHERE sys_user.id = ? OR sys_user.phone = ? OR sys_user.email = ?
+2025-12-29 13:55:44,692 DEBUG apper.ExtUserMapper.selectByPhoneOrEmail: 135 - ==> Parameters: admin(String), admin(String), admin(String)
+2025-12-29 13:55:44,695 DEBUG apper.ExtUserMapper.selectByPhoneOrEmail: 135 - <==      Total: 1
+2025-12-29 13:55:44,696 DEBUG anizationMapper.selectAllOrganizationIds: 135 - ==>  Preparing: select id from sys_organization
+2025-12-29 13:55:44,697 DEBUG anizationMapper.selectAllOrganizationIds: 135 - ==> Parameters: 
+2025-12-29 13:55:44,698 DEBUG anizationMapper.selectAllOrganizationIds: 135 - <==      Total: 1
+2025-12-29 13:55:44,780 DEBUG           cn.cordys.config.SessionConfig:  67 - [SessionIdResolver] /login - No session ID found in headers
+2025-12-29 13:58:29,122 DEBUG           cn.cordys.config.SessionConfig:  53 - [SessionIdResolver] /api/enterprise/search-local - Found X-AUTH-TOKEN: f0b09858...
+2025-12-29 13:58:29,131  INFO   cn.cordys.common.security.ApiKeyFilter:  49 - [ApiKeyFilter] onPreHandle for: GET /api/enterprise/search-local
+2025-12-29 13:58:29,132  INFO     cn.cordys.common.security.AuthFilter:  41 - [AuthFilter] isAccessAllowed for: GET /api/enterprise/search-local, authenticated: true
+2025-12-29 13:58:29,132  INFO    cn.cordys.config.RequestLoggingFilter:  34 - ========== 收到HTTP请求 ==========
+2025-12-29 13:58:29,132  INFO    cn.cordys.config.RequestLoggingFilter:  35 - Method: GET
+2025-12-29 13:58:29,132  INFO    cn.cordys.config.RequestLoggingFilter:  36 - URI: /api/enterprise/search-local
+2025-12-29 13:58:29,132  INFO    cn.cordys.config.RequestLoggingFilter:  37 - QueryString: keyword=ji&page=1&pageSize=10
+2025-12-29 13:58:29,132  INFO    cn.cordys.config.RequestLoggingFilter:  38 - ContentType: application/json
+2025-12-29 13:58:29,132  INFO    cn.cordys.config.RequestLoggingFilter:  39 - RemoteAddr: 192.168.1.139
+2025-12-29 13:58:29,132  INFO    cn.cordys.config.RequestLoggingFilter:  49 - Headers: user-agent: Dart/3.10 (dart:io); accept: application/json; x-auth-token: f0b09858-8fef-4361-bab2-3a0466a8bf83; accept-encoding: gzip; host: 192.168.1.226:8081; authorization: Bearer f0b09858-8fef-4361-bab2-3a0466a8bf83; content-type: application/json; 
+2025-12-29 13:58:29,132  INFO    cn.cordys.config.RequestLoggingFilter:  56 - ==================================
+2025-12-29 13:58:29,145 DEBUG erpriseProfileMapper.searchByCompanyName: 135 - ==>  Preparing: SELECT id, customer_id, iqicha_id, credit_code, company_name, legal_person, reg_capital, reg_date, staff_size, industry_code, industry_name, province, city, address, status, phone, email, website, shareholders, executives, risks, source, last_sync_at, organization_id, create_time, update_time, create_user, update_user FROM enterprise_profile WHERE company_name LIKE CONCAT('%', ?, '%') AND organization_id = ? ORDER BY create_time DESC LIMIT 50
+2025-12-29 13:58:29,146 DEBUG erpriseProfileMapper.searchByCompanyName: 135 - ==> Parameters: ji(String), 100001(String)
+2025-12-29 13:58:29,148 DEBUG erpriseProfileMapper.searchByCompanyName: 135 - <==      Total: 0
+2025-12-29 13:58:29,158 DEBUG           cn.cordys.config.SessionConfig:  53 - [SessionIdResolver] /api/enterprise/search-local - Found X-AUTH-TOKEN: f0b09858...
+2025-12-29 13:58:41,865 DEBUG           cn.cordys.config.SessionConfig:  53 - [SessionIdResolver] /api/enterprise/search-local - Found X-AUTH-TOKEN: f0b09858...
+2025-12-29 13:58:41,867  INFO   cn.cordys.common.security.ApiKeyFilter:  49 - [ApiKeyFilter] onPreHandle for: GET /api/enterprise/search-local
+2025-12-29 13:58:41,867  INFO     cn.cordys.common.security.AuthFilter:  41 - [AuthFilter] isAccessAllowed for: GET /api/enterprise/search-local, authenticated: true
+2025-12-29 13:58:41,867  INFO    cn.cordys.config.RequestLoggingFilter:  34 - ========== 收到HTTP请求 ==========
+2025-12-29 13:58:41,868  INFO    cn.cordys.config.RequestLoggingFilter:  35 - Method: GET
+2025-12-29 13:58:41,868  INFO    cn.cordys.config.RequestLoggingFilter:  36 - URI: /api/enterprise/search-local
+2025-12-29 13:58:41,868  INFO    cn.cordys.config.RequestLoggingFilter:  37 - QueryString: keyword=ji%E6%BF%80%E5%85%89&page=1&pageSize=10
+2025-12-29 13:58:41,868  INFO    cn.cordys.config.RequestLoggingFilter:  38 - ContentType: application/json
+2025-12-29 13:58:41,868  INFO    cn.cordys.config.RequestLoggingFilter:  39 - RemoteAddr: 192.168.1.139
+2025-12-29 13:58:41,868  INFO    cn.cordys.config.RequestLoggingFilter:  49 - Headers: user-agent: Dart/3.10 (dart:io); accept: application/json; x-auth-token: f0b09858-8fef-4361-bab2-3a0466a8bf83; accept-encoding: gzip; host: 192.168.1.226:8081; authorization: Bearer f0b09858-8fef-4361-bab2-3a0466a8bf83; content-type: application/json; 
+2025-12-29 13:58:41,868  INFO    cn.cordys.config.RequestLoggingFilter:  56 - ==================================
+2025-12-29 13:58:41,869 DEBUG erpriseProfileMapper.searchByCompanyName: 135 - ==>  Preparing: SELECT id, customer_id, iqicha_id, credit_code, company_name, legal_person, reg_capital, reg_date, staff_size, industry_code, industry_name, province, city, address, status, phone, email, website, shareholders, executives, risks, source, last_sync_at, organization_id, create_time, update_time, create_user, update_user FROM enterprise_profile WHERE company_name LIKE CONCAT('%', ?, '%') AND organization_id = ? ORDER BY create_time DESC LIMIT 50
+2025-12-29 13:58:41,870 DEBUG erpriseProfileMapper.searchByCompanyName: 135 - ==> Parameters: ji激光(String), 100001(String)
+2025-12-29 13:58:41,871 DEBUG erpriseProfileMapper.searchByCompanyName: 135 - <==      Total: 0
+2025-12-29 13:58:41,874 DEBUG           cn.cordys.config.SessionConfig:  53 - [SessionIdResolver] /api/enterprise/search-local - Found X-AUTH-TOKEN: f0b09858...
+2025-12-29 13:58:45,730 DEBUG           cn.cordys.config.SessionConfig:  53 - [SessionIdResolver] /api/enterprise/search-local - Found X-AUTH-TOKEN: f0b09858...
+2025-12-29 13:58:45,732  INFO   cn.cordys.common.security.ApiKeyFilter:  49 - [ApiKeyFilter] onPreHandle for: GET /api/enterprise/search-local
+2025-12-29 13:58:45,732  INFO     cn.cordys.common.security.AuthFilter:  41 - [AuthFilter] isAccessAllowed for: GET /api/enterprise/search-local, authenticated: true
+2025-12-29 13:58:45,732  INFO    cn.cordys.config.RequestLoggingFilter:  34 - ========== 收到HTTP请求 ==========
+2025-12-29 13:58:45,732  INFO    cn.cordys.config.RequestLoggingFilter:  35 - Method: GET
+2025-12-29 13:58:45,732  INFO    cn.cordys.config.RequestLoggingFilter:  36 - URI: /api/enterprise/search-local
+2025-12-29 13:58:45,732  INFO    cn.cordys.config.RequestLoggingFilter:  37 - QueryString: keyword=%E6%BF%80%E5%85%89&page=1&pageSize=10
+2025-12-29 13:58:45,732  INFO    cn.cordys.config.RequestLoggingFilter:  38 - ContentType: application/json
+2025-12-29 13:58:45,732  INFO    cn.cordys.config.RequestLoggingFilter:  39 - RemoteAddr: 192.168.1.139
+2025-12-29 13:58:45,732  INFO    cn.cordys.config.RequestLoggingFilter:  49 - Headers: user-agent: Dart/3.10 (dart:io); accept: application/json; x-auth-token: f0b09858-8fef-4361-bab2-3a0466a8bf83; accept-encoding: gzip; host: 192.168.1.226:8081; authorization: Bearer f0b09858-8fef-4361-bab2-3a0466a8bf83; content-type: application/json; 
+2025-12-29 13:58:45,732  INFO    cn.cordys.config.RequestLoggingFilter:  56 - ==================================
+2025-12-29 13:58:45,734 DEBUG erpriseProfileMapper.searchByCompanyName: 135 - ==>  Preparing: SELECT id, customer_id, iqicha_id, credit_code, company_name, legal_person, reg_capital, reg_date, staff_size, industry_code, industry_name, province, city, address, status, phone, email, website, shareholders, executives, risks, source, last_sync_at, organization_id, create_time, update_time, create_user, update_user FROM enterprise_profile WHERE company_name LIKE CONCAT('%', ?, '%') AND organization_id = ? ORDER BY create_time DESC LIMIT 50
+2025-12-29 13:58:45,735 DEBUG erpriseProfileMapper.searchByCompanyName: 135 - ==> Parameters: 激光(String), 100001(String)
+2025-12-29 13:58:45,806 ERROR           cn.cordys.common.util.LogUtils: 189 - Method[error][org.springframework.dao.DataIntegrityViolationException: Error attempting to get column 'reg_date' from result set.  Cause: java.sql.SQLDataException: Unsupported conversion from DATE to java.lang.Long
+; Unsupported conversion from DATE to java.lang.Long
+	at org.springframework.jdbc.support.SQLExceptionSubclassTranslator.doTranslate(SQLExceptionSubclassTranslator.java:100)
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:107)
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:116)
+	at org.mybatis.spring.MyBatisExceptionTranslator.translateExceptionIfPossible(MyBatisExceptionTranslator.java:95)
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:347)
+	at jdk.proxy2/jdk.proxy2.$Proxy120.selectList(Unknown Source)
+	at org.mybatis.spring.SqlSessionTemplate.selectList(SqlSessionTemplate.java:194)
+	at org.apache.ibatis.binding.MapperMethod.executeForMany(MapperMethod.java:147)
+	at org.apache.ibatis.binding.MapperMethod.execute(MapperMethod.java:80)
+	at org.apache.ibatis.binding.MapperProxy$PlainMethodInvoker.invoke(MapperProxy.java:141)
+	at org.apache.ibatis.binding.MapperProxy.invoke(MapperProxy.java:86)
+	at jdk.proxy2/jdk.proxy2.$Proxy190.searchByCompanyName(Unknown Source)
+	at cn.cordys.crm.integration.service.EnterpriseService.searchLocalEnterprise(EnterpriseService.java:235)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:360)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:724)
+	at cn.cordys.crm.integration.service.EnterpriseService$$SpringCGLIB$$0.searchLocalEnterprise(<generated>)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:360)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:724)
+	at cn.cordys.crm.integration.service.EnterpriseService$$SpringCGLIB$$1.searchLocalEnterprise(<generated>)
+	at cn.cordys.crm.integration.controller.EnterpriseController.searchLocalEnterprise(EnterpriseController.java:127)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:258)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:191)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:991)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:896)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:527)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:614)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at cn.cordys.QuartzFilter.doFilter(QuartzFilter.java:48)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at cn.cordys.QuartzFilter.doFilter(QuartzFilter.java:48)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at cn.cordys.common.context.OrganizationContextWebFilter.doFilterInternal(OrganizationContextWebFilter.java:32)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at cn.cordys.config.RequestLoggingFilter.doFilter(RequestLoggingFilter.java:58)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:65)
+	at org.apache.shiro.web.servlet.AdviceFilter.executeChain(AdviceFilter.java:109)
+	at org.apache.shiro.web.servlet.AdviceFilter.doFilterInternal(AdviceFilter.java:138)
+	at org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:156)
+	at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:70)
+	at org.apache.shiro.web.servlet.AdviceFilter.executeChain(AdviceFilter.java:109)
+	at org.apache.shiro.web.servlet.AdviceFilter.doFilterInternal(AdviceFilter.java:138)
+	at org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:156)
+	at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:70)
+	at org.apache.shiro.web.servlet.AdviceFilter.executeChain(AdviceFilter.java:109)
+	at org.apache.shiro.web.servlet.AdviceFilter.doFilterInternal(AdviceFilter.java:138)
+	at org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:156)
+	at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:70)
+	at org.apache.shiro.web.servlet.AbstractShiroFilter.executeChain(AbstractShiroFilter.java:463)
+	at org.apache.shiro.web.servlet.AbstractShiroFilter.lambda$doFilterInternal$0(AbstractShiroFilter.java:378)
+	at org.apache.shiro.subject.support.SubjectCallable.doCall(SubjectCallable.java:91)
+	at org.apache.shiro.subject.support.SubjectCallable.call(SubjectCallable.java:84)
+	at org.apache.shiro.subject.support.DelegatingSubject.execute(DelegatingSubject.java:389)
+	at org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:376)
+	at org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:156)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at org.springframework.session.web.http.SessionRepositoryFilter.doFilterInternal(SessionRepositoryFilter.java:142)
+	at org.springframework.session.web.http.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:82)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:362)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:278)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:88)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:342)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:399)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1774)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at java.base/java.lang.VirtualThread.run(VirtualThread.java:329)
+Caused by: java.sql.SQLDataException: Unsupported conversion from DATE to java.lang.Long
+	at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:106)
+	at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:89)
+	at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:81)
+	at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:55)
+	at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:65)
+	at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:88)
+	at com.mysql.cj.jdbc.result.ResultSetImpl.getObject(ResultSetImpl.java:1412)
+	at com.mysql.cj.jdbc.result.ResultSetImpl.getLong(ResultSetImpl.java:882)
+	at com.mysql.cj.jdbc.result.ResultSetImpl.getLong(ResultSetImpl.java:888)
+	at com.zaxxer.hikari.pool.HikariProxyResultSet.getLong(HikariProxyResultSet.java)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.ibatis.logging.jdbc.ResultSetLogger.invoke(ResultSetLogger.java:68)
+	at jdk.proxy3/jdk.proxy3.$Proxy230.getLong(Unknown Source)
+	at org.apache.ibatis.type.LongTypeHandler.getNullableResult(LongTypeHandler.java:35)
+	at org.apache.ibatis.type.LongTypeHandler.getNullableResult(LongTypeHandler.java:26)
+	at org.apache.ibatis.type.BaseTypeHandler.getResult(BaseTypeHandler.java:85)
+	at org.apache.ibatis.executor.resultset.DefaultResultSetHandler.applyAutomaticMappings(DefaultResultSetHandler.java:586)
+	at org.apache.ibatis.executor.resultset.DefaultResultSetHandler.getRowValue(DefaultResultSetHandler.java:416)
+	at org.apache.ibatis.executor.resultset.DefaultResultSetHandler.handleRowValuesForSimpleResultMap(DefaultResultSetHandler.java:366)
+	at org.apache.ibatis.executor.resultset.DefaultResultSetHandler.handleRowValues(DefaultResultSetHandler.java:337)
+	at org.apache.ibatis.executor.resultset.DefaultResultSetHandler.handleResultSet(DefaultResultSetHandler.java:310)
+	at org.apache.ibatis.executor.resultset.DefaultResultSetHandler.handleResultSets(DefaultResultSetHandler.java:202)
+	at org.apache.ibatis.executor.statement.PreparedStatementHandler.query(PreparedStatementHandler.java:66)
+	at org.apache.ibatis.executor.statement.RoutingStatementHandler.query(RoutingStatementHandler.java:80)
+	at org.apache.ibatis.executor.SimpleExecutor.doQuery(SimpleExecutor.java:65)
+	at org.apache.ibatis.executor.BaseExecutor.queryFromDatabase(BaseExecutor.java:336)
+	at org.apache.ibatis.executor.BaseExecutor.query(BaseExecutor.java:158)
+	at com.github.pagehelper.PageInterceptor.intercept(PageInterceptor.java:170)
+	at org.apache.ibatis.plugin.Plugin.invoke(Plugin.java:59)
+	at jdk.proxy2/jdk.proxy2.$Proxy223.query(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.ibatis.plugin.Invocation.proceed(Invocation.java:61)
+	at cn.cordys.mybatis.interceptor.MybatisInterceptor.intercept(MybatisInterceptor.java:61)
+	at org.apache.ibatis.plugin.Plugin.invoke(Plugin.java:59)
+	at jdk.proxy2/jdk.proxy2.$Proxy223.query(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.ibatis.plugin.Invocation.proceed(Invocation.java:61)
+	at cn.cordys.common.interceptor.UserDesensitizationInterceptor.intercept(UserDesensitizationInterceptor.java:38)
+	at org.apache.ibatis.plugin.Plugin.invoke(Plugin.java:59)
+	at jdk.proxy2/jdk.proxy2.$Proxy223.query(Unknown Source)
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:154)
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:147)
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:142)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:333)
+	... 102 more
+Caused by: com.mysql.cj.exceptions.DataConversionException: Unsupported conversion from DATE to java.lang.Long
+	at com.mysql.cj.result.DefaultValueFactory.unsupported(DefaultValueFactory.java:61)
+	at com.mysql.cj.result.DefaultValueFactory.createFromDate(DefaultValueFactory.java:76)
+	at com.mysql.cj.protocol.a.MysqlTextValueDecoder.decodeDate(MysqlTextValueDecoder.java:71)
+	at com.mysql.cj.protocol.result.AbstractResultsetRow.decodeAndCreateReturnValue(AbstractResultsetRow.java:84)
+	at com.mysql.cj.protocol.result.AbstractResultsetRow.getValueFromBytes(AbstractResultsetRow.java:235)
+	at com.mysql.cj.protocol.a.result.TextBufferRow.getValue(TextBufferRow.java:122)
+	at com.mysql.cj.jdbc.result.ResultSetImpl.getObject(ResultSetImpl.java:1315)
+	... 144 more
+]
+2025-12-29 13:58:45,812 DEBUG           cn.cordys.config.SessionConfig:  53 - [SessionIdResolver] /api/enterprise/search-local - Found X-AUTH-TOKEN: f0b09858...
+2025-12-29 13:58:52,550 DEBUG           cn.cordys.config.SessionConfig:  53 - [SessionIdResolver] /api/enterprise/search-local - Found X-AUTH-TOKEN: f0b09858...
+2025-12-29 13:58:52,552  INFO   cn.cordys.common.security.ApiKeyFilter:  49 - [ApiKeyFilter] onPreHandle for: GET /api/enterprise/search-local
+2025-12-29 13:58:52,552  INFO     cn.cordys.common.security.AuthFilter:  41 - [AuthFilter] isAccessAllowed for: GET /api/enterprise/search-local, authenticated: true
+2025-12-29 13:58:52,552  INFO    cn.cordys.config.RequestLoggingFilter:  34 - ========== 收到HTTP请求 ==========
+2025-12-29 13:58:52,552  INFO    cn.cordys.config.RequestLoggingFilter:  35 - Method: GET
+2025-12-29 13:58:52,552  INFO    cn.cordys.config.RequestLoggingFilter:  36 - URI: /api/enterprise/search-local
+2025-12-29 13:58:52,552  INFO    cn.cordys.config.RequestLoggingFilter:  37 - QueryString: keyword=%E6%BF%80%E5%85%89%E8%A1%8C%E4%B8%9A&page=1&pageSize=10
+2025-12-29 13:58:52,552  INFO    cn.cordys.config.RequestLoggingFilter:  38 - ContentType: application/json
+2025-12-29 13:58:52,552  INFO    cn.cordys.config.RequestLoggingFilter:  39 - RemoteAddr: 192.168.1.139
+2025-12-29 13:58:52,553  INFO    cn.cordys.config.RequestLoggingFilter:  49 - Headers: user-agent: Dart/3.10 (dart:io); accept: application/json; x-auth-token: f0b09858-8fef-4361-bab2-3a0466a8bf83; accept-encoding: gzip; host: 192.168.1.226:8081; authorization: Bearer f0b09858-8fef-4361-bab2-3a0466a8bf83; content-type: application/json; 
+2025-12-29 13:58:52,553  INFO    cn.cordys.config.RequestLoggingFilter:  56 - ==================================
+2025-12-29 13:58:52,554 DEBUG erpriseProfileMapper.searchByCompanyName: 135 - ==>  Preparing: SELECT id, customer_id, iqicha_id, credit_code, company_name, legal_person, reg_capital, reg_date, staff_size, industry_code, industry_name, province, city, address, status, phone, email, website, shareholders, executives, risks, source, last_sync_at, organization_id, create_time, update_time, create_user, update_user FROM enterprise_profile WHERE company_name LIKE CONCAT('%', ?, '%') AND organization_id = ? ORDER BY create_time DESC LIMIT 50
+2025-12-29 13:58:52,555 DEBUG erpriseProfileMapper.searchByCompanyName: 135 - ==> Parameters: 激光行业(String), 100001(String)
+2025-12-29 13:58:52,556 DEBUG erpriseProfileMapper.searchByCompanyName: 135 - <==      Total: 1
+2025-12-29 13:58:52,556  INFO rm.integration.service.EnterpriseService: 237 - 本地搜索 '激光行业' 找到 1 条记录
+2025-12-29 13:58:52,560 DEBUG           cn.cordys.config.SessionConfig:  53 - [SessionIdResolver] /api/enterprise/search-local - Found X-AUTH-TOKEN: f0b09858...
+2025-12-29 13:59:01,252 DEBUG           cn.cordys.config.SessionConfig:  53 - [SessionIdResolver] /api/enterprise/search-local - Found X-AUTH-TOKEN: f0b09858...
+2025-12-29 13:59:01,253  INFO   cn.cordys.common.security.ApiKeyFilter:  49 - [ApiKeyFilter] onPreHandle for: GET /api/enterprise/search-local
+2025-12-29 13:59:01,253  INFO     cn.cordys.common.security.AuthFilter:  41 - [AuthFilter] isAccessAllowed for: GET /api/enterprise/search-local, authenticated: true
+2025-12-29 13:59:01,253  INFO    cn.cordys.config.RequestLoggingFilter:  34 - ========== 收到HTTP请求 ==========
+2025-12-29 13:59:01,254  INFO    cn.cordys.config.RequestLoggingFilter:  35 - Method: GET
+2025-12-29 13:59:01,254  INFO    cn.cordys.config.RequestLoggingFilter:  36 - URI: /api/enterprise/search-local
+2025-12-29 13:59:01,254  INFO    cn.cordys.config.RequestLoggingFilter:  37 - QueryString: keyword=%E6%BF%80%E5%85%89%E8%A1%8C%E4%B8%9Alaser&page=1&pageSize=10
+2025-12-29 13:59:01,254  INFO    cn.cordys.config.RequestLoggingFilter:  38 - ContentType: application/json
+2025-12-29 13:59:01,254  INFO    cn.cordys.config.RequestLoggingFilter:  39 - RemoteAddr: 192.168.1.139
+2025-12-29 13:59:01,254  INFO    cn.cordys.config.RequestLoggingFilter:  49 - Headers: user-agent: Dart/3.10 (dart:io); accept: application/json; x-auth-token: f0b09858-8fef-4361-bab2-3a0466a8bf83; accept-encoding: gzip; host: 192.168.1.226:8081; authorization: Bearer f0b09858-8fef-4361-bab2-3a0466a8bf83; content-type: application/json; 
+2025-12-29 13:59:01,254  INFO    cn.cordys.config.RequestLoggingFilter:  56 - ==================================
+2025-12-29 13:59:01,255 DEBUG erpriseProfileMapper.searchByCompanyName: 135 - ==>  Preparing: SELECT id, customer_id, iqicha_id, credit_code, company_name, legal_person, reg_capital, reg_date, staff_size, industry_code, industry_name, province, city, address, status, phone, email, website, shareholders, executives, risks, source, last_sync_at, organization_id, create_time, update_time, create_user, update_user FROM enterprise_profile WHERE company_name LIKE CONCAT('%', ?, '%') AND organization_id = ? ORDER BY create_time DESC LIMIT 50
+2025-12-29 13:59:01,255 DEBUG erpriseProfileMapper.searchByCompanyName: 135 - ==> Parameters: 激光行业laser(String), 100001(String)
+2025-12-29 13:59:01,256 DEBUG erpriseProfileMapper.searchByCompanyName: 135 - <==      Total: 0
+2025-12-29 13:59:01,259 DEBUG           cn.cordys.config.SessionConfig:  53 - [SessionIdResolver] /api/enterprise/search-local - Found X-AUTH-TOKEN: f0b09858...
+2025-12-29 13:59:27,205 DEBUG           cn.cordys.config.SessionConfig:  53 - [SessionIdResolver] /api/enterprise/search-local - Found X-AUTH-TOKEN: f0b09858...
+2025-12-29 13:59:27,207  INFO   cn.cordys.common.security.ApiKeyFilter:  49 - [ApiKeyFilter] onPreHandle for: GET /api/enterprise/search-local
+2025-12-29 13:59:27,207  INFO     cn.cordys.common.security.AuthFilter:  41 - [AuthFilter] isAccessAllowed for: GET /api/enterprise/search-local, authenticated: true
+2025-12-29 13:59:27,207  INFO    cn.cordys.config.RequestLoggingFilter:  34 - ========== 收到HTTP请求 ==========
+2025-12-29 13:59:27,207  INFO    cn.cordys.config.RequestLoggingFilter:  35 - Method: GET
+2025-12-29 13:59:27,207  INFO    cn.cordys.config.RequestLoggingFilter:  36 - URI: /api/enterprise/search-local
+2025-12-29 13:59:27,207  INFO    cn.cordys.config.RequestLoggingFilter:  37 - QueryString: keyword=%E6%BF%80%E5%85%89&page=1&pageSize=10
+2025-12-29 13:59:27,207  INFO    cn.cordys.config.RequestLoggingFilter:  38 - ContentType: application/json
+2025-12-29 13:59:27,207  INFO    cn.cordys.config.RequestLoggingFilter:  39 - RemoteAddr: 192.168.1.139
+2025-12-29 13:59:27,207  INFO    cn.cordys.config.RequestLoggingFilter:  49 - Headers: user-agent: Dart/3.10 (dart:io); accept: application/json; x-auth-token: f0b09858-8fef-4361-bab2-3a0466a8bf83; accept-encoding: gzip; host: 192.168.1.226:8081; authorization: Bearer f0b09858-8fef-4361-bab2-3a0466a8bf83; content-type: application/json; 
+2025-12-29 13:59:27,207  INFO    cn.cordys.config.RequestLoggingFilter:  56 - ==================================
+2025-12-29 13:59:27,209 DEBUG erpriseProfileMapper.searchByCompanyName: 135 - ==>  Preparing: SELECT id, customer_id, iqicha_id, credit_code, company_name, legal_person, reg_capital, reg_date, staff_size, industry_code, industry_name, province, city, address, status, phone, email, website, shareholders, executives, risks, source, last_sync_at, organization_id, create_time, update_time, create_user, update_user FROM enterprise_profile WHERE company_name LIKE CONCAT('%', ?, '%') AND organization_id = ? ORDER BY create_time DESC LIMIT 50
+2025-12-29 13:59:27,209 DEBUG erpriseProfileMapper.searchByCompanyName: 135 - ==> Parameters: 激光(String), 100001(String)
+2025-12-29 13:59:27,211 ERROR           cn.cordys.common.util.LogUtils: 189 - Method[error][org.springframework.dao.DataIntegrityViolationException: Error attempting to get column 'reg_date' from result set.  Cause: java.sql.SQLDataException: Unsupported conversion from DATE to java.lang.Long
+; Unsupported conversion from DATE to java.lang.Long
+	at org.springframework.jdbc.support.SQLExceptionSubclassTranslator.doTranslate(SQLExceptionSubclassTranslator.java:100)
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:107)
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:116)
+	at org.mybatis.spring.MyBatisExceptionTranslator.translateExceptionIfPossible(MyBatisExceptionTranslator.java:95)
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:347)
+	at jdk.proxy2/jdk.proxy2.$Proxy120.selectList(Unknown Source)
+	at org.mybatis.spring.SqlSessionTemplate.selectList(SqlSessionTemplate.java:194)
+	at org.apache.ibatis.binding.MapperMethod.executeForMany(MapperMethod.java:147)
+	at org.apache.ibatis.binding.MapperMethod.execute(MapperMethod.java:80)
+	at org.apache.ibatis.binding.MapperProxy$PlainMethodInvoker.invoke(MapperProxy.java:141)
+	at org.apache.ibatis.binding.MapperProxy.invoke(MapperProxy.java:86)
+	at jdk.proxy2/jdk.proxy2.$Proxy190.searchByCompanyName(Unknown Source)
+	at cn.cordys.crm.integration.service.EnterpriseService.searchLocalEnterprise(EnterpriseService.java:235)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:360)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:724)
+	at cn.cordys.crm.integration.service.EnterpriseService$$SpringCGLIB$$0.searchLocalEnterprise(<generated>)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:360)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:724)
+	at cn.cordys.crm.integration.service.EnterpriseService$$SpringCGLIB$$1.searchLocalEnterprise(<generated>)
+	at cn.cordys.crm.integration.controller.EnterpriseController.searchLocalEnterprise(EnterpriseController.java:127)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:258)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:191)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:991)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:896)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:527)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:614)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at cn.cordys.QuartzFilter.doFilter(QuartzFilter.java:48)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at cn.cordys.QuartzFilter.doFilter(QuartzFilter.java:48)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at cn.cordys.common.context.OrganizationContextWebFilter.doFilterInternal(OrganizationContextWebFilter.java:32)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at cn.cordys.config.RequestLoggingFilter.doFilter(RequestLoggingFilter.java:58)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:65)
+	at org.apache.shiro.web.servlet.AdviceFilter.executeChain(AdviceFilter.java:109)
+	at org.apache.shiro.web.servlet.AdviceFilter.doFilterInternal(AdviceFilter.java:138)
+	at org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:156)
+	at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:70)
+	at org.apache.shiro.web.servlet.AdviceFilter.executeChain(AdviceFilter.java:109)
+	at org.apache.shiro.web.servlet.AdviceFilter.doFilterInternal(AdviceFilter.java:138)
+	at org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:156)
+	at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:70)
+	at org.apache.shiro.web.servlet.AdviceFilter.executeChain(AdviceFilter.java:109)
+	at org.apache.shiro.web.servlet.AdviceFilter.doFilterInternal(AdviceFilter.java:138)
+	at org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:156)
+	at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:70)
+	at org.apache.shiro.web.servlet.AbstractShiroFilter.executeChain(AbstractShiroFilter.java:463)
+	at org.apache.shiro.web.servlet.AbstractShiroFilter.lambda$doFilterInternal$0(AbstractShiroFilter.java:378)
+	at org.apache.shiro.subject.support.SubjectCallable.doCall(SubjectCallable.java:91)
+	at org.apache.shiro.subject.support.SubjectCallable.call(SubjectCallable.java:84)
+	at org.apache.shiro.subject.support.DelegatingSubject.execute(DelegatingSubject.java:389)
+	at org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:376)
+	at org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:156)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at org.springframework.session.web.http.SessionRepositoryFilter.doFilterInternal(SessionRepositoryFilter.java:142)
+	at org.springframework.session.web.http.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:82)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:362)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:278)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:88)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:342)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:399)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1774)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at java.base/java.lang.VirtualThread.run(VirtualThread.java:329)
+Caused by: java.sql.SQLDataException: Unsupported conversion from DATE to java.lang.Long
+	at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:106)
+	at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:89)
+	at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:81)
+	at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:55)
+	at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:65)
+	at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:88)
+	at com.mysql.cj.jdbc.result.ResultSetImpl.getObject(ResultSetImpl.java:1412)
+	at com.mysql.cj.jdbc.result.ResultSetImpl.getLong(ResultSetImpl.java:882)
+	at com.mysql.cj.jdbc.result.ResultSetImpl.getLong(ResultSetImpl.java:888)
+	at com.zaxxer.hikari.pool.HikariProxyResultSet.getLong(HikariProxyResultSet.java)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.ibatis.logging.jdbc.ResultSetLogger.invoke(ResultSetLogger.java:68)
+	at jdk.proxy3/jdk.proxy3.$Proxy230.getLong(Unknown Source)
+	at org.apache.ibatis.type.LongTypeHandler.getNullableResult(LongTypeHandler.java:35)
+	at org.apache.ibatis.type.LongTypeHandler.getNullableResult(LongTypeHandler.java:26)
+	at org.apache.ibatis.type.BaseTypeHandler.getResult(BaseTypeHandler.java:85)
+	at org.apache.ibatis.executor.resultset.DefaultResultSetHandler.applyAutomaticMappings(DefaultResultSetHandler.java:586)
+	at org.apache.ibatis.executor.resultset.DefaultResultSetHandler.getRowValue(DefaultResultSetHandler.java:416)
+	at org.apache.ibatis.executor.resultset.DefaultResultSetHandler.handleRowValuesForSimpleResultMap(DefaultResultSetHandler.java:366)
+	at org.apache.ibatis.executor.resultset.DefaultResultSetHandler.handleRowValues(DefaultResultSetHandler.java:337)
+	at org.apache.ibatis.executor.resultset.DefaultResultSetHandler.handleResultSet(DefaultResultSetHandler.java:310)
+	at org.apache.ibatis.executor.resultset.DefaultResultSetHandler.handleResultSets(DefaultResultSetHandler.java:202)
+	at org.apache.ibatis.executor.statement.PreparedStatementHandler.query(PreparedStatementHandler.java:66)
+	at org.apache.ibatis.executor.statement.RoutingStatementHandler.query(RoutingStatementHandler.java:80)
+	at org.apache.ibatis.executor.SimpleExecutor.doQuery(SimpleExecutor.java:65)
+	at org.apache.ibatis.executor.BaseExecutor.queryFromDatabase(BaseExecutor.java:336)
+	at org.apache.ibatis.executor.BaseExecutor.query(BaseExecutor.java:158)
+	at com.github.pagehelper.PageInterceptor.intercept(PageInterceptor.java:170)
+	at org.apache.ibatis.plugin.Plugin.invoke(Plugin.java:59)
+	at jdk.proxy2/jdk.proxy2.$Proxy223.query(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.ibatis.plugin.Invocation.proceed(Invocation.java:61)
+	at cn.cordys.mybatis.interceptor.MybatisInterceptor.intercept(MybatisInterceptor.java:61)
+	at org.apache.ibatis.plugin.Plugin.invoke(Plugin.java:59)
+	at jdk.proxy2/jdk.proxy2.$Proxy223.query(Unknown Source)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.ibatis.plugin.Invocation.proceed(Invocation.java:61)
+	at cn.cordys.common.interceptor.UserDesensitizationInterceptor.intercept(UserDesensitizationInterceptor.java:38)
+	at org.apache.ibatis.plugin.Plugin.invoke(Plugin.java:59)
+	at jdk.proxy2/jdk.proxy2.$Proxy223.query(Unknown Source)
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:154)
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:147)
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:142)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:333)
+	... 102 more
+Caused by: com.mysql.cj.exceptions.DataConversionException: Unsupported conversion from DATE to java.lang.Long
+	at com.mysql.cj.result.DefaultValueFactory.unsupported(DefaultValueFactory.java:61)
+	at com.mysql.cj.result.DefaultValueFactory.createFromDate(DefaultValueFactory.java:76)
+	at com.mysql.cj.protocol.a.MysqlTextValueDecoder.decodeDate(MysqlTextValueDecoder.java:71)
+	at com.mysql.cj.protocol.result.AbstractResultsetRow.decodeAndCreateReturnValue(AbstractResultsetRow.java:84)
+	at com.mysql.cj.protocol.result.AbstractResultsetRow.getValueFromBytes(AbstractResultsetRow.java:235)
+	at com.mysql.cj.protocol.a.result.TextBufferRow.getValue(TextBufferRow.java:122)
+	at com.mysql.cj.jdbc.result.ResultSetImpl.getObject(ResultSetImpl.java:1315)
+	... 144 more
+]
+2025-12-29 13:59:27,217 DEBUG           cn.cordys.config.SessionConfig:  53 - [SessionIdResolver] /api/enterprise/search-local - Found X-AUTH-TOKEN: f0b09858...
+2025-12-29 13:59:31,720 DEBUG           cn.cordys.config.SessionConfig:  53 - [SessionIdResolver] /api/enterprise/search-local - Found X-AUTH-TOKEN: f0b09858...
+2025-12-29 13:59:31,722  INFO   cn.cordys.common.security.ApiKeyFilter:  49 - [ApiKeyFilter] onPreHandle for: GET /api/enterprise/search-local
+2025-12-29 13:59:31,722  INFO     cn.cordys.common.security.AuthFilter:  41 - [AuthFilter] isAccessAllowed for: GET /api/enterprise/search-local, authenticated: true
+2025-12-29 13:59:31,722  INFO    cn.cordys.config.RequestLoggingFilter:  34 - ========== 收到HTTP请求 ==========
+2025-12-29 13:59:31,722  INFO    cn.cordys.config.RequestLoggingFilter:  35 - Method: GET
+2025-12-29 13:59:31,722  INFO    cn.cordys.config.RequestLoggingFilter:  36 - URI: /api/enterprise/search-local
+2025-12-29 13:59:31,723  INFO    cn.cordys.config.RequestLoggingFilter:  37 - QueryString: keyword=%E6%BF%80%E5%85%89%E8%A1%8C%E4%B8%9A&page=1&pageSize=10
+2025-12-29 13:59:31,723  INFO    cn.cordys.config.RequestLoggingFilter:  38 - ContentType: application/json
+2025-12-29 13:59:31,723  INFO    cn.cordys.config.RequestLoggingFilter:  39 - RemoteAddr: 192.168.1.139
+2025-12-29 13:59:31,723  INFO    cn.cordys.config.RequestLoggingFilter:  49 - Headers: user-agent: Dart/3.10 (dart:io); accept: application/json; x-auth-token: f0b09858-8fef-4361-bab2-3a0466a8bf83; accept-encoding: gzip; host: 192.168.1.226:8081; authorization: Bearer f0b09858-8fef-4361-bab2-3a0466a8bf83; content-type: application/json; 
+2025-12-29 13:59:31,723  INFO    cn.cordys.config.RequestLoggingFilter:  56 - ==================================
+2025-12-29 13:59:31,724 DEBUG erpriseProfileMapper.searchByCompanyName: 135 - ==>  Preparing: SELECT id, customer_id, iqicha_id, credit_code, company_name, legal_person, reg_capital, reg_date, staff_size, industry_code, industry_name, province, city, address, status, phone, email, website, shareholders, executives, risks, source, last_sync_at, organization_id, create_time, update_time, create_user, update_user FROM enterprise_profile WHERE company_name LIKE CONCAT('%', ?, '%') AND organization_id = ? ORDER BY create_time DESC LIMIT 50
+2025-12-29 13:59:31,725 DEBUG erpriseProfileMapper.searchByCompanyName: 135 - ==> Parameters: 激光行业(String), 100001(String)
+2025-12-29 13:59:31,726 DEBUG erpriseProfileMapper.searchByCompanyName: 135 - <==      Total: 1
+2025-12-29 13:59:31,726  INFO rm.integration.service.EnterpriseService: 237 - 本地搜索 '激光行业' 找到 1 条记录
+2025-12-29 13:59:31,730 DEBUG           cn.cordys.config.SessionConfig:  53 - [SessionIdResolver] /api/enterprise/search-local - Found X-AUTH-TOKEN: f0b09858...
+2025-12-29 14:00:00,008 DEBUG tz.config.ClusterQuartzFixedDelayJobBean:  32 - The scheduled task starts：targetObject=notifyOnJob, targetMethod=onEvent
+2025-12-29 14:00:00,009 DEBUG cementMapper.selectInEffectUnConvertData: 135 - ==>  Preparing: SELECT * FROM sys_announcement WHERE end_time >= ? and start_time < ? and notice = false
+2025-12-29 14:00:00,009 DEBUG cementMapper.selectInEffectUnConvertData: 135 - ==> Parameters: 1766988000009(Long), 1766988000009(Long)
+2025-12-29 14:00:00,010 DEBUG cementMapper.selectInEffectUnConvertData: 135 - <==      Total: 0
+2025-12-29 14:00:00,010 DEBUG tz.config.ClusterQuartzFixedDelayJobBean:  36 - The scheduled task ends normally：targetObject=notifyOnJob, targetMethod=onEvent
+2025-12-29 14:00:00,010 DEBUG rdys.quartz.config.FixedDelayJobListener:  63 - Not a fixed delay job : DEFAULT.6da64b5bd2ee-9d6f9ca7-bd24-4c94-bdf8-0766619f4d64

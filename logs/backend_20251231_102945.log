@@ -1,0 +1,427 @@
+[[1;34mINFO[m] Scanning for projects...
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m---------------------------< [0;36mcn.cordys:app[0;1m >----------------------------[m
+[[1;34mINFO[m] [1mBuilding app main[m
+[[1;34mINFO[m] [1m--------------------------------[ jar ]---------------------------------[m
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m>>> [0;32mspring-boot-maven-plugin:3.5.7:run[m [1m(default-cli)[0;1m > [0;1mtest-compile[m @ [36mapp[0;1m >>>[m
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mjacoco-maven-plugin:0.8.12:prepare-agent[m [1m(default)[m @ [36mapp[0;1m ---[m
+[[1;34mINFO[m] argLine set to -javaagent:/home/rogers/.m2/repository/org/jacoco/org.jacoco.agent/0.8.12/org.jacoco.agent-0.8.12-runtime.jar=destfile=/home/rogers/source/custom/CordysCRM/backend/app/target/jacoco.exec,excludes=io/cordys/crm/*/mapper/**:io/cordys/crm/*/domain/**:io/cordys/common/**:io/cordys/config/**:io/cordys/aspectj/**:io/cordys/mybatis/**:io/cordys/security/**
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mmaven-antrun-plugin:3.1.0:run[m [1m(main-class-placement)[m @ [36mapp[0;1m ---[m
+[[1;34mINFO[m] Executing tasks
+[[1;34mINFO[m] Executed tasks
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mmaven-resources-plugin:3.3.1:resources[m [1m(default-resources)[m @ [36mapp[0;1m ---[m
+[[1;34mINFO[m] Copying 0 resource from src/main/java to target/classes
+[[1;34mINFO[m] Copying 1054 resources from src/main/resources to target/classes
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mflatten-maven-plugin:1.6.0:flatten[m [1m(flatten)[m @ [36mapp[0;1m ---[m
+[[1;34mINFO[m] Generating flattened POM of project cn.cordys:app:jar:main...
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mmaven-compiler-plugin:3.14.1:compile[m [1m(compile)[m @ [36mapp[0;1m ---[m
+[[1;34mINFO[m] Nothing to compile - all classes are up to date.
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mmaven-resources-plugin:3.3.1:testResources[m [1m(default-testResources)[m @ [36mapp[0;1m ---[m
+[[1;34mINFO[m] skip non existing resourceDirectory /home/rogers/source/custom/CordysCRM/backend/app/src/test/resources
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mmaven-compiler-plugin:3.14.1:testCompile[m [1m(testCompile)[m @ [36mapp[0;1m ---[m
+[[1;34mINFO[m] No sources to compile
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m<<< [0;32mspring-boot-maven-plugin:3.5.7:run[m [1m(default-cli)[0;1m < [0;1mtest-compile[m @ [36mapp[0;1m <<<[m
+[[1;34mINFO[m] 
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mspring-boot-maven-plugin:3.5.7:run[m [1m(default-cli)[m @ [36mapp[0;1m ---[m
+[[1;34mINFO[m] Attaching agents: []
+10:30:15,306 |-INFO in ch.qos.logback.classic.model.processor.ConfigurationModelHandlerFull - Main configuration file URL: file:/home/rogers/source/custom/CordysCRM/backend/app/target/classes/logback-spring.xml
+10:30:15,308 |-INFO in ch.qos.logback.classic.model.processor.ConfigurationModelHandlerFull - FileWatchList= {/home/rogers/source/custom/CordysCRM/backend/app/target/classes/logback-spring.xml}
+10:30:15,308 |-INFO in ch.qos.logback.classic.model.processor.ConfigurationModelHandlerFull - URLWatchList= {}
+10:30:15,310 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - Processing appender named [console]
+10:30:15,310 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - About to instantiate appender of type [ch.qos.logback.core.ConsoleAppender]
+10:30:15,313 |-INFO in ch.qos.logback.core.model.processor.ImplicitModelHandler - Assuming default type [ch.qos.logback.classic.encoder.PatternLayoutEncoder] for [encoder] property
+10:30:15,329 |-INFO in ch.qos.logback.core.ConsoleAppender[console] - NOTE: Writing to the console can be slow. Try to avoid logging to the 
+10:30:15,329 |-INFO in ch.qos.logback.core.ConsoleAppender[console] - console in production environments, especially in high volume systems.
+10:30:15,329 |-INFO in ch.qos.logback.core.ConsoleAppender[console] - See also https://logback.qos.ch/codes.html#slowConsole
+10:30:15,329 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - Processing appender named [traceAppender]
+10:30:15,329 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - About to instantiate appender of type [ch.qos.logback.core.rolling.RollingFileAppender]
+10:30:15,335 |-INFO in ch.qos.logback.core.model.processor.ModelInterpretationContext@16c63f5 - value "/opt/cordys/logs/cordys-crm/trace.log" substituted for "${logging.file.path}/trace.log"
+10:30:15,337 |-INFO in ch.qos.logback.core.model.processor.ModelInterpretationContext@16c63f5 - value "/opt/cordys/logs/cordys-crm/history/trace.%d{yyyyMMdd}-%i.log" substituted for "${logging.file.path}/history/trace.%d{yyyyMMdd}-%i.log"
+10:30:15,338 |-INFO in ch.qos.logback.core.model.processor.ModelInterpretationContext@16c63f5 - value "30" substituted for "${logger.max.history:-30}"
+10:30:15,343 |-INFO in c.q.l.core.rolling.SizeAndTimeBasedRollingPolicy@1959239586 - Archive files will be limited to [50 MB] each.
+10:30:15,343 |-INFO in c.q.l.core.rolling.SizeAndTimeBasedRollingPolicy@1959239586 - No compression will be used
+10:30:15,345 |-INFO in c.q.l.core.rolling.SizeAndTimeBasedRollingPolicy@1959239586 - Will use the pattern /opt/cordys/logs/cordys-crm/history/trace.%d{yyyyMMdd}-%i.log for the active file
+10:30:15,374 |-INFO in ch.qos.logback.core.rolling.SizeAndTimeBasedFileNamingAndTriggeringPolicy@2cc44ad - The date pattern is 'yyyyMMdd' from file name pattern '/opt/cordys/logs/cordys-crm/history/trace.%d{yyyyMMdd}-%i.log'.
+10:30:15,374 |-INFO in ch.qos.logback.core.rolling.SizeAndTimeBasedFileNamingAndTriggeringPolicy@2cc44ad - Roll-over at midnight.
+10:30:15,380 |-INFO in ch.qos.logback.core.rolling.SizeAndTimeBasedFileNamingAndTriggeringPolicy@2cc44ad - Setting initial period to 2025-11-07T03:27:30.021Z
+10:30:15,382 |-INFO in ch.qos.logback.core.model.processor.ImplicitModelHandler - Assuming default type [ch.qos.logback.classic.encoder.PatternLayoutEncoder] for [encoder] property
+10:30:15,384 |-INFO in ch.qos.logback.core.rolling.RollingFileAppender[traceAppender] - Active log file name: /opt/cordys/logs/cordys-crm/trace.log
+10:30:15,386 |-INFO in ch.qos.logback.core.rolling.RollingFileAppender[traceAppender] - Setting currentFileLength to 0 for /opt/cordys/logs/cordys-crm/trace.log
+10:30:15,386 |-INFO in ch.qos.logback.core.rolling.RollingFileAppender[traceAppender] - File property is set to [/opt/cordys/logs/cordys-crm/trace.log]
+10:30:15,387 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - Processing appender named [debugAppender]
+10:30:15,387 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - About to instantiate appender of type [ch.qos.logback.core.rolling.RollingFileAppender]
+10:30:15,387 |-INFO in ch.qos.logback.core.model.processor.ModelInterpretationContext@16c63f5 - value "/opt/cordys/logs/cordys-crm/debug.log" substituted for "${logging.file.path}/debug.log"
+10:30:15,388 |-INFO in ch.qos.logback.core.model.processor.ModelInterpretationContext@16c63f5 - value "/opt/cordys/logs/cordys-crm/history/debug.%d{yyyyMMdd}-%i.log" substituted for "${logging.file.path}/history/debug.%d{yyyyMMdd}-%i.log"
+10:30:15,388 |-INFO in ch.qos.logback.core.model.processor.ModelInterpretationContext@16c63f5 - value "30" substituted for "${logger.max.history:-30}"
+10:30:15,388 |-INFO in c.q.l.core.rolling.SizeAndTimeBasedRollingPolicy@843299092 - Archive files will be limited to [50 MB] each.
+10:30:15,388 |-INFO in c.q.l.core.rolling.SizeAndTimeBasedRollingPolicy@843299092 - No compression will be used
+10:30:15,388 |-INFO in c.q.l.core.rolling.SizeAndTimeBasedRollingPolicy@843299092 - Will use the pattern /opt/cordys/logs/cordys-crm/history/debug.%d{yyyyMMdd}-%i.log for the active file
+10:30:15,389 |-INFO in ch.qos.logback.core.rolling.SizeAndTimeBasedFileNamingAndTriggeringPolicy@241e8ea6 - The date pattern is 'yyyyMMdd' from file name pattern '/opt/cordys/logs/cordys-crm/history/debug.%d{yyyyMMdd}-%i.log'.
+10:30:15,389 |-INFO in ch.qos.logback.core.rolling.SizeAndTimeBasedFileNamingAndTriggeringPolicy@241e8ea6 - Roll-over at midnight.
+10:30:15,389 |-INFO in ch.qos.logback.core.rolling.SizeAndTimeBasedFileNamingAndTriggeringPolicy@241e8ea6 - Setting initial period to 2025-12-29T20:50:07.469Z
+10:30:15,390 |-INFO in ch.qos.logback.core.model.processor.ImplicitModelHandler - Assuming default type [ch.qos.logback.classic.encoder.PatternLayoutEncoder] for [encoder] property
+10:30:15,391 |-INFO in ch.qos.logback.core.rolling.RollingFileAppender[debugAppender] - Active log file name: /opt/cordys/logs/cordys-crm/debug.log
+10:30:15,391 |-INFO in ch.qos.logback.core.rolling.RollingFileAppender[debugAppender] - Setting currentFileLength to 6304 for /opt/cordys/logs/cordys-crm/debug.log
+10:30:15,391 |-INFO in ch.qos.logback.core.rolling.RollingFileAppender[debugAppender] - File property is set to [/opt/cordys/logs/cordys-crm/debug.log]
+10:30:15,391 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - Processing appender named [infoAppender]
+10:30:15,391 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - About to instantiate appender of type [ch.qos.logback.core.rolling.RollingFileAppender]
+10:30:15,392 |-INFO in ch.qos.logback.core.model.processor.ModelInterpretationContext@16c63f5 - value "/opt/cordys/logs/cordys-crm/info.log" substituted for "${logging.file.path}/info.log"
+10:30:15,392 |-INFO in ch.qos.logback.core.model.processor.ModelInterpretationContext@16c63f5 - value "/opt/cordys/logs/cordys-crm/history/info.%d{yyyyMMdd}-%i.log" substituted for "${logging.file.path}/history/info.%d{yyyyMMdd}-%i.log"
+10:30:15,392 |-INFO in ch.qos.logback.core.model.processor.ModelInterpretationContext@16c63f5 - value "30" substituted for "${logger.max.history:-30}"
+10:30:15,392 |-INFO in c.q.l.core.rolling.SizeAndTimeBasedRollingPolicy@1651262695 - Archive files will be limited to [50 MB] each.
+10:30:15,392 |-INFO in c.q.l.core.rolling.SizeAndTimeBasedRollingPolicy@1651262695 - No compression will be used
+10:30:15,393 |-INFO in c.q.l.core.rolling.SizeAndTimeBasedRollingPolicy@1651262695 - Will use the pattern /opt/cordys/logs/cordys-crm/history/info.%d{yyyyMMdd}-%i.log for the active file
+10:30:15,393 |-INFO in ch.qos.logback.core.rolling.SizeAndTimeBasedFileNamingAndTriggeringPolicy@4dc8caa7 - The date pattern is 'yyyyMMdd' from file name pattern '/opt/cordys/logs/cordys-crm/history/info.%d{yyyyMMdd}-%i.log'.
+10:30:15,393 |-INFO in ch.qos.logback.core.rolling.SizeAndTimeBasedFileNamingAndTriggeringPolicy@4dc8caa7 - Roll-over at midnight.
+10:30:15,394 |-INFO in ch.qos.logback.core.rolling.SizeAndTimeBasedFileNamingAndTriggeringPolicy@4dc8caa7 - Setting initial period to 2025-12-29T20:50:35.672Z
+10:30:15,394 |-INFO in ch.qos.logback.core.model.processor.ImplicitModelHandler - Assuming default type [ch.qos.logback.classic.encoder.PatternLayoutEncoder] for [encoder] property
+10:30:15,395 |-INFO in ch.qos.logback.core.rolling.RollingFileAppender[infoAppender] - Active log file name: /opt/cordys/logs/cordys-crm/info.log
+10:30:15,395 |-INFO in ch.qos.logback.core.rolling.RollingFileAppender[infoAppender] - Setting currentFileLength to 23165 for /opt/cordys/logs/cordys-crm/info.log
+10:30:15,395 |-INFO in ch.qos.logback.core.rolling.RollingFileAppender[infoAppender] - File property is set to [/opt/cordys/logs/cordys-crm/info.log]
+10:30:15,396 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - Processing appender named [warnAppender]
+10:30:15,396 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - About to instantiate appender of type [ch.qos.logback.core.rolling.RollingFileAppender]
+10:30:15,396 |-INFO in ch.qos.logback.core.model.processor.ModelInterpretationContext@16c63f5 - value "/opt/cordys/logs/cordys-crm/warn.log" substituted for "${logging.file.path}/warn.log"
+10:30:15,397 |-INFO in ch.qos.logback.core.model.processor.ModelInterpretationContext@16c63f5 - value "/opt/cordys/logs/cordys-crm/history/warn.%d{yyyyMMdd}-%i.log" substituted for "${logging.file.path}/history/warn.%d{yyyyMMdd}-%i.log"
+10:30:15,397 |-INFO in ch.qos.logback.core.model.processor.ModelInterpretationContext@16c63f5 - value "30" substituted for "${logger.max.history:-30}"
+10:30:15,397 |-INFO in c.q.l.core.rolling.SizeAndTimeBasedRollingPolicy@494077446 - Archive files will be limited to [50 MB] each.
+10:30:15,398 |-INFO in c.q.l.core.rolling.SizeAndTimeBasedRollingPolicy@494077446 - No compression will be used
+10:30:15,398 |-INFO in c.q.l.core.rolling.SizeAndTimeBasedRollingPolicy@494077446 - Will use the pattern /opt/cordys/logs/cordys-crm/history/warn.%d{yyyyMMdd}-%i.log for the active file
+10:30:15,398 |-INFO in ch.qos.logback.core.rolling.SizeAndTimeBasedFileNamingAndTriggeringPolicy@3bcbb589 - The date pattern is 'yyyyMMdd' from file name pattern '/opt/cordys/logs/cordys-crm/history/warn.%d{yyyyMMdd}-%i.log'.
+10:30:15,398 |-INFO in ch.qos.logback.core.rolling.SizeAndTimeBasedFileNamingAndTriggeringPolicy@3bcbb589 - Roll-over at midnight.
+10:30:15,399 |-INFO in ch.qos.logback.core.rolling.SizeAndTimeBasedFileNamingAndTriggeringPolicy@3bcbb589 - Setting initial period to 2025-12-29T05:51:44.086Z
+10:30:15,399 |-INFO in ch.qos.logback.core.model.processor.ImplicitModelHandler - Assuming default type [ch.qos.logback.classic.encoder.PatternLayoutEncoder] for [encoder] property
+10:30:15,400 |-INFO in ch.qos.logback.core.rolling.RollingFileAppender[warnAppender] - Active log file name: /opt/cordys/logs/cordys-crm/warn.log
+10:30:15,400 |-INFO in ch.qos.logback.core.rolling.RollingFileAppender[warnAppender] - Setting currentFileLength to 9540 for /opt/cordys/logs/cordys-crm/warn.log
+10:30:15,400 |-INFO in ch.qos.logback.core.rolling.RollingFileAppender[warnAppender] - File property is set to [/opt/cordys/logs/cordys-crm/warn.log]
+10:30:15,400 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - Processing appender named [errorAppender]
+10:30:15,400 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - About to instantiate appender of type [ch.qos.logback.core.rolling.RollingFileAppender]
+10:30:15,401 |-INFO in ch.qos.logback.core.model.processor.ModelInterpretationContext@16c63f5 - value "/opt/cordys/logs/cordys-crm/error.log" substituted for "${logging.file.path}/error.log"
+10:30:15,401 |-INFO in ch.qos.logback.core.model.processor.ModelInterpretationContext@16c63f5 - value "/opt/cordys/logs/cordys-crm/history/error.%d{yyyyMMdd}-%i.log" substituted for "${logging.file.path}/history/error.%d{yyyyMMdd}-%i.log"
+10:30:15,401 |-INFO in ch.qos.logback.core.model.processor.ModelInterpretationContext@16c63f5 - value "30" substituted for "${logger.max.history:-30}"
+10:30:15,401 |-INFO in c.q.l.core.rolling.SizeAndTimeBasedRollingPolicy@989889899 - Archive files will be limited to [50 MB] each.
+10:30:15,402 |-INFO in c.q.l.core.rolling.SizeAndTimeBasedRollingPolicy@989889899 - No compression will be used
+10:30:15,402 |-INFO in c.q.l.core.rolling.SizeAndTimeBasedRollingPolicy@989889899 - Will use the pattern /opt/cordys/logs/cordys-crm/history/error.%d{yyyyMMdd}-%i.log for the active file
+10:30:15,402 |-INFO in ch.qos.logback.core.rolling.SizeAndTimeBasedFileNamingAndTriggeringPolicy@3016fd5e - The date pattern is 'yyyyMMdd' from file name pattern '/opt/cordys/logs/cordys-crm/history/error.%d{yyyyMMdd}-%i.log'.
+10:30:15,402 |-INFO in ch.qos.logback.core.rolling.SizeAndTimeBasedFileNamingAndTriggeringPolicy@3016fd5e - Roll-over at midnight.
+10:30:15,403 |-INFO in ch.qos.logback.core.rolling.SizeAndTimeBasedFileNamingAndTriggeringPolicy@3016fd5e - Setting initial period to 2025-12-29T20:45:34.432Z
+10:30:15,403 |-INFO in ch.qos.logback.core.model.processor.ImplicitModelHandler - Assuming default type [ch.qos.logback.classic.encoder.PatternLayoutEncoder] for [encoder] property
+10:30:15,404 |-INFO in ch.qos.logback.core.rolling.RollingFileAppender[errorAppender] - Active log file name: /opt/cordys/logs/cordys-crm/error.log
+10:30:15,404 |-INFO in ch.qos.logback.core.rolling.RollingFileAppender[errorAppender] - Setting currentFileLength to 1094 for /opt/cordys/logs/cordys-crm/error.log
+10:30:15,404 |-INFO in ch.qos.logback.core.rolling.RollingFileAppender[errorAppender] - File property is set to [/opt/cordys/logs/cordys-crm/error.log]
+10:30:15,404 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - Processing appender named [traceAsyncAppender]
+10:30:15,404 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - About to instantiate appender of type [ch.qos.logback.classic.AsyncAppender]
+10:30:15,407 |-INFO in ch.qos.logback.core.model.processor.AppenderRefModelHandler - Attaching appender named [traceAppender] to ch.qos.logback.classic.AsyncAppender[traceAsyncAppender]
+10:30:15,407 |-INFO in ch.qos.logback.classic.AsyncAppender[traceAsyncAppender] - Attaching appender named [traceAppender] to AsyncAppender.
+10:30:15,408 |-INFO in ch.qos.logback.classic.AsyncAppender[traceAsyncAppender] - Setting discardingThreshold to 2000
+10:30:15,408 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - Processing appender named [debugAsyncAppender]
+10:30:15,408 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - About to instantiate appender of type [ch.qos.logback.classic.AsyncAppender]
+10:30:15,409 |-INFO in ch.qos.logback.core.model.processor.AppenderRefModelHandler - Attaching appender named [debugAppender] to ch.qos.logback.classic.AsyncAppender[debugAsyncAppender]
+10:30:15,409 |-INFO in ch.qos.logback.classic.AsyncAppender[debugAsyncAppender] - Attaching appender named [debugAppender] to AsyncAppender.
+10:30:15,409 |-INFO in ch.qos.logback.classic.AsyncAppender[debugAsyncAppender] - Setting discardingThreshold to 2000
+10:30:15,409 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - Processing appender named [infoAsyncAppender]
+10:30:15,409 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - About to instantiate appender of type [ch.qos.logback.classic.AsyncAppender]
+10:30:15,410 |-INFO in ch.qos.logback.core.model.processor.AppenderRefModelHandler - Attaching appender named [infoAppender] to ch.qos.logback.classic.AsyncAppender[infoAsyncAppender]
+10:30:15,410 |-INFO in ch.qos.logback.classic.AsyncAppender[infoAsyncAppender] - Attaching appender named [infoAppender] to AsyncAppender.
+10:30:15,410 |-INFO in ch.qos.logback.classic.AsyncAppender[infoAsyncAppender] - Setting discardingThreshold to 2000
+10:30:15,410 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - Processing appender named [warnAsyncAppender]
+10:30:15,410 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - About to instantiate appender of type [ch.qos.logback.classic.AsyncAppender]
+10:30:15,411 |-INFO in ch.qos.logback.core.model.processor.AppenderRefModelHandler - Attaching appender named [warnAppender] to ch.qos.logback.classic.AsyncAppender[warnAsyncAppender]
+10:30:15,411 |-INFO in ch.qos.logback.classic.AsyncAppender[warnAsyncAppender] - Attaching appender named [warnAppender] to AsyncAppender.
+10:30:15,411 |-INFO in ch.qos.logback.classic.AsyncAppender[warnAsyncAppender] - Setting discardingThreshold to 2000
+10:30:15,411 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - Processing appender named [errorAsyncAppender]
+10:30:15,411 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - About to instantiate appender of type [ch.qos.logback.classic.AsyncAppender]
+10:30:15,411 |-INFO in ch.qos.logback.core.model.processor.AppenderRefModelHandler - Attaching appender named [errorAppender] to ch.qos.logback.classic.AsyncAppender[errorAsyncAppender]
+10:30:15,411 |-INFO in ch.qos.logback.classic.AsyncAppender[errorAsyncAppender] - Attaching appender named [errorAppender] to AsyncAppender.
+10:30:15,412 |-INFO in ch.qos.logback.classic.AsyncAppender[errorAsyncAppender] - Setting discardingThreshold to 2000
+10:30:15,412 |-INFO in ch.qos.logback.core.model.processor.ModelInterpretationContext@16c63f5 - value "logback.level:INFO_IS_UNDEFINED" substituted for "${logback.level:INFO}"
+10:30:15,412 |-INFO in ch.qos.logback.classic.model.processor.LoggerModelHandler - Setting level of logger [cn.cordys] to DEBUG
+10:30:15,412 |-INFO in ch.qos.logback.classic.jul.LevelChangePropagator@24d09c1 - Propagating DEBUG level on Logger[cn.cordys] onto the JUL framework
+10:30:15,415 |-INFO in ch.qos.logback.classic.model.processor.LoggerModelHandler - Setting additivity of logger [cn.cordys] to false
+10:30:15,415 |-INFO in ch.qos.logback.core.model.processor.AppenderRefModelHandler - Attaching appender named [traceAsyncAppender] to Logger[cn.cordys]
+10:30:15,415 |-INFO in ch.qos.logback.core.model.processor.AppenderRefModelHandler - Attaching appender named [debugAsyncAppender] to Logger[cn.cordys]
+10:30:15,415 |-INFO in ch.qos.logback.core.model.processor.AppenderRefModelHandler - Attaching appender named [infoAsyncAppender] to Logger[cn.cordys]
+10:30:15,416 |-INFO in ch.qos.logback.core.model.processor.AppenderRefModelHandler - Attaching appender named [warnAsyncAppender] to Logger[cn.cordys]
+10:30:15,416 |-INFO in ch.qos.logback.core.model.processor.AppenderRefModelHandler - Attaching appender named [errorAsyncAppender] to Logger[cn.cordys]
+10:30:15,416 |-INFO in ch.qos.logback.core.model.processor.AppenderRefModelHandler - Attaching appender named [console] to Logger[cn.cordys]
+10:30:15,416 |-INFO in ch.qos.logback.core.model.processor.ModelInterpretationContext@16c63f5 - value "logback.level:INFO_IS_UNDEFINED" substituted for "${logback.level:INFO}"
+10:30:15,416 |-INFO in ch.qos.logback.classic.model.processor.LoggerModelHandler - Setting level of logger [cn.cordys.Application] to DEBUG
+10:30:15,416 |-INFO in ch.qos.logback.classic.jul.LevelChangePropagator@24d09c1 - Propagating DEBUG level on Logger[cn.cordys.Application] onto the JUL framework
+10:30:15,416 |-INFO in ch.qos.logback.classic.model.processor.LoggerModelHandler - Setting additivity of logger [cn.cordys.Application] to false
+10:30:15,416 |-INFO in ch.qos.logback.core.model.processor.AppenderRefModelHandler - Attaching appender named [infoAsyncAppender] to Logger[cn.cordys.Application]
+10:30:15,416 |-INFO in ch.qos.logback.classic.model.processor.LoggerModelHandler - Setting level of logger [org.eclipse.jetty.ee10.servlet.ServletChannel] to ERROR
+10:30:15,416 |-INFO in ch.qos.logback.classic.jul.LevelChangePropagator@24d09c1 - Propagating ERROR level on Logger[org.eclipse.jetty.ee10.servlet.ServletChannel] onto the JUL framework
+10:30:15,417 |-INFO in ch.qos.logback.classic.model.processor.RootLoggerModelHandler - Setting level of ROOT logger to INFO
+10:30:15,417 |-INFO in ch.qos.logback.classic.jul.LevelChangePropagator@24d09c1 - Propagating INFO level on Logger[ROOT] onto the JUL framework
+10:30:15,417 |-INFO in ch.qos.logback.core.model.processor.AppenderRefModelHandler - Attaching appender named [console] to Logger[ROOT]
+10:30:15,417 |-INFO in ch.qos.logback.core.model.processor.DefaultProcessor@35a9782c - End of configuration.
+10:30:15,418 |-INFO in org.springframework.boot.logging.logback.SpringBootJoranConfigurator@70a36a66 - Registering current configuration as safe fallback point
+
+ ██████╗ ██████╗ ██████╗ ██████╗ ██╗   ██╗███████╗     ██████╗██████╗ ███╗   ███╗
+██╔════╝██╔═══██╗██╔══██╗██╔══██╗╚██╗ ██╔╝██╔════╝    ██╔════╝██╔══██╗████╗ ████║
+██║     ██║   ██║██████╔╝██║  ██║ ╚████╔╝ ███████╗    ██║     ██████╔╝██╔████╔██║
+██║     ██║   ██║██╔══██╗██║  ██║  ╚██╔╝  ╚════██║    ██║     ██╔══██╗██║╚██╔╝██║
+╚██████╗╚██████╔╝██║  ██║██████╔╝   ██║   ███████║    ╚██████╗██║  ██║██║ ╚═╝ ██║
+ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝    ╚═╝   ╚══════╝     ╚═════╝╚═╝  ╚═╝╚═╝     ╚═╝
+
+2025-12-31 10:30:15,447  INFO ibernate.validator.internal.util.Version:  21 - HV000001: Hibernate Validator 8.0.3.Final
+10:30:15,504 |-INFO in c.q.l.co.rolling.helper.RenameUtil - Renaming file [/opt/cordys/logs/cordys-crm/info.log] to [/opt/cordys/logs/cordys-crm/history/info.20251230-0.log]
+10:30:15,506 |-INFO in c.q.l.core.rolling.helper.TimeBasedArchiveRemover - first clean up after appender initialization
+10:30:15,507 |-INFO in c.q.l.core.rolling.helper.TimeBasedArchiveRemover - Multiple periods, i.e. 32 periods, seem to have elapsed. This can happen at application start.
+10:30:15,507 |-INFO in c.q.l.core.rolling.helper.TimeBasedArchiveRemover - deleting historically stale /opt/cordys/logs/cordys-crm/history/info.20251130-0.log
+2025-12-31 10:30:16,954  INFO y.config.RepositoryConfigurationDelegate: 294 - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-12-31 10:30:16,957  INFO y.config.RepositoryConfigurationDelegate: 145 - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-12-31 10:30:17,063  INFO y.config.RepositoryConfigurationDelegate: 213 - Finished Spring Data repository scanning in 87 ms. Found 0 Redis repository interfaces.
+2025-12-31 10:30:17,449  WARN trationDelegate$BeanPostProcessorChecker: 429 - Bean 'shiroConfig' of type [cn.cordys.config.ShiroConfig$$SpringCGLIB$$0] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). The currently created BeanPostProcessor [lifecycleBeanPostProcessor] is declared through a non-static factory method on that class; consider declaring it as static instead.
+2025-12-31 10:30:17,485  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'sessionManager' of type [org.apache.shiro.web.session.mgt.ServletContainerSessionManager] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [methodValidationPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:17,488  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'memoryConstrainedCacheManager' of type [org.apache.shiro.cache.MemoryConstrainedCacheManager] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [methodValidationPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:17,518  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'localRealm' of type [cn.cordys.common.security.realm.LocalRealm] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [methodValidationPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:17,543  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'securityManager' of type [org.apache.shiro.web.mgt.DefaultWebSecurityManager] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [methodValidationPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+
+========== Shiro Filter Chain Configuration ==========
+  /api/user/current -> anon
+  /api/user/current/** -> anon
+  /web/** -> anon
+  /mobile/** -> anon
+  /static/** -> anon
+  /templates/** -> anon
+  /*.html -> anon
+  /css/** -> anon
+  /js/** -> anon
+  /images/** -> anon
+  /assets/** -> anon
+  /fonts/** -> anon
+  /favicon.ico -> anon
+  /logo.* -> anon
+  /base-display/** -> anon
+  /cordys/** -> anon
+  /login -> anon
+  /logout -> anon
+  /is-login -> anon
+  /get-key -> anon
+  /403 -> anon
+  /sso/callback/** -> anon
+  /display/info -> anon
+  /pic/preview/** -> anon
+  /attachment/preview/** -> anon
+  /ui/display/preview -> anon
+  /ui/display/info -> anon
+  /anonymous/** -> anon
+  /system/version/current -> anon
+  /sse/subscribe/** -> anon
+  /sse/close/** -> anon
+  /sse/broadcast/** -> anon
+  /organization/settings/third-party/types -> anon
+  /organization/settings/third-party/get/** -> anon
+  /organization/settings/third-party/sync/resource -> anon
+  /license/validate/** -> anon
+  /mcp/** -> anon
+  /opportunity/stage/get -> anon
+  / -> apikey, authc
+  /language -> apikey, authc
+  /mock -> apikey, authc
+  /api/enterprise/config/** -> apikey, authc
+  /api/enterprise/search -> apikey, authc
+  /api/enterprise/search/** -> apikey, authc
+  /api/enterprise/search-local -> apikey, authc
+  /api/enterprise/search-local/** -> apikey, authc
+  /api/enterprise/import -> apikey, authc
+  /api/enterprise/import/** -> apikey, authc
+  /** -> apikey, csrf, authc
+======================================================
+2025-12-31 10:30:17,552  WARN             cn.cordys.config.ShiroConfig: 107 - 
+========== Shiro Filter Chain Configuration ==========
+  /api/user/current -> anon
+  /api/user/current/** -> anon
+  /web/** -> anon
+  /mobile/** -> anon
+  /static/** -> anon
+  /templates/** -> anon
+  /*.html -> anon
+  /css/** -> anon
+  /js/** -> anon
+  /images/** -> anon
+  /assets/** -> anon
+  /fonts/** -> anon
+  /favicon.ico -> anon
+  /logo.* -> anon
+  /base-display/** -> anon
+  /cordys/** -> anon
+  /login -> anon
+  /logout -> anon
+  /is-login -> anon
+  /get-key -> anon
+  /403 -> anon
+  /sso/callback/** -> anon
+  /display/info -> anon
+  /pic/preview/** -> anon
+  /attachment/preview/** -> anon
+  /ui/display/preview -> anon
+  /ui/display/info -> anon
+  /anonymous/** -> anon
+  /system/version/current -> anon
+  /sse/subscribe/** -> anon
+  /sse/close/** -> anon
+  /sse/broadcast/** -> anon
+  /organization/settings/third-party/types -> anon
+  /organization/settings/third-party/get/** -> anon
+  /organization/settings/third-party/sync/resource -> anon
+  /license/validate/** -> anon
+  /mcp/** -> anon
+  /opportunity/stage/get -> anon
+  / -> apikey, authc
+  /language -> apikey, authc
+  /mock -> apikey, authc
+  /api/enterprise/config/** -> apikey, authc
+  /api/enterprise/search -> apikey, authc
+  /api/enterprise/search/** -> apikey, authc
+  /api/enterprise/search-local -> apikey, authc
+  /api/enterprise/search-local/** -> apikey, authc
+  /api/enterprise/import -> apikey, authc
+  /api/enterprise/import/** -> apikey, authc
+  /** -> apikey, csrf, authc
+======================================================
+10:30:17,553 |-INFO in c.q.l.co.rolling.helper.RenameUtil - Renaming file [/opt/cordys/logs/cordys-crm/warn.log] to [/opt/cordys/logs/cordys-crm/history/warn.20251229-0.log]
+10:30:17,554 |-INFO in c.q.l.core.rolling.helper.TimeBasedArchiveRemover - first clean up after appender initialization
+10:30:17,554 |-INFO in c.q.l.core.rolling.helper.TimeBasedArchiveRemover - Multiple periods, i.e. 32 periods, seem to have elapsed. This can happen at application start.
+10:30:17,555 |-INFO in c.q.l.core.rolling.helper.TimeBasedArchiveRemover - deleting historically stale /opt/cordys/logs/cordys-crm/history/warn.20251130-0.log
+10:30:17,556 |-INFO in c.q.l.core.rolling.helper.TimeBasedArchiveRemover - deleting historically stale /opt/cordys/logs/cordys-crm/history/warn.20251129-0.log
+2025-12-31 10:30:17,574  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'getAuthorizationAttributeSourceAdvisor' of type [org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor []? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:17,952  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'operationLogConfig' of type [cn.cordys.aspectj.config.OperationLogConfig$$SpringCGLIB$$0] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor []? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:17,969  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'mybatisConfig' of type [cn.cordys.config.MybatisConfig$$SpringCGLIB$$0] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:17,985  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'stringOrNumberMigrationVersionConverter' of type [org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration$StringOrNumberToMigrationVersionConverter] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:17,993  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'dataSourceProperties' of type [org.springframework.boot.autoconfigure.jdbc.DataSourceProperties] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,014  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'dataSource' of type [com.zaxxer.hikari.HikariDataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,044  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'quartz-cn.cordys.autoconfigure.QuartzProperties' of type [cn.cordys.autoconfigure.QuartzProperties] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,053  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'quartzDataSourceProperties' of type [org.springframework.boot.autoconfigure.jdbc.DataSourceProperties] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,060  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'quartzDataSource' of type [com.zaxxer.hikari.HikariDataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,073  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration$JdbcTransactionManagerConfiguration' of type [org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration$JdbcTransactionManagerConfiguration] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,079  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'org.springframework.boot.autoconfigure.transaction.TransactionManagerCustomizationAutoConfiguration' of type [org.springframework.boot.autoconfigure.transaction.TransactionManagerCustomizationAutoConfiguration] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,083  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'transactionExecutionListeners' of type [org.springframework.boot.autoconfigure.transaction.ExecutionListenersTransactionManagerCustomizer] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,086  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'spring.transaction-org.springframework.boot.autoconfigure.transaction.TransactionProperties' of type [org.springframework.boot.autoconfigure.transaction.TransactionProperties] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,089  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'platformTransactionManagerCustomizers' of type [org.springframework.boot.autoconfigure.transaction.TransactionManagerCustomizers] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,093  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'transactionManager' of type [org.springframework.jdbc.support.JdbcTransactionManager] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,104  WARN trationDelegate$BeanPostProcessorChecker: 429 - Bean 'cn.cordys.autoconfigure.QuartzAutoConfiguration' of type [cn.cordys.autoconfigure.QuartzAutoConfiguration$$SpringCGLIB$$0] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). The currently created BeanPostProcessor [schedulerStarter] is declared through a non-static factory method on that class; consider declaring it as static instead.
+2025-12-31 10:30:18,118  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'spring.flyway-org.springframework.boot.autoconfigure.flyway.FlywayProperties' of type [org.springframework.boot.autoconfigure.flyway.FlywayProperties] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,127  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration$FlywayConfiguration' of type [org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration$FlywayConfiguration] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,137  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'flywayConnectionDetails' of type [org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration$PropertiesFlywayConnectionDetails] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,140  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'resourceProviderCustomizer' of type [org.springframework.boot.autoconfigure.flyway.ResourceProviderCustomizer] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,275  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'flyway' of type [org.flywaydb.core.Flyway] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,291  INFO       com.zaxxer.hikari.HikariDataSource: 109 - DatebookHikariCP - Starting...
+2025-12-31 10:30:18,463  INFO        com.zaxxer.hikari.pool.HikariPool: 580 - DatebookHikariCP - Added connection com.mysql.cj.jdbc.ConnectionImpl@73417494
+2025-12-31 10:30:18,465  INFO       com.zaxxer.hikari.HikariDataSource: 122 - DatebookHikariCP - Start completed.
+2025-12-31 10:30:18,527  INFO         org.flywaydb.core.FlywayExecutor:  41 - Database: jdbc:mysql://127.0.0.1:3306/cordys_crm?autoReconnect=false&useUnicode=true&characterEncoding=UTF-8&characterSetResults=UTF-8&zeroDateTimeBehavior=convertToNull&allowPublicKeyRetrieval=true&useSSL=false&sessionVariables=sql_mode='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' (MySQL 8.0)
+2025-12-31 10:30:18,635  INFO flywaydb.core.internal.command.DbMigrate:  41 - Current version of schema `cordys_crm`: 1.5.0.2
+2025-12-31 10:30:18,643  INFO flywaydb.core.internal.command.DbMigrate:  41 - Schema `cordys_crm` is up to date. No migration necessary.
+2025-12-31 10:30:18,656  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'flywayInitializer' of type [org.springframework.boot.autoconfigure.flyway.FlywayMigrationInitializer] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,658  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'org.springframework.boot.autoconfigure.sql.init.DataSourceInitializationConfiguration' of type [org.springframework.boot.autoconfigure.sql.init.DataSourceInitializationConfiguration] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,662  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'spring.sql.init-org.springframework.boot.autoconfigure.sql.init.SqlInitializationProperties' of type [org.springframework.boot.autoconfigure.sql.init.SqlInitializationProperties] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,669  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'dataSourceScriptDatabaseInitializer' of type [org.springframework.boot.autoconfigure.sql.init.SqlDataSourceScriptDatabaseInitializer] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,715  INFO      org.quartz.impl.StdSchedulerFactory:1222 - Using default implementation for ThreadExecutor
+2025-12-31 10:30:18,721  INFO        org.quartz.simpl.SimpleThreadPool: 269 - Job execution threads will use class loader of thread: main
+2025-12-31 10:30:18,738  INFO    org.quartz.core.SchedulerSignalerImpl:  62 - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+2025-12-31 10:30:18,739  INFO          org.quartz.core.QuartzScheduler: 224 - Quartz Scheduler v2.5.0 created.
+2025-12-31 10:30:18,747  INFO       com.zaxxer.hikari.HikariDataSource: 109 - DatebookHikariCP - Starting...
+2025-12-31 10:30:18,763  INFO        com.zaxxer.hikari.pool.HikariPool: 580 - DatebookHikariCP - Added connection com.mysql.cj.jdbc.ConnectionImpl@445b4594
+2025-12-31 10:30:18,764  INFO       com.zaxxer.hikari.HikariDataSource: 122 - DatebookHikariCP - Start completed.
+2025-12-31 10:30:18,765  INFO cheduling.quartz.LocalDataSourceJobStore: 673 - Using db table-based data access locking (synchronization).
+2025-12-31 10:30:18,767  INFO cheduling.quartz.LocalDataSourceJobStore: 147 - JobStoreCMT initialized.
+2025-12-31 10:30:18,768  INFO          org.quartz.core.QuartzScheduler: 289 - Scheduler meta-data: Quartz Scheduler (v2.5.0) 'cordys-crm-quartz' with instanceId 'rogers-V1x0PNPx1767148218719'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 10 threads.
+  Using job-store 'org.springframework.scheduling.quartz.LocalDataSourceJobStore' - which supports persistence. and is clustered.
+
+2025-12-31 10:30:18,768  INFO      org.quartz.impl.StdSchedulerFactory:1376 - Quartz scheduler 'cordys-crm-quartz' initialized from an externally provided properties instance.
+2025-12-31 10:30:18,769  INFO      org.quartz.impl.StdSchedulerFactory:1378 - Quartz scheduler version: 2.5.0
+2025-12-31 10:30:18,770  INFO          org.quartz.core.QuartzScheduler:2240 - JobFactory set to: org.springframework.scheduling.quartz.AdaptableJobFactory@34be7efb
+2025-12-31 10:30:18,775  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'clusterSchedulerFactoryBean' of type [org.springframework.scheduling.quartz.SchedulerFactoryBean] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,787  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'clusterSchedulerFactoryBean' of type [org.quartz.impl.StdScheduler] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,802  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'quartzTimeZone' of type [sun.util.calendar.ZoneInfo] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,808  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'quartzManageService' of type [cn.cordys.quartz.service.QuartzManageService] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [schedulerStarter]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:18,831  WARN trationDelegate$BeanPostProcessorChecker: 429 - Bean 'org.apache.shiro.spring.boot.autoconfigure.ShiroBeanAutoConfiguration' of type [org.apache.shiro.spring.boot.autoconfigure.ShiroBeanAutoConfiguration$$SpringCGLIB$$0] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). The currently created BeanPostProcessor [shiroEventBusAwareBeanPostProcessor] is declared through a non-static factory method on that class; consider declaring it as static instead.
+2025-12-31 10:30:18,834  WARN trationDelegate$BeanPostProcessorChecker: 437 - Bean 'eventBus' of type [org.apache.shiro.event.support.DefaultEventBus] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [shiroEventBusAwareBeanPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.
+2025-12-31 10:30:19,201  INFO boot.web.embedded.tomcat.TomcatWebServer: 111 - Tomcat initialized with port 8081 (http)
+2025-12-31 10:30:19,215  INFO g.apache.coyote.http11.Http11NioProtocol: 168 - Initializing ProtocolHandler ["http-nio-8081"]
+2025-12-31 10:30:19,217  INFO org.apache.catalina.core.StandardService: 168 - Starting service [Tomcat]
+2025-12-31 10:30:19,217  INFO  org.apache.catalina.core.StandardEngine: 168 - Starting Servlet engine: [Apache Tomcat/10.1.48]
+2025-12-31 10:30:19,277  INFO e.ContainerBase.[Tomcat].[localhost].[/]: 168 - Initializing Spring embedded WebApplicationContext
+2025-12-31 10:30:19,277  INFO ntext.ServletWebServerApplicationContext: 301 - Root WebApplicationContext: initialization completed in 3726 ms
+2025-12-31 10:30:19,653  INFO                     org.redisson.Version:  43 - Redisson 3.52.0
+2025-12-31 10:30:19,983  INFO rg.redisson.connection.ConnectionsHolder: 134 - 1 connections initialized for 127.0.0.1/127.0.0.1:6379
+2025-12-31 10:30:20,047  INFO rg.redisson.connection.ConnectionsHolder: 134 - 10 connections initialized for 127.0.0.1/127.0.0.1:6379
+2025-12-31 10:30:20,355  INFO dys.config.UserCurrentBypassFilterConfig:  34 - ========== Registering UserCurrentBypassFilter ==========
+2025-12-31 10:30:20,355  INFO dys.config.UserCurrentBypassFilterConfig:  44 - UserCurrentBypassFilter registered with order: -2147483548
+2025-12-31 10:30:20,355  INFO dys.config.UserCurrentBypassFilterConfig:  45 - URL patterns: /api/user/current, /api/user/current/*
+2025-12-31 10:30:20,356  INFO dys.config.UserCurrentBypassFilterConfig:  46 - ==========================================================
+2025-12-31 10:30:20,500 DEBUG cn.cordys.config.UserCurrentBypassFilter: 240 - Filter 'userCurrentBypassFilter' configured for use
+10:30:20,501 |-INFO in c.q.l.co.rolling.helper.RenameUtil - Renaming file [/opt/cordys/logs/cordys-crm/debug.log] to [/opt/cordys/logs/cordys-crm/history/debug.20251230-0.log]
+2025-12-31 10:30:20,501 DEBUG mon.context.OrganizationContextWebFilter: 240 - Filter 'tenantContextWebFilter' configured for use
+10:30:20,502 |-INFO in c.q.l.core.rolling.helper.TimeBasedArchiveRemover - first clean up after appender initialization
+10:30:20,502 |-INFO in c.q.l.core.rolling.helper.TimeBasedArchiveRemover - Multiple periods, i.e. 32 periods, seem to have elapsed. This can happen at application start.
+10:30:20,502 |-INFO in c.q.l.core.rolling.helper.TimeBasedArchiveRemover - deleting historically stale /opt/cordys/logs/cordys-crm/history/debug.20251130-0.log
+2025-12-31 10:30:24,000  INFO cordys.crm.integration.service.AIService:  54 - Registered LLM provider: LOCAL
+2025-12-31 10:30:24,040  INFO .integration.service.IqichaSearchService:  77 - IqichaSearchService 初始化完成，已禁用自动重定向
+2025-12-31 10:30:25,334  INFO re.web.servlet.WelcomePageHandlerMapping:  59 - Adding welcome page: class path resource [static/index.html]
+2025-12-31 10:30:26,470  INFO g.apache.coyote.http11.Http11NioProtocol: 168 - Starting ProtocolHandler ["http-nio-8081"]
+2025-12-31 10:30:26,476  WARN ConfigServletWebServerApplicationContext: 635 - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Failed to start bean 'webServerStartStop'
+2025-12-31 10:30:26,496  INFO           cn.cordys.common.util.LogUtils:  66 - Method[info][Shutdown UidGenerator...]
+2025-12-31 10:30:26,509  INFO k.scheduling.quartz.SchedulerFactoryBean: 845 - Shutting down Quartz Scheduler
+2025-12-31 10:30:26,510  INFO          org.quartz.core.QuartzScheduler: 656 - Scheduler cordys-crm-quartz_$_rogers-V1x0PNPx1767148218719 shutting down.
+2025-12-31 10:30:26,510  INFO          org.quartz.core.QuartzScheduler: 576 - Scheduler cordys-crm-quartz_$_rogers-V1x0PNPx1767148218719 paused.
+2025-12-31 10:30:26,510  INFO          org.quartz.core.QuartzScheduler: 728 - Scheduler cordys-crm-quartz_$_rogers-V1x0PNPx1767148218719 shutdown complete.
+2025-12-31 10:30:26,510  INFO       com.zaxxer.hikari.HikariDataSource: 349 - DatebookHikariCP - Shutdown initiated...
+2025-12-31 10:30:26,518  INFO       com.zaxxer.hikari.HikariDataSource: 351 - DatebookHikariCP - Shutdown completed.
+2025-12-31 10:30:26,520  INFO       com.zaxxer.hikari.HikariDataSource: 349 - DatebookHikariCP - Shutdown initiated...
+2025-12-31 10:30:26,522  INFO       com.zaxxer.hikari.HikariDataSource: 351 - DatebookHikariCP - Shutdown completed.
+2025-12-31 10:30:26,538  INFO .logging.ConditionEvaluationReportLogger:  82 - 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2025-12-31 10:30:26,559 ERROR agnostics.LoggingFailureAnalysisReporter:  40 - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Web server failed to start. Port 8081 was already in use.
+
+Action:
+
+Identify and stop the process that's listening on port 8081 or configure this application to listen on another port.
+
+10:30:27,511 |-INFO in ch.qos.logback.classic.AsyncAppender[traceAsyncAppender] - Worker thread will flush remaining events before exiting. 
+10:30:27,512 |-INFO in ch.qos.logback.classic.AsyncAppender[traceAsyncAppender] - Queue flush finished successfully within timeout.
+10:30:27,512 |-INFO in ch.qos.logback.classic.AsyncAppender[debugAsyncAppender] - Worker thread will flush remaining events before exiting. 
+10:30:27,512 |-INFO in ch.qos.logback.classic.AsyncAppender[debugAsyncAppender] - Queue flush finished successfully within timeout.
+10:30:27,512 |-INFO in ch.qos.logback.classic.AsyncAppender[infoAsyncAppender] - Worker thread will flush remaining events before exiting. 
+10:30:27,513 |-INFO in ch.qos.logback.classic.AsyncAppender[infoAsyncAppender] - Queue flush finished successfully within timeout.
+10:30:27,513 |-INFO in ch.qos.logback.classic.AsyncAppender[warnAsyncAppender] - Worker thread will flush remaining events before exiting. 
+10:30:27,513 |-INFO in ch.qos.logback.classic.AsyncAppender[warnAsyncAppender] - Queue flush finished successfully within timeout.
+10:30:27,513 |-INFO in ch.qos.logback.classic.AsyncAppender[errorAsyncAppender] - Worker thread will flush remaining events before exiting. 
+10:30:27,513 |-INFO in ch.qos.logback.classic.AsyncAppender[errorAsyncAppender] - Queue flush finished successfully within timeout.
+[[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+[[1;34mINFO[m] [1;31mBUILD FAILURE[m
+[[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+[[1;34mINFO[m] Total time:  15.809 s
+[[1;34mINFO[m] Finished at: 2025-12-31T10:30:27+08:00
+[[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+[[1;31mERROR[m] Failed to execute goal [32morg.springframework.boot:spring-boot-maven-plugin:3.5.7:run[m [1m(default-cli)[m on project [36mapp[m: [1;31mProcess terminated with exit code: 1[m -> [1m[Help 1][m
+[[1;31mERROR[m] 
+[[1;31mERROR[m] To see the full stack trace of the errors, re-run Maven with the [1m-e[m switch.
+[[1;31mERROR[m] Re-run Maven using the [1m-X[m switch to enable full debug logging.
+[[1;31mERROR[m] 
+[[1;31mERROR[m] For more information about the errors and possible solutions, please read the following articles:
+[[1;31mERROR[m] [1m[Help 1][m http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
